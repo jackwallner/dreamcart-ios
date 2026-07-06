@@ -1,0 +1,22 @@
+# Xcode / build
+build/
+DerivedData/
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+*.xcuserstate
+
+# secrets
+.env.shop
+.env
+*.p8
+
+# supabase
+supabase/.temp/
+supabase/.branches/
+
+# macOS
+.DS_Store
+
+# node
+node_modules/

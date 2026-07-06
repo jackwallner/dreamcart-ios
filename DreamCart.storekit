@@ -1,0 +1,92 @@
+{
+  "identifier" : "DREAMCART_SK",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "COINS_POCKET",
+      "localizations" : [
+        {
+          "description" : "1,000 coins to shop with.",
+          "displayName" : "Pocket of Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackwallner.shop.coins.pocket",
+      "referenceName" : "Pocket of Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "COINS_BAG",
+      "localizations" : [
+        {
+          "description" : "3,200 coins. Best for a full look.",
+          "displayName" : "Bag of Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackwallner.shop.coins.bag",
+      "referenceName" : "Bag of Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "COINS_HAUL",
+      "localizations" : [
+        {
+          "description" : "8,500 coins. Build a whole wardrobe.",
+          "displayName" : "Haul of Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackwallner.shop.coins.haul",
+      "referenceName" : "Haul of Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "COINS_SPREE",
+      "localizations" : [
+        {
+          "description" : "20,000 coins. Go on a spree.",
+          "displayName" : "Shopping Spree",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackwallner.shop.coins.spree",
+      "referenceName" : "Shopping Spree",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "COINS_VAULT",
+      "localizations" : [
+        {
+          "description" : "60,000 coins. The vault is yours.",
+          "displayName" : "The Vault",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackwallner.shop.coins.vault",
+      "referenceName" : "The Vault",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6787820106",
+    "_developerTeamID" : "YXG4MP6W39",
+    "_failTransactionsEnabled" : false,
+    "_askToBuyEnabled" : false
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

@@ -1,0 +1,15 @@
+project_id = "wpjmshibfhdpzvfrjzrv"
+
+# generate-products authenticates with x-cron-secret (pg_cron / seed), not a
+# Supabase JWT. rc-webhook authenticates with a shared bearer from RevenueCat.
+[functions.generate-products]
+verify_jwt = false
+
+[functions.rc-webhook]
+verify_jwt = false
+
+[functions.redeem]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
