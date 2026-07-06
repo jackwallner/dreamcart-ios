@@ -5,6 +5,7 @@ struct ProductDetailView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
     @State private var showCoinShop = false
+    @State private var showCheckout = false
     @State private var addedPulse = false
 
     private var owned: Bool { shop.ownedIds.contains(product.id) }
@@ -29,22 +30,22 @@ struct ProductDetailView: View {
                     if let brand {
                         NavigationLink(value: brand) {
                             Text(brand.name.uppercased())
-                                .font(.system(size: 12, weight: .black, design: .rounded))
+                                .font(.system(size: 12, weight: .black))
                                 .tracking(0.6)
                                 .foregroundStyle(Color(hex: brand.accentHex))
                         }
                     }
                     Text(product.name)
-                        .font(.system(size: 26, weight: .black, design: .rounded))
+                        .font(Theme.display(27, .bold))
                         .foregroundStyle(Theme.ink(scheme))
                     Text(product.description)
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(Theme.subtle(scheme))
 
                     HStack(spacing: 8) {
                         ForEach(product.styleTags.prefix(3), id: \.self) { tag in
                             Text("#\(tag)")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .font(.system(size: 12, weight: .semibold))
                                 .foregroundStyle(Theme.violet)
                                 .padding(.horizontal, 10).padding(.vertical, 5)
                                 .background(Theme.violet.opacity(0.1), in: Capsule())
@@ -62,6 +63,7 @@ struct ProductDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) { buyBar }
         .sheet(isPresented: $showCoinShop) { CoinShopView() }
+        .sheet(isPresented: $showCheckout) { CartView() }
     }
 
     private var favoriteButton: some View {
@@ -90,10 +92,10 @@ struct ProductDetailView: View {
 
     private func specRow(_ k: String, _ v: String) -> some View {
         HStack {
-            Text(k).font(.system(size: 14, weight: .medium, design: .rounded))
+            Text(k).font(.system(size: 14, weight: .medium))
                 .foregroundStyle(Theme.subtle(scheme))
             Spacer()
-            Text(v).font(.system(size: 14, weight: .bold, design: .rounded))
+            Text(v).font(.system(size: 14, weight: .bold))
                 .foregroundStyle(Theme.ink(scheme))
         }
         .padding(.vertical, 13)
@@ -106,20 +108,24 @@ struct ProductDetailView: View {
             Spacer()
             if owned {
                 Label("In your closet", systemImage: "checkmark.seal.fill")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20).padding(.vertical, 14)
                     .background(Color.green.gradient, in: Capsule())
             } else {
                 Button {
-                    shop.toggleCart(product.id)
+                    // First tap adds and drops you straight into checkout; once
+                    // in the cart, the button re-opens checkout (removal lives
+                    // in the cart itself).
+                    if !inCart { shop.toggleCart(product.id) }
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showCheckout = true }
                 } label: {
                     HStack(spacing: 7) {
-                        Image(systemName: inCart ? "checkmark" : "cart.badge.plus")
-                        Text(inCart ? "In cart" : "Add to cart")
+                        Image(systemName: inCart ? "creditcard.fill" : "cart.badge.plus")
+                        Text(inCart ? "Check out" : "Add to cart")
                     }
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 14)
                     .background(inCart ? AnyShapeStyle(Color.green.gradient) : AnyShapeStyle(Theme.candy),

@@ -86,9 +86,9 @@ struct ClosetView: View {
     private func stat(_ value: String, _ label: String, _ icon: String) -> some View {
         VStack(spacing: 5) {
             Image(systemName: icon).font(.system(size: 16)).foregroundStyle(Theme.violet)
-            Text(value).font(.system(size: 20, weight: .black, design: .rounded))
+            Text(value).font(.system(size: 20, weight: .black))
                 .foregroundStyle(Theme.ink(scheme))
-            Text(label).font(.system(size: 11, weight: .medium, design: .rounded))
+            Text(label).font(.system(size: 11, weight: .medium))
                 .foregroundStyle(Theme.subtle(scheme))
         }
         .frame(maxWidth: .infinity)
@@ -98,14 +98,14 @@ struct ClosetView: View {
         HStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14).fill(Theme.candy).frame(width: 52, height: 52)
-                Image(systemName: "sparkles").font(.system(size: 24, weight: .bold)).foregroundStyle(.white)
+                Image(systemName: "figure.arms.open").font(.system(size: 24, weight: .bold)).foregroundStyle(.white)
             }
             VStack(alignment: .leading, spacing: 3) {
-                Text("Style a look")
-                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                Text("Dress up your avatar")
+                    .font(Theme.display(17, .bold))
                     .foregroundStyle(Theme.ink(scheme))
-                Text("Mix your pieces into full outfits")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                Text("Put your pieces on a model and save the look")
+                    .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.subtle(scheme))
             }
             Spacer()
@@ -126,7 +126,7 @@ struct ClosetTile: View {
                 .clipShape(RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
                 .overlay(alignment: .topLeading) { RarityTag(rarity: product.rarityKind).padding(6) }
             Text(product.name)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.ink(scheme))
                 .lineLimit(1)
         }

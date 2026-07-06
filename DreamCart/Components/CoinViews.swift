@@ -8,7 +8,7 @@ struct CoinIcon: View {
             Circle().fill(Theme.goldGradient)
             Circle().strokeBorder(.white.opacity(0.55), lineWidth: size * 0.06)
             Text("$")
-                .font(.system(size: size * 0.6, weight: .black, design: .rounded))
+                .font(.system(size: size * 0.6, weight: .black))
                 .foregroundStyle(.white.opacity(0.9))
         }
         .frame(width: size, height: size)
@@ -25,7 +25,7 @@ struct CoinLabel: View {
         HStack(spacing: size * 0.28) {
             CoinIcon(size: size)
             Text(Format.coins(amount))
-                .font(.system(size: size, weight: weight, design: .rounded))
+                .font(.system(size: size, weight: weight))
                 .monospacedDigit()
         }
     }
@@ -43,7 +43,7 @@ struct WalletPill: View {
             HStack(spacing: 7) {
                 CoinIcon(size: 20)
                 Text(Format.coins(coins))
-                    .font(.system(size: 17, weight: .heavy, design: .rounded))
+                    .font(.system(size: 17, weight: .heavy))
                     .monospacedDigit()
                     .contentTransition(.numericText(value: Double(coins)))
                 Image(systemName: "plus.circle.fill")

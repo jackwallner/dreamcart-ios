@@ -56,7 +56,7 @@ struct TodayView: View {
         return VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Label("Daily Drop", systemImage: "gift.fill")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(.white)
                 Spacer()
                 if let s = shop.me?.streak, s > 0 {
@@ -64,18 +64,18 @@ struct TodayView: View {
                         Image(systemName: "flame.fill")
                         Text("\(s) day\(s == 1 ? "" : "")")
                     }
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 10).padding(.vertical, 5)
                     .background(.white.opacity(0.22), in: Capsule())
                 }
             }
             Text(can ? "Your coins are waiting" : "Come back tomorrow")
-                .font(.system(size: 24, weight: .black, design: .rounded))
+                .font(Theme.display(24, .bold))
                 .foregroundStyle(.white)
             Text(can ? "Claim today's coins and keep your streak alive."
                      : "You've claimed today. Streak safe. Spin for more below.")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.white.opacity(0.85))
 
             Button {
@@ -85,7 +85,7 @@ struct TodayView: View {
                     if claiming { ProgressView().tint(Theme.violet) }
                     else { Text(can ? "Claim now" : "Claimed").fontWeight(.bold) }
                 }
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(can ? Theme.violet : Theme.subtle(scheme))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
@@ -126,16 +126,16 @@ struct TodayView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Spin the wheel")
-                        .font(.system(size: 17, weight: .heavy, design: .rounded))
+                        .font(.system(size: 17, weight: .heavy))
                         .foregroundStyle(Theme.ink(scheme))
                     Text(can ? "Your free spin is ready" : "Free spin resets tomorrow")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(Theme.subtle(scheme))
                 }
                 Spacer()
                 if can {
                     Text("SPIN")
-                        .font(.system(size: 13, weight: .black, design: .rounded))
+                        .font(.system(size: 13, weight: .black))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14).padding(.vertical, 8)
                         .background(Theme.candy, in: Capsule())
@@ -179,10 +179,10 @@ struct TodayView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(brand.name)
-                                    .font(.system(size: 19, weight: .heavy, design: .rounded))
+                                    .font(Theme.display(19, .bold))
                                     .foregroundStyle(Theme.ink(scheme))
                                 Text(brand.tagline)
-                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(Color(hex: brand.accentHex))
                             }
                             Spacer()
@@ -190,7 +190,7 @@ struct TodayView: View {
                                 BrandView(brand: brand)
                             } label: {
                                 Text("See all")
-                                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                                    .font(.system(size: 14, weight: .bold))
                                     .foregroundStyle(Theme.violet)
                             }
                         }

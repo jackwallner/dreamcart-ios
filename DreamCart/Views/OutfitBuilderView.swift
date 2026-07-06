@@ -1,9 +1,11 @@
 import SwiftUI
 
-// Nuuly-style styling: pick one piece per slot from your closet, save the look.
+// The dressing room: pick one owned piece per slot and watch your avatar wear
+// the whole fit, rendered as one on-model editorial shot. Looks can be saved.
 struct OutfitBuilderView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
+    @AppStorage("avatarLook") private var lookRaw = AvatarLook.aria.rawValue
 
     // Slot order top-to-bottom, matching the closet_items.slot values.
     private let slots: [(key: String, label: String, icon: String)] = [
@@ -23,15 +25,18 @@ struct OutfitBuilderView: View {
     @State private var name = ""
     @State private var savedFlash = false
 
+    private var look: AvatarLook { AvatarLook(rawValue: lookRaw) ?? .aria }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
                 if shop.closet.isEmpty {
                     EmptyState(icon: "hanger", title: "Nothing to style yet",
-                               message: "Buy a few pieces, then come back to build looks.")
+                               message: "Buy a few pieces, then come back to dress up your avatar.")
                         .padding(.top, 40)
                 } else {
-                    lookPreview
+                    avatarPreview
+                    lookPicker
                     slotList
                     saveRow
                     if !shop.outfits.isEmpty { savedLooks }
@@ -40,7 +45,7 @@ struct OutfitBuilderView: View {
             .padding(16)
         }
         .background(Theme.bg(scheme))
-        .navigationTitle("Style a look")
+        .navigationTitle("Dressing room")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $pickingSlot) { slot in
             SlotPickerSheet(slot: slot.id,
@@ -54,32 +59,48 @@ struct OutfitBuilderView: View {
 
     private var chosen: [Product] { slots.compactMap { picks[$0.key] } }
 
-    private var lookPreview: some View {
+    // MARK: avatar
+
+    private var avatarPreview: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: Theme.corner)
+            RoundedRectangle(cornerRadius: Theme.corner, style: .continuous)
                 .fill(Theme.candy.opacity(0.12))
-            if chosen.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "wand.and.stars").font(.system(size: 34)).foregroundStyle(Theme.violet)
-                    Text("Tap a slot to start styling")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Theme.subtle(scheme))
-                }
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(chosen) { p in
-                            RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
-                                .frame(width: 96, height: 120)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
+            if let url = Avatar.imageURL(look: look, items: chosen) {
+                RemoteImage(url: url)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
+                    .overlay(alignment: .bottomTrailing) {
+                        Text("\(chosen.count) piece\(chosen.count == 1 ? "" : "s")")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 9).padding(.vertical, 4)
+                            .background(.black.opacity(0.45), in: Capsule())
+                            .padding(10)
                     }
-                    .padding(14)
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "figure.arms.open")
+                        .font(.system(size: 40)).foregroundStyle(Theme.violet)
+                    Text("Pick pieces below to dress your avatar")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.subtle(scheme))
                 }
             }
         }
-        .frame(height: 160)
+        .aspectRatio(0.8, contentMode: .fit)
+        .animation(.easeOut(duration: 0.3), value: chosen.map(\.id))
     }
+
+    private var lookPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(AvatarLook.allCases) { l in
+                    FilterChip(label: l.label, selected: look == l) { lookRaw = l.rawValue }
+                }
+            }
+        }
+    }
+
+    // MARK: slots
 
     private var slotList: some View {
         VStack(spacing: 10) {
@@ -94,20 +115,27 @@ struct OutfitBuilderView: View {
                             .foregroundStyle(available ? Theme.violet : Theme.subtle(scheme).opacity(0.4))
                             .frame(width: 26)
                         Text(slot.label)
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(available ? Theme.ink(scheme) : Theme.subtle(scheme).opacity(0.5))
                         Spacer()
                         if let p = picks[slot.key] {
-                            Text(p.name).font(.system(size: 13, weight: .medium, design: .rounded))
+                            Text(p.name).font(.system(size: 13, weight: .medium))
                                 .foregroundStyle(Theme.subtle(scheme)).lineLimit(1)
                             RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
                                 .frame(width: 34, height: 42)
                                 .clipShape(RoundedRectangle(cornerRadius: 7))
+                            Button {
+                                Haptics.tap(); picks[slot.key] = nil
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 17))
+                                    .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
+                            }
                         } else if available {
-                            Text("Choose").font(.system(size: 13, weight: .bold, design: .rounded))
+                            Text("Choose").font(.system(size: 13, weight: .bold))
                                 .foregroundStyle(Theme.violet)
                         } else {
-                            Text("None owned").font(.system(size: 12, weight: .medium, design: .rounded))
+                            Text("None owned").font(.system(size: 12, weight: .medium))
                                 .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
                         }
                     }
@@ -123,7 +151,7 @@ struct OutfitBuilderView: View {
     private var saveRow: some View {
         VStack(spacing: 10) {
             TextField("Name this look", text: $name)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: 15, weight: .semibold))
                 .padding(14)
                 .cardStyle(scheme)
             CandyButton(title: savedFlash ? "Saved!" : "Save look", systemImage: "square.and.arrow.down.fill",
@@ -146,14 +174,23 @@ struct OutfitBuilderView: View {
             ForEach(shop.outfits) { outfit in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(outfit.name).font(.system(size: 15, weight: .bold, design: .rounded))
+                        Text(outfit.name).font(.system(size: 15, weight: .bold))
                             .foregroundStyle(Theme.ink(scheme))
                         Spacer()
+                        Button {
+                            let items = (outfit.outfitItems ?? []).compactMap { $0.products }
+                            picks = Dictionary(items.map { ($0.slot, $0) }, uniquingKeysWith: { a, _ in a })
+                            Haptics.soft()
+                        } label: {
+                            Text("Try on").font(.system(size: 13, weight: .bold))
+                                .foregroundStyle(Theme.violet)
+                        }
                         Button {
                             Task { await shop.deleteOutfit(outfit.id) }
                         } label: {
                             Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(Theme.subtle(scheme))
                         }
+                        .padding(.leading, 8)
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {

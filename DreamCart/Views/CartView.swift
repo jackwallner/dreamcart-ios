@@ -46,7 +46,7 @@ struct CartView: View {
         VStack(spacing: 10) {
             HStack {
                 Text("\(shop.cartProducts.count) item\(shop.cartProducts.count == 1 ? "" : "s")")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(Theme.subtle(scheme))
                 Spacer()
                 CoinLabel(amount: shop.cartTotal, size: 18, weight: .heavy)
@@ -60,7 +60,7 @@ struct CartView: View {
             } else {
                 VStack(spacing: 8) {
                     Text("You need \(Format.coins(shop.cartTotal - shop.coins)) more coins")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Theme.pink)
                     CandyButton(title: "Get more coins", systemImage: "plus.circle.fill") {
                         showCoinShop = true
@@ -97,7 +97,7 @@ struct CartRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 4) {
                 Text(product.name)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Theme.ink(scheme))
                     .lineLimit(2)
                 CoinLabel(amount: product.price, size: 14, weight: .heavy)
@@ -117,54 +117,85 @@ struct CartRow: View {
     }
 }
 
-// The dopamine payoff: a card-flip reveal of everything you just "bought".
+// The dopamine payoff: one big centered reveal per piece — glow ring, confetti,
+// the full name front and center. Swipe through when the haul has several.
 struct UnboxingView: View {
     let items: [Product]
     let onDone: () -> Void
     @Environment(\.colorScheme) private var scheme
     @State private var revealed = false
+    @State private var page = 0
+    @State private var burst = 0
 
     var body: some View {
         ZStack {
             Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
-            ConfettiBurst().ignoresSafeArea()
-            VStack(spacing: 18) {
-                Text("It's yours!")
-                    .font(.system(size: 30, weight: .black, design: .rounded))
+            LinearGradient(colors: [Theme.violet.opacity(0.35), .clear, Theme.pink.opacity(0.3)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+            ForEach(0...burst, id: \.self) { _ in
+                ConfettiBurst().ignoresSafeArea()
+            }
+
+            VStack(spacing: 14) {
+                Text("IT'S YOURS")
+                    .font(Theme.display(38, .bold))
+                    .tracking(1.5)
                     .foregroundStyle(Theme.ink(scheme))
-                Text("\(items.count) new piece\(items.count == 1 ? "" : "s") delivered to your closet")
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .scaleEffect(revealed ? 1 : 0.6)
+                    .opacity(revealed ? 1 : 0)
+                Text(items.count == 1 ? "Delivered to your closet"
+                                      : "\(items.count) new pieces delivered to your closet")
+                    .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(Theme.subtle(scheme))
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 14) {
-                        ForEach(Array(items.enumerated()), id: \.element.id) { idx, p in
-                            VStack(spacing: 8) {
+                TabView(selection: $page) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { idx, p in
+                        VStack(spacing: 16) {
+                            ZStack {
+                                // Rarity glow halo behind the shot.
+                                Circle()
+                                    .fill(p.rarityKind.color.opacity(0.35))
+                                    .frame(width: 260, height: 260)
+                                    .blur(radius: 50)
                                 RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
-                                    .frame(width: 150, height: 185)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                    .overlay(RoundedRectangle(cornerRadius: 16)
-                                        .strokeBorder(p.rarityKind.color, lineWidth: p.rarityKind.glow ? 3 : 0))
-                                Text(p.name)
-                                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                                    .foregroundStyle(Theme.ink(scheme))
-                                    .lineLimit(1).frame(width: 150)
+                                    .frame(width: 240, height: 300)
+                                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                        .strokeBorder(p.rarityKind.color.opacity(p.rarityKind.glow ? 1 : 0.4),
+                                                      lineWidth: p.rarityKind.glow ? 4 : 1.5))
+                                    .shadow(color: p.rarityKind.color.opacity(0.5), radius: 28, y: 10)
                             }
-                            .scaleEffect(revealed ? 1 : 0.4)
-                            .opacity(revealed ? 1 : 0)
-                            .animation(.spring(response: 0.5, dampingFraction: 0.6)
-                                .delay(Double(idx) * 0.12), value: revealed)
+                            VStack(spacing: 6) {
+                                RarityTag(rarity: p.rarityKind)
+                                Text(p.name)
+                                    .font(Theme.display(22, .semibold))
+                                    .foregroundStyle(Theme.ink(scheme))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 30)
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .scaleEffect(revealed ? 1 : 0.35)
+                        .opacity(revealed ? 1 : 0)
+                        .tag(idx)
                     }
-                    .padding(.horizontal, 30)
                 }
-                .frame(height: 240)
+                .tabViewStyle(.page(indexDisplayMode: items.count > 1 ? .automatic : .never))
+                .frame(height: 440)
+                .onChange(of: page) { _, _ in
+                    Haptics.soft()
+                    burst += 1
+                }
 
                 CandyButton(title: "Love it", systemImage: "heart.fill") { onDone() }
                     .padding(.horizontal, 50)
             }
-            .padding(.vertical, 30)
+            .padding(.vertical, 24)
         }
-        .onAppear { Haptics.celebrate(); revealed = true }
+        .onAppear {
+            Haptics.celebrate()
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.55)) { revealed = true }
+        }
     }
 }

@@ -92,7 +92,7 @@ struct BrandView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
                 Text(brand.tagline)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Color(hex: brand.accentHex))
                     .padding(.horizontal, 16)
                 LazyVGrid(columns: cols, spacing: 18) {

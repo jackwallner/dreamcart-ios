@@ -46,13 +46,13 @@ struct WelcomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 Text("We use Sign in with Apple to save your closet and coins. Nothing is shared.")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Theme.subtle(scheme))
                     .multilineTextAlignment(.center)
 
                 #if DEBUG
                 Button("Continue as tester") { Task { await auth.devSignIn() } }
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.violet)
                 #endif
             }
@@ -79,11 +79,11 @@ struct WelcomeView: View {
             }
             VStack(spacing: 12) {
                 Text(s.title)
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(Theme.display(29, .bold))
                     .foregroundStyle(Theme.ink(scheme))
                     .multilineTextAlignment(.center)
                 Text(s.body)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(Theme.subtle(scheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 34)

@@ -38,6 +38,32 @@ enum Theme {
 
     static let corner: CGFloat = 22
     static let cardCorner: CGFloat = 18
+
+    // Typography: editorial serif (New York) for display/headline moments so the
+    // app reads like a fashion catalog; plain SF for everything functional.
+    static func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
+        .system(size: size, weight: weight, design: .serif)
+    }
+}
+
+// User-selectable appearance. Light is the default brand look.
+enum Appearance: String, CaseIterable, Identifiable {
+    case light, dark, system
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .light: return "Light"
+        case .dark: return "Dark"
+        case .system: return "Auto"
+        }
+    }
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .light: return .light
+        case .dark: return .dark
+        case .system: return nil
+        }
+    }
 }
 
 extension Color {
