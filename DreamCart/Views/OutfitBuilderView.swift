@@ -25,17 +25,7 @@ struct OutfitBuilderView: View {
     @State private var name = ""
     @State private var savedFlash = false
 
-    @State private var avatarURL: String?
-    @State private var rendering = false
-    @State private var renderFailed = false
-    @State private var renderAttempt = 0
-
     private var look: AvatarLook { AvatarLook(rawValue: lookRaw) ?? .aria }
-
-    /// One render per distinct fit — the task below re-fires when this changes.
-    private var renderKey: String {
-        "\(look.rawValue)|\(chosen.map(\.id).joined())|\(renderAttempt)"
-    }
 
     var body: some View {
         ScrollView {
@@ -65,24 +55,6 @@ struct OutfitBuilderView: View {
                 Haptics.soft()
             }
         }
-        .task(id: renderKey) { await renderAvatar() }
-    }
-
-    private func renderAvatar() async {
-        guard !chosen.isEmpty else { avatarURL = nil; renderFailed = false; return }
-        // Debounce so tapping through slots doesn't fire a render per tap.
-        try? await Task.sleep(for: .milliseconds(500))
-        if Task.isCancelled { return }
-        rendering = true
-        renderFailed = false
-        defer { rendering = false }
-        if let url = await Avatar.render(look: look, items: chosen) {
-            if Task.isCancelled { return }
-            withAnimation(.easeOut(duration: 0.3)) { avatarURL = url }
-        } else if !Task.isCancelled {
-            avatarURL = nil          // drop the stale fit so the retry card shows
-            renderFailed = true
-        }
     }
 
     private var chosen: [Product] { slots.compactMap { picks[$0.key] } }
@@ -93,8 +65,17 @@ struct OutfitBuilderView: View {
         ZStack {
             RoundedRectangle(cornerRadius: Theme.corner, style: .continuous)
                 .fill(Theme.candy.opacity(0.12))
-            if let url = avatarURL {
-                RemoteImage(url: url)
+            if chosen.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "figure.arms.open")
+                        .font(.system(size: 40)).foregroundStyle(Theme.violet)
+                    Text("Pick pieces below to dress your avatar")
+                        .font(.dcBodyText)
+                        .foregroundStyle(Theme.subtle(scheme))
+                }
+            } else {
+                CompositeAvatarView(look: look, picks: picks)
+                    .padding(10)
                     .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
                     .overlay(alignment: .bottomTrailing) {
                         Text("\(chosen.count) piece\(chosen.count == 1 ? "" : "s")")
@@ -104,47 +85,6 @@ struct OutfitBuilderView: View {
                             .background(.black.opacity(0.45), in: Capsule())
                             .padding(10)
                     }
-                    .overlay {
-                        if rendering {
-                            ZStack {
-                                Color.black.opacity(0.25)
-                                ProgressView().tint(.white)
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
-                        }
-                    }
-            } else if chosen.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "figure.arms.open")
-                        .font(.system(size: 40)).foregroundStyle(Theme.violet)
-                    Text("Pick pieces below to dress your avatar")
-                        .font(.dcBodyText)
-                        .foregroundStyle(Theme.subtle(scheme))
-                }
-            } else if renderFailed {
-                VStack(spacing: 10) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 32)).foregroundStyle(Theme.violet)
-                    Text("The stylist is busy")
-                        .font(.dcBody)
-                        .foregroundStyle(Theme.ink(scheme))
-                    Button {
-                        Haptics.tap(); renderAttempt += 1
-                    } label: {
-                        Text("Try again")
-                            .font(.dcLabel)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 16).padding(.vertical, 8)
-                            .background(Theme.candy, in: Capsule())
-                    }
-                }
-            } else {
-                VStack(spacing: 10) {
-                    ProgressView().tint(Theme.violet)
-                    Text("Styling your look…")
-                        .font(.dcBodyText)
-                        .foregroundStyle(Theme.subtle(scheme))
-                }
             }
         }
         .aspectRatio(0.8, contentMode: .fit)
