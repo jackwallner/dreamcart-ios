@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // DreamCart's design language: dopamine-forward but clean. Bold candy gradients
 // for the reward moments (claim, spin, checkout), a calm near-white canvas so
@@ -44,6 +45,71 @@ enum Theme {
     static func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
         .system(size: size, weight: weight, design: .serif)
     }
+
+    /// New York (serif) as a UIFont — used to make navigation-bar titles match
+    /// the app's editorial serif voice instead of defaulting to SF.
+    static func serifUIFont(_ size: CGFloat, _ weight: UIFont.Weight) -> UIFont {
+        let base = UIFont.systemFont(ofSize: size, weight: weight)
+        guard let d = base.fontDescriptor.withDesign(.serif) else { return base }
+        return UIFont(descriptor: d, size: size)
+    }
+
+    /// Make every UINavigationBar large + inline title render in serif so the
+    /// system page titles ("You", "Cart", "Shop"…) stop clashing with the serif
+    /// headlines the rest of the app draws by hand. Called once at launch.
+    static func configureNavigationBarAppearance() {
+        let ink = UIColor { $0.userInterfaceStyle == .dark
+            ? UIColor(white: 0.96, alpha: 1)
+            : UIColor(red: 0.09, green: 0.08, blue: 0.11, alpha: 1) }
+        let titleAttrs: [NSAttributedString.Key: Any] =
+            [.font: serifUIFont(17, .bold), .foregroundColor: ink]
+        let largeAttrs: [NSAttributedString.Key: Any] =
+            [.font: serifUIFont(34, .bold), .foregroundColor: ink]
+
+        // Blurred bar once content scrolls under it…
+        let standard = UINavigationBarAppearance()
+        standard.configureWithDefaultBackground()
+        standard.titleTextAttributes = titleAttrs
+        standard.largeTitleTextAttributes = largeAttrs
+        // …but transparent at the top so the large title floats on the canvas,
+        // matching the app's seamless look.
+        let edge = UINavigationBarAppearance()
+        edge.configureWithTransparentBackground()
+        edge.titleTextAttributes = titleAttrs
+        edge.largeTitleTextAttributes = largeAttrs
+
+        let proxy = UINavigationBar.appearance()
+        proxy.standardAppearance = standard
+        proxy.compactAppearance = standard
+        proxy.scrollEdgeAppearance = edge
+    }
+}
+
+// The DreamCart type scale. Two voices: the editorial serif layer (screen
+// heroes, section titles, product names) and functional SF (buttons, rows,
+// captions, numerals). Every Text in the app uses one of these tokens — never
+// a raw .system size — so the whole app reads as one catalog.
+extension Font {
+    // Editorial serif
+    static let dcHero     = Theme.display(34, .bold)      // splash, welcome, unboxing
+    static let dcTitle    = Theme.display(24, .bold)      // page titles, product name
+    static let dcSection  = Theme.display(20, .bold)      // section headers
+    static let dcCard     = Theme.display(18, .bold)      // card headlines
+    static let dcItem     = Theme.display(15, .semibold)  // product names on tiles/rows
+
+    // Functional SF
+    static let dcJumbo    = Font.system(size: 54, weight: .heavy)     // reward numerals
+    static let dcStat     = Font.system(size: 20, weight: .heavy)     // stat numbers
+    static let dcNumeral  = Font.system(size: 17, weight: .heavy)     // wallet balance
+    static let dcPrice    = Font.system(size: 15, weight: .heavy)     // prices, deltas
+    static let dcButton   = Font.system(size: 17, weight: .bold)      // CTAs
+    static let dcBody     = Font.system(size: 15, weight: .semibold)  // rows, primary labels
+    static let dcBodyText = Font.system(size: 15, weight: .medium)    // paragraphs
+    static let dcSub      = Font.system(size: 13, weight: .medium)    // secondary text
+    static let dcLabel    = Font.system(size: 13, weight: .bold)      // small action links
+    static let dcCaption  = Font.system(size: 11, weight: .medium)    // fine print
+    static let dcOverline = Font.system(size: 11, weight: .heavy)     // uppercase micro-labels
+    static let dcBadge    = Font.system(size: 9, weight: .black)      // NEW / rarity chips
 }
 
 // User-selectable appearance. Light is the default brand look.

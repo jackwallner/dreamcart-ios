@@ -4,7 +4,7 @@ struct CartView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
     @State private var showCoinShop = false
-    @State private var checkingOut = false
+    @State private var showCheckout = false
     @State private var unboxing: [Product]? = nil
 
     var body: some View {
@@ -35,6 +35,12 @@ struct CartView: View {
                 if !shop.cartProducts.isEmpty { checkoutBar }
             }
         }
+        .sheet(isPresented: $showCheckout) {
+            CheckoutView { bought in
+                showCheckout = false
+                withAnimation { unboxing = bought }
+            }
+        }
         .overlay {
             if let items = unboxing {
                 UnboxingView(items: items) { withAnimation { unboxing = nil } }
@@ -46,21 +52,20 @@ struct CartView: View {
         VStack(spacing: 10) {
             HStack {
                 Text("\(shop.cartProducts.count) item\(shop.cartProducts.count == 1 ? "" : "s")")
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.dcSub)
                     .foregroundStyle(Theme.subtle(scheme))
                 Spacer()
                 CoinLabel(amount: shop.cartTotal, size: 18, weight: .heavy)
                     .foregroundStyle(Theme.ink(scheme))
             }
             if shop.canAfford {
-                CandyButton(title: checkingOut ? "Checking out..." : "Check out",
-                            systemImage: "sparkles", enabled: !checkingOut) {
-                    Task { await checkout() }
+                CandyButton(title: "Check out", systemImage: "sparkles") {
+                    showCheckout = true
                 }
             } else {
                 VStack(spacing: 8) {
                     Text("You need \(Format.coins(shop.cartTotal - shop.coins)) more coins")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.dcLabel)
                         .foregroundStyle(Theme.pink)
                     CandyButton(title: "Get more coins", systemImage: "plus.circle.fill") {
                         showCoinShop = true
@@ -72,17 +77,6 @@ struct CartView: View {
         .background(.bar)
     }
 
-    private func checkout() async {
-        checkingOut = true
-        defer { checkingOut = false }
-        let bought = shop.cartProducts
-        if let r = await shop.checkout(), r.ok {
-            Haptics.celebrate()
-            withAnimation { unboxing = bought }
-        } else {
-            Haptics.warning()
-        }
-    }
 }
 
 struct CartRow: View {
@@ -97,10 +91,10 @@ struct CartRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 4) {
                 Text(product.name)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.dcItem)
                     .foregroundStyle(Theme.ink(scheme))
                     .lineLimit(2)
-                CoinLabel(amount: product.price, size: 14, weight: .heavy)
+                CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))
             }
             Spacer()
@@ -139,14 +133,14 @@ struct UnboxingView: View {
 
             VStack(spacing: 14) {
                 Text("IT'S YOURS")
-                    .font(Theme.display(38, .bold))
+                    .font(.dcHero)
                     .tracking(1.5)
                     .foregroundStyle(Theme.ink(scheme))
                     .scaleEffect(revealed ? 1 : 0.6)
                     .opacity(revealed ? 1 : 0)
                 Text(items.count == 1 ? "Delivered to your closet"
                                       : "\(items.count) new pieces delivered to your closet")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.dcBodyText)
                     .foregroundStyle(Theme.subtle(scheme))
 
                 TabView(selection: $page) {
@@ -169,7 +163,7 @@ struct UnboxingView: View {
                             VStack(spacing: 6) {
                                 RarityTag(rarity: p.rarityKind)
                                 Text(p.name)
-                                    .font(Theme.display(22, .semibold))
+                                    .font(.dcTitle)
                                     .foregroundStyle(Theme.ink(scheme))
                                     .multilineTextAlignment(.center)
                                     .padding(.horizontal, 30)

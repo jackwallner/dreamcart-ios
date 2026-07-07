@@ -40,7 +40,7 @@ struct SplashView: View {
                     .scaleEffect(pulse ? 1.06 : 0.94)
                     .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
                 Text("DreamCart")
-                    .font(Theme.display(36, .bold))
+                    .font(.dcHero)
                     .foregroundStyle(.white)
             }
         }

@@ -86,9 +86,9 @@ struct ClosetView: View {
     private func stat(_ value: String, _ label: String, _ icon: String) -> some View {
         VStack(spacing: 5) {
             Image(systemName: icon).font(.system(size: 16)).foregroundStyle(Theme.violet)
-            Text(value).font(.system(size: 20, weight: .black))
+            Text(value).font(.dcStat)
                 .foregroundStyle(Theme.ink(scheme))
-            Text(label).font(.system(size: 11, weight: .medium))
+            Text(label).font(.dcCaption)
                 .foregroundStyle(Theme.subtle(scheme))
         }
         .frame(maxWidth: .infinity)
@@ -102,10 +102,10 @@ struct ClosetView: View {
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text("Dress up your avatar")
-                    .font(Theme.display(17, .bold))
+                    .font(.dcCard)
                     .foregroundStyle(Theme.ink(scheme))
                 Text("Put your pieces on a model and save the look")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.dcSub)
                     .foregroundStyle(Theme.subtle(scheme))
             }
             Spacer()
@@ -126,7 +126,7 @@ struct ClosetTile: View {
                 .clipShape(RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
                 .overlay(alignment: .topLeading) { RarityTag(rarity: product.rarityKind).padding(6) }
             Text(product.name)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.dcItem)
                 .foregroundStyle(Theme.ink(scheme))
                 .lineLimit(1)
         }

@@ -39,9 +39,9 @@ struct CoinShopView: View {
     private var balanceHeader: some View {
         VStack(spacing: 6) {
             Text("Your balance")
-                .font(.system(size: 13, weight: .medium))
+                .font(.dcSub)
                 .foregroundStyle(.white.opacity(0.85))
-            CoinLabel(amount: shop.coins, size: 30, weight: .black)
+            CoinLabel(amount: shop.coins, size: 30)
                 .foregroundStyle(.white)
         }
         .frame(maxWidth: .infinity)
@@ -62,11 +62,11 @@ struct CoinShopView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(pack.title)
-                            .font(.system(size: 18, weight: .heavy))
+                            .font(.dcCard)
                             .foregroundStyle(Theme.ink(scheme))
                         if let badge = pack.badge {
                             Text(badge)
-                                .font(.system(size: 9, weight: .black))
+                                .font(.dcBadge)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Theme.pink, in: Capsule())
@@ -75,11 +75,11 @@ struct CoinShopView: View {
                     HStack(spacing: 4) {
                         CoinIcon(size: 14)
                         Text("\(Format.coins(pack.coins)) coins")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.dcBody)
                             .foregroundStyle(Theme.ink(scheme))
                     }
                     Text(pack.blurb)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.dcSub)
                         .foregroundStyle(Theme.subtle(scheme))
                 }
                 Spacer()
@@ -87,7 +87,7 @@ struct CoinShopView: View {
                     ProgressView()
                 } else {
                     Text(store.price(for: pack))
-                        .font(.system(size: 15, weight: .heavy))
+                        .font(.dcPrice)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16).padding(.vertical, 9)
                         .background(Theme.candy, in: Capsule())
@@ -103,11 +103,11 @@ struct CoinShopView: View {
     private var footer: some View {
         VStack(spacing: 6) {
             Text("Coins are for use inside DreamCart only and have no cash value. All items and delivery are virtual.")
-                .font(.system(size: 11, weight: .medium))
+                .font(.dcCaption)
                 .foregroundStyle(Theme.subtle(scheme))
                 .multilineTextAlignment(.center)
             Button("Restore Purchases") { Task { await store.restore(); await shop.reconcilePurchases() } }
-                .font(.system(size: 12, weight: .semibold))
+                .font(.dcLabel)
                 .foregroundStyle(Theme.violet)
         }
         .padding(.top, 6)

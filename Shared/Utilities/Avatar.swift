@@ -1,9 +1,9 @@
 import Foundation
 
-// The dress-up avatar: owned pieces are composed into one on-model editorial
-// shot rendered by the same keyless image endpoint the catalog uses. The URL is
-// deterministic (seeded by look + item set) so a given fit renders once and
-// then serves from cache forever.
+// The dress-up avatar. Rendering happens server-side (render-avatar edge
+// function): the fit is generated once, cached in the public avatar-art
+// bucket, and every later view is a plain storage fetch. The client just
+// picks a look and sends the chosen piece ids.
 
 enum AvatarLook: String, CaseIterable, Identifiable {
     case aria, maya, zoe, kai, leo, rio
@@ -11,58 +11,26 @@ enum AvatarLook: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     var label: String { rawValue.capitalized }
-
-    // How the model reads to the image generator.
-    var promptWords: String {
-        switch self {
-        case .aria: return "a young woman with long straight dark hair"
-        case .maya: return "a young woman with voluminous curly brown hair"
-        case .zoe:  return "a young woman with a blonde chin-length bob"
-        case .kai:  return "a young man with short dark hair"
-        case .leo:  return "a young man with loose curly hair"
-        case .rio:  return "an androgynous person with a platinum buzz cut"
-        }
-    }
 }
 
 enum Avatar {
-    /// FNV-1a masked to 31 bits, matching the server's seed function.
-    static func fnv1a(_ text: String) -> Int {
-        var h: UInt32 = 0x811c9dc5
-        for b in Array(text.utf8) {
-            h ^= UInt32(b)
-            h = h &* 0x01000193
-        }
-        return Int(h & 0x7fffffff)
+    struct RenderResponse: Decodable {
+        let ok: Bool
+        let url: String?
+        let cached: Bool?
     }
 
-    /// "Solstice Blush Slip Dress" → "slip dress": strip the series word and
-    /// the colorway so the garment noun reads cleanly in the prompt.
-    static func garmentPhrase(_ product: Product) -> String {
-        var noun = product.name
-        if let firstSpace = noun.firstIndex(of: " ") {
-            noun = String(noun[noun.index(after: firstSpace)...])
-        }
-        noun = noun.replacingOccurrences(of: product.colorName, with: "")
-            .trimmingCharacters(in: .whitespaces)
-        if noun.isEmpty { noun = product.name }
-        return "\(product.colorName.lowercased()) \(noun.lowercased())"
-    }
-
-    /// One on-model shot wearing every picked piece.
-    static func imageURL(look: AvatarLook, items: [Product]) -> String? {
+    /// Ask the server for the on-model shot of this fit. Returns the hosted
+    /// image URL, or nil when the generation queue is busy (caller offers a
+    /// retry).
+    static func render(look: AvatarLook, items: [Product]) async -> String? {
         guard !items.isEmpty else { return nil }
-        let sorted = items.sorted { $0.slot < $1.slot }
-        let outfit = sorted.map(garmentPhrase).joined(separator: ", ")
-        let prompt =
-            "full body fashion editorial photograph of \(look.promptWords), " +
-            "wearing \(outfit), standing relaxed pose, full body visible head to toe, " +
-            "centered on a seamless warm ivory studio backdrop, soft even diffused " +
-            "studio lighting, sharp focus, high detail, clean catalog fashion " +
-            "photography, no text, no words, no logo, no watermark"
-        let seed = fnv1a(look.rawValue + sorted.map { $0.id }.joined())
-        let path = prompt.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? prompt
-        return "https://image.pollinations.ai/prompt/\(path)" +
-            "?width=800&height=1000&nologo=true&seed=\(seed)&model=flux"
+        let body: [String: Any] = [
+            "look": look.rawValue,
+            "product_ids": items.map { $0.id },
+        ]
+        guard let r: RenderResponse = try? await SupabaseClient.shared
+            .callFunction("render-avatar", body: body), r.ok else { return nil }
+        return r.url
     }
 }

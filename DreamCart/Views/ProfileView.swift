@@ -20,7 +20,7 @@ struct ProfileView: View {
                     actions
                     dangerZone
                     Text("DreamCart is a virtual shopping game. Everything here, including coins, items, and delivery, is imaginary and has no cash value.")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.dcCaption)
                         .foregroundStyle(Theme.subtle(scheme))
                         .multilineTextAlignment(.center)
                         .padding(.top, 8)
@@ -39,16 +39,16 @@ struct ProfileView: View {
             ZStack {
                 Circle().fill(Theme.candy).frame(width: 84, height: 84)
                 Text(String((shop.me?.displayName ?? "S").prefix(1)).uppercased())
-                    .font(.system(size: 38, weight: .black))
+                    .font(.dcHero)
                     .foregroundStyle(.white)
             }
             Text(shop.me?.displayName ?? "Shopper")
-                .font(Theme.display(23, .bold))
+                .font(.dcTitle)
                 .foregroundStyle(Theme.ink(scheme))
             HStack(spacing: 5) {
                 Image(systemName: "flame.fill").foregroundStyle(Theme.coral)
                 Text("\(shop.me?.streak ?? 0)-day streak")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.dcLabel)
                     .foregroundStyle(Theme.subtle(scheme))
             }
         }
@@ -68,8 +68,8 @@ struct ProfileView: View {
     private func statTile(_ v: String, _ l: String, _ icon: String, _ tint: Color) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon).font(.system(size: 18)).foregroundStyle(tint)
-            Text(v).font(.system(size: 19, weight: .black)).foregroundStyle(Theme.ink(scheme))
-            Text(l).font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.subtle(scheme))
+            Text(v).font(.dcStat).foregroundStyle(Theme.ink(scheme))
+            Text(l).font(.dcCaption).foregroundStyle(Theme.subtle(scheme))
         }
         .frame(maxWidth: .infinity).padding(.vertical, 16).cardStyle(scheme)
     }
@@ -78,7 +78,7 @@ struct ProfileView: View {
         HStack(spacing: 14) {
             Image(systemName: "sun.max.fill").font(.system(size: 17))
                 .foregroundStyle(Theme.gold).frame(width: 24)
-            Text("Appearance").font(.system(size: 15, weight: .semibold))
+            Text("Appearance").font(.dcBody)
                 .foregroundStyle(Theme.ink(scheme))
             Spacer()
             Picker("Appearance", selection: $appearance) {
@@ -112,7 +112,7 @@ struct ProfileView: View {
         Button { Haptics.tap(); action() } label: {
             HStack(spacing: 14) {
                 Image(systemName: icon).font(.system(size: 17)).foregroundStyle(tint).frame(width: 24)
-                Text(title).font(.system(size: 15, weight: .semibold))
+                Text(title).font(.dcBody)
                     .foregroundStyle(Theme.ink(scheme))
                 Spacer()
                 Image(systemName: "chevron.right").font(.system(size: 13)).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
@@ -127,7 +127,7 @@ struct ProfileView: View {
             confirmDelete = true
         } label: {
             Text("Delete account")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.dcBody)
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity).padding(.vertical, 14)
         }
@@ -154,14 +154,14 @@ struct LedgerView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(label(e.reason))
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.dcBody)
                             Text(e.createdAt.prefix(10))
-                                .font(.system(size: 12, weight: .medium))
+                                .font(.dcSub)
                                 .foregroundStyle(Theme.subtle(scheme))
                         }
                         Spacer()
                         Text("\(e.delta > 0 ? "+" : "")\(Format.coins(e.delta))")
-                            .font(.system(size: 16, weight: .heavy))
+                            .font(.dcPrice)
                             .foregroundStyle(e.delta > 0 ? .green : Theme.pink)
                             .monospacedDigit()
                     }
