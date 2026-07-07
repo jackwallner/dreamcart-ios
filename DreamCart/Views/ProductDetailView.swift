@@ -30,22 +30,22 @@ struct ProductDetailView: View {
                     if let brand {
                         NavigationLink(value: brand) {
                             Text(brand.name.uppercased())
-                                .font(.system(size: 12, weight: .black))
+                                .font(.dcOverline)
                                 .tracking(0.6)
                                 .foregroundStyle(Color(hex: brand.accentHex))
                         }
                     }
                     Text(product.name)
-                        .font(Theme.display(27, .bold))
+                        .font(.dcTitle)
                         .foregroundStyle(Theme.ink(scheme))
                     Text(product.description)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(.dcBodyText)
                         .foregroundStyle(Theme.subtle(scheme))
 
                     HStack(spacing: 8) {
                         ForEach(product.styleTags.prefix(3), id: \.self) { tag in
                             Text("#\(tag)")
-                                .font(.system(size: 12, weight: .semibold))
+                                .font(.dcLabel)
                                 .foregroundStyle(Theme.violet)
                                 .padding(.horizontal, 10).padding(.vertical, 5)
                                 .background(Theme.violet.opacity(0.1), in: Capsule())
@@ -92,10 +92,10 @@ struct ProductDetailView: View {
 
     private func specRow(_ k: String, _ v: String) -> some View {
         HStack {
-            Text(k).font(.system(size: 14, weight: .medium))
+            Text(k).font(.dcBodyText)
                 .foregroundStyle(Theme.subtle(scheme))
             Spacer()
-            Text(v).font(.system(size: 14, weight: .bold))
+            Text(v).font(.dcBody)
                 .foregroundStyle(Theme.ink(scheme))
         }
         .padding(.vertical, 13)
@@ -108,7 +108,7 @@ struct ProductDetailView: View {
             Spacer()
             if owned {
                 Label("In your closet", systemImage: "checkmark.seal.fill")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.dcBody)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 20).padding(.vertical, 14)
                     .background(Color.green.gradient, in: Capsule())
@@ -125,7 +125,7 @@ struct ProductDetailView: View {
                         Image(systemName: inCart ? "creditcard.fill" : "cart.badge.plus")
                         Text(inCart ? "Check out" : "Add to cart")
                     }
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.dcButton)
                     .foregroundStyle(.white)
                     .padding(.horizontal, 22).padding(.vertical, 14)
                     .background(inCart ? AnyShapeStyle(Color.green.gradient) : AnyShapeStyle(Theme.candy),

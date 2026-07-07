@@ -22,7 +22,7 @@ struct SpinView: View {
             Theme.bg(scheme).ignoresSafeArea()
             VStack(spacing: 30) {
                 Text("Spin to win")
-                    .font(.system(size: 28, weight: .black))
+                    .font(.dcTitle)
                     .foregroundStyle(Theme.ink(scheme))
                     .padding(.top, 30)
 
@@ -53,7 +53,7 @@ struct SpinView: View {
                 .padding(.horizontal, 30)
 
                 Button("Close") { dismiss() }
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.dcBody)
                     .foregroundStyle(Theme.subtle(scheme))
                     .padding(.bottom, 20)
             }
@@ -82,7 +82,7 @@ struct SpinView: View {
                     .stroke(.white.opacity(0.5), lineWidth: 2)
                 // prize label, seated in the middle of slice i (i*45° from top)
                 Text(Format.coinsShort(prizes[i]))
-                    .font(.system(size: 15, weight: .black))
+                    .font(.dcPrice)
                     .foregroundStyle(.white)
                     .offset(y: -108)
                     .rotationEffect(.degrees(Double(i) * 45))

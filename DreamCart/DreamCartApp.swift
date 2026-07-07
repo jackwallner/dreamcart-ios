@@ -11,6 +11,8 @@ struct DreamCartApp: App {
         // Product art is generated on demand (pollinations); cache aggressively
         // so a shot only renders once per device.
         URLCache.shared = URLCache(memoryCapacity: 64 << 20, diskCapacity: 512 << 20)
+        // Serif navigation titles so system page titles match the editorial voice.
+        Theme.configureNavigationBarAppearance()
     }
 
     var body: some Scene {

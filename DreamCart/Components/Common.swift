@@ -12,7 +12,7 @@ struct CandyButton: View {
                 if let systemImage { Image(systemName: systemImage) }
                 Text(title)
             }
-            .font(.system(size: 17, weight: .bold))
+            .font(.dcButton)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
@@ -46,11 +46,11 @@ struct SectionHeader: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(Theme.display(20, .bold))
+                    .font(.dcSection)
                     .foregroundStyle(Theme.ink(scheme))
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.dcSub)
                         .foregroundStyle(Theme.subtle(scheme))
                 }
             }
@@ -58,7 +58,7 @@ struct SectionHeader: View {
             if let actionTitle, let action {
                 Button(action: { Haptics.tap(); action() }) {
                     Text(actionTitle)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.dcLabel)
                         .foregroundStyle(Theme.violet)
                 }
             }
@@ -78,10 +78,10 @@ struct EmptyState: View {
                 .font(.system(size: 44, weight: .medium))
                 .foregroundStyle(Theme.violet.opacity(0.7))
             Text(title)
-                .font(.system(size: 18, weight: .bold))
+                .font(.dcSection)
                 .foregroundStyle(Theme.ink(scheme))
             Text(message)
-                .font(.system(size: 14, weight: .medium))
+                .font(.dcSub)
                 .foregroundStyle(Theme.subtle(scheme))
                 .multilineTextAlignment(.center)
         }
@@ -100,7 +100,7 @@ struct FilterChip: View {
     var body: some View {
         Button(action: { Haptics.select(); action() }) {
             Text(label)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.dcBody)
                 .foregroundStyle(selected ? .white : Theme.ink(scheme))
                 .padding(.horizontal, 15).padding(.vertical, 9)
                 .background(

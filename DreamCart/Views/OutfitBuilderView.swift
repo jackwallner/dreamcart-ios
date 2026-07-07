@@ -25,7 +25,17 @@ struct OutfitBuilderView: View {
     @State private var name = ""
     @State private var savedFlash = false
 
+    @State private var avatarURL: String?
+    @State private var rendering = false
+    @State private var renderFailed = false
+    @State private var renderAttempt = 0
+
     private var look: AvatarLook { AvatarLook(rawValue: lookRaw) ?? .aria }
+
+    /// One render per distinct fit — the task below re-fires when this changes.
+    private var renderKey: String {
+        "\(look.rawValue)|\(chosen.map(\.id).joined())|\(renderAttempt)"
+    }
 
     var body: some View {
         ScrollView {
@@ -55,6 +65,24 @@ struct OutfitBuilderView: View {
                 Haptics.soft()
             }
         }
+        .task(id: renderKey) { await renderAvatar() }
+    }
+
+    private func renderAvatar() async {
+        guard !chosen.isEmpty else { avatarURL = nil; renderFailed = false; return }
+        // Debounce so tapping through slots doesn't fire a render per tap.
+        try? await Task.sleep(for: .milliseconds(500))
+        if Task.isCancelled { return }
+        rendering = true
+        renderFailed = false
+        defer { rendering = false }
+        if let url = await Avatar.render(look: look, items: chosen) {
+            if Task.isCancelled { return }
+            withAnimation(.easeOut(duration: 0.3)) { avatarURL = url }
+        } else if !Task.isCancelled {
+            avatarURL = nil          // drop the stale fit so the retry card shows
+            renderFailed = true
+        }
     }
 
     private var chosen: [Product] { slots.compactMap { picks[$0.key] } }
@@ -65,29 +93,61 @@ struct OutfitBuilderView: View {
         ZStack {
             RoundedRectangle(cornerRadius: Theme.corner, style: .continuous)
                 .fill(Theme.candy.opacity(0.12))
-            if let url = Avatar.imageURL(look: look, items: chosen) {
+            if let url = avatarURL {
                 RemoteImage(url: url)
                     .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
                     .overlay(alignment: .bottomTrailing) {
                         Text("\(chosen.count) piece\(chosen.count == 1 ? "" : "s")")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.dcCaption)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 9).padding(.vertical, 4)
                             .background(.black.opacity(0.45), in: Capsule())
                             .padding(10)
                     }
-            } else {
+                    .overlay {
+                        if rendering {
+                            ZStack {
+                                Color.black.opacity(0.25)
+                                ProgressView().tint(.white)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
+                        }
+                    }
+            } else if chosen.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "figure.arms.open")
                         .font(.system(size: 40)).foregroundStyle(Theme.violet)
                     Text("Pick pieces below to dress your avatar")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.dcBodyText)
+                        .foregroundStyle(Theme.subtle(scheme))
+                }
+            } else if renderFailed {
+                VStack(spacing: 10) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 32)).foregroundStyle(Theme.violet)
+                    Text("The stylist is busy")
+                        .font(.dcBody)
+                        .foregroundStyle(Theme.ink(scheme))
+                    Button {
+                        Haptics.tap(); renderAttempt += 1
+                    } label: {
+                        Text("Try again")
+                            .font(.dcLabel)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            .background(Theme.candy, in: Capsule())
+                    }
+                }
+            } else {
+                VStack(spacing: 10) {
+                    ProgressView().tint(Theme.violet)
+                    Text("Styling your look…")
+                        .font(.dcBodyText)
                         .foregroundStyle(Theme.subtle(scheme))
                 }
             }
         }
         .aspectRatio(0.8, contentMode: .fit)
-        .animation(.easeOut(duration: 0.3), value: chosen.map(\.id))
     }
 
     private var lookPicker: some View {
@@ -115,11 +175,11 @@ struct OutfitBuilderView: View {
                             .foregroundStyle(available ? Theme.violet : Theme.subtle(scheme).opacity(0.4))
                             .frame(width: 26)
                         Text(slot.label)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.dcBody)
                             .foregroundStyle(available ? Theme.ink(scheme) : Theme.subtle(scheme).opacity(0.5))
                         Spacer()
                         if let p = picks[slot.key] {
-                            Text(p.name).font(.system(size: 13, weight: .medium))
+                            Text(p.name).font(.dcSub)
                                 .foregroundStyle(Theme.subtle(scheme)).lineLimit(1)
                             RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
                                 .frame(width: 34, height: 42)
@@ -132,10 +192,10 @@ struct OutfitBuilderView: View {
                                     .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
                             }
                         } else if available {
-                            Text("Choose").font(.system(size: 13, weight: .bold))
+                            Text("Choose").font(.dcLabel)
                                 .foregroundStyle(Theme.violet)
                         } else {
-                            Text("None owned").font(.system(size: 12, weight: .medium))
+                            Text("None owned").font(.dcSub)
                                 .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
                         }
                     }
@@ -151,7 +211,7 @@ struct OutfitBuilderView: View {
     private var saveRow: some View {
         VStack(spacing: 10) {
             TextField("Name this look", text: $name)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.dcBody)
                 .padding(14)
                 .cardStyle(scheme)
             CandyButton(title: savedFlash ? "Saved!" : "Save look", systemImage: "square.and.arrow.down.fill",
@@ -174,7 +234,7 @@ struct OutfitBuilderView: View {
             ForEach(shop.outfits) { outfit in
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(outfit.name).font(.system(size: 15, weight: .bold))
+                        Text(outfit.name).font(.dcItem)
                             .foregroundStyle(Theme.ink(scheme))
                         Spacer()
                         Button {
@@ -182,7 +242,7 @@ struct OutfitBuilderView: View {
                             picks = Dictionary(items.map { ($0.slot, $0) }, uniquingKeysWith: { a, _ in a })
                             Haptics.soft()
                         } label: {
-                            Text("Try on").font(.system(size: 13, weight: .bold))
+                            Text("Try on").font(.dcLabel)
                                 .foregroundStyle(Theme.violet)
                         }
                         Button {

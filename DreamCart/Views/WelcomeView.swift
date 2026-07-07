@@ -46,13 +46,13 @@ struct WelcomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 Text("We use Sign in with Apple to save your closet and coins. Nothing is shared.")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.dcCaption)
                     .foregroundStyle(Theme.subtle(scheme))
                     .multilineTextAlignment(.center)
 
                 #if DEBUG
                 Button("Continue as tester") { Task { await auth.devSignIn() } }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.dcLabel)
                     .foregroundStyle(Theme.violet)
                 #endif
             }
@@ -60,7 +60,7 @@ struct WelcomeView: View {
             .padding(.bottom, 20)
 
             if let err = auth.errorMessage {
-                Text(err).font(.caption).foregroundStyle(.red).padding(.bottom, 6)
+                Text(err).font(.dcCaption).foregroundStyle(.red).padding(.bottom, 6)
             }
         }
         .overlay {
@@ -79,11 +79,11 @@ struct WelcomeView: View {
             }
             VStack(spacing: 12) {
                 Text(s.title)
-                    .font(Theme.display(29, .bold))
+                    .font(.dcHero)
                     .foregroundStyle(Theme.ink(scheme))
                     .multilineTextAlignment(.center)
                 Text(s.body)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.dcBodyText)
                     .foregroundStyle(Theme.subtle(scheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 34)

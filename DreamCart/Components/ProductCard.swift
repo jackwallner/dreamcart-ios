@@ -35,7 +35,7 @@ struct RemoteImage: View {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 22, weight: .semibold))
                     Text("Tap to load")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.dcCaption)
                 }
                 .foregroundStyle(Theme.subtle(scheme).opacity(0.6))
                 .contentShape(Rectangle())
@@ -122,7 +122,7 @@ struct RarityTag: View {
     var body: some View {
         if rarity != .common {
             Text(rarity.label.uppercased())
-                .font(.system(size: 9, weight: .black))
+                .font(.dcBadge)
                 .tracking(0.6)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7).padding(.vertical, 3)
@@ -151,7 +151,7 @@ struct ProductCard: View {
                         Spacer()
                         if isNew {
                             Text("NEW")
-                                .font(.system(size: 9, weight: .black))
+                                .font(.dcBadge)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 7).padding(.vertical, 3)
                                 .background(Theme.pink, in: Capsule())
@@ -163,7 +163,7 @@ struct ProductCard: View {
                             Image(systemName: "checkmark.seal.fill")
                             Text("Owned")
                         }
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.dcBadge)
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8).padding(.vertical, 4)
                         .background(.black.opacity(0.55), in: Capsule())
@@ -176,15 +176,15 @@ struct ProductCard: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(product.brands?.name ?? "")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.dcOverline)
                     .foregroundStyle(Theme.subtle(scheme))
                     .textCase(.uppercase)
                     .tracking(0.4)
                 Text(product.name)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.dcItem)
                     .foregroundStyle(Theme.ink(scheme))
                     .lineLimit(1)
-                CoinLabel(amount: product.price, size: 14, weight: .heavy)
+                CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))
                     .padding(.top, 1)
             }

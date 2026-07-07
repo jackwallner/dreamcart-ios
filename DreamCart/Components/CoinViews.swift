@@ -20,7 +20,7 @@ struct CoinIcon: View {
 struct CoinLabel: View {
     let amount: Int
     var size: CGFloat = 15
-    var weight: Font.Weight = .bold
+    var weight: Font.Weight = .heavy
     var body: some View {
         HStack(spacing: size * 0.28) {
             CoinIcon(size: size)
@@ -43,7 +43,7 @@ struct WalletPill: View {
             HStack(spacing: 7) {
                 CoinIcon(size: 20)
                 Text(Format.coins(coins))
-                    .font(.system(size: 17, weight: .heavy))
+                    .font(.dcNumeral)
                     .monospacedDigit()
                     .contentTransition(.numericText(value: Double(coins)))
                 Image(systemName: "plus.circle.fill")

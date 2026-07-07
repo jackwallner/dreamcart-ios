@@ -44,8 +44,10 @@ Big, satisfying, tactile, and fast. Every tap, every unbox, every spin is design
 DreamCart is a virtual shopping game. Coins, items, and delivery are all imaginary and have no cash value. Optional coin packs are available if you want to shop more, but you never have to spend a cent to play.
 """
 
-SUPPORT_URL = "https://dreamcart-app.github.io/support"
-MARKETING_URL = "https://dreamcart-app.github.io"
+BASE_URL = "https://jackwallner.github.io/dreamcart"
+SUPPORT_URL = f"{BASE_URL}/support.html"
+MARKETING_URL = f"{BASE_URL}/"
+PRIVACY_URL = f"{BASE_URL}/privacy-policy.html"
 
 
 def main():
@@ -108,10 +110,14 @@ def main():
             c.patch(f"/appInfoLocalizations/{loc['id']}", {
                 "data": {
                     "type": "appInfoLocalizations", "id": loc["id"],
-                    "attributes": {"name": NAME, "subtitle": SUBTITLE},
+                    "attributes": {
+                        "name": NAME,
+                        "subtitle": SUBTITLE,
+                        "privacyPolicyUrl": PRIVACY_URL,
+                    },
                 }
             })
-            print(f"name + subtitle set ({len(NAME)}/{len(SUBTITLE)} chars)")
+            print(f"name + subtitle + privacy set ({len(NAME)}/{len(SUBTITLE)} chars)")
 
     # --- version-level copy ---
     for v in asc_lib.list_all(c, f"/apps/{app_id}/appStoreVersions"):
