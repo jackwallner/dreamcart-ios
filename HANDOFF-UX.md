@@ -9,7 +9,7 @@ Simulator UDID: `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`
 - [x] 3. Profile real display name
 - [x] 4. Compact claimed Daily Drop card
 - [x] 5. Upright spin labels and reset hint
-- [ ] 6. Category chip icons
+- [x] 6. Category chip icons
 - [ ] 7. Outfit compositing loading treatment
 - [ ] 8. Delisted closet item navigation
 - [ ] 9. Accessibility identifiers and labels
@@ -58,4 +58,12 @@ Update each item with status, files touched, screenshots, test results, and punt
 - Screenshot: `sim77-design/ux/05-spin-legibility.png`, inspected. All slice labels are upright and the midnight reset hint is visible.
 - Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Notes: The server returns `lastSpinDate` but no reset timestamp, so the required fallback copy is used.
+- Punts: None
+
+### 6. Category chip icons
+
+- Status: Complete
+- Files: `DreamCart/Components/Common.swift`, `DreamCart/Views/ShopView.swift`, `sim77-design/ux/06-category-icons.png`, `HANDOFF-UX.md`
+- Screenshot: `sim77-design/ux/06-category-icons.png`, inspected. Symbols align with category labels and use the compact icon scale.
+- Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Punts: None
