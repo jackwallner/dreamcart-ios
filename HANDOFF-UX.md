@@ -6,7 +6,7 @@ Simulator UDID: `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`
 
 - [x] 1. Empty cart Browse shop CTA
 - [x] 2. Dismissible catalog error banner on Today and Shop
-- [ ] 3. Profile real display name
+- [x] 3. Profile real display name
 - [ ] 4. Compact claimed Daily Drop card
 - [ ] 5. Upright spin labels and reset hint
 - [ ] 6. Category chip icons
@@ -29,8 +29,16 @@ Update each item with status, files touched, screenshots, test results, and punt
 ### 2. Dismissible catalog error banner on Today and Shop
 
 - Status: Complete
-- Files: `DreamCart/Components/LoadErrorBanner.swift`, `DreamCart/Views/TodayView.swift`, `DreamCart/Views/ShopView.swift`, `DreamCart.xcodeproj/project.pbxproj`, `HANDOFF-UX.md`
+- Files: `DreamCart/Components/LoadErrorBanner.swift`, `DreamCart/Views/TodayView.swift`, `DreamCart/Views/ShopView.swift`, `HANDOFF-UX.md`
 - Screenshot: Not required for this item
 - Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Notes: `refreshAll()` already clears `loadError` before each load. Successful refresh leaves it cleared.
+- Punts: None
+
+### 3. Profile real display name
+
+- Status: Complete
+- Files: `DreamCart/Views/ProfileView.swift`, `HANDOFF-UX.md`
+- Screenshot: Not required for this item
+- Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Punts: None
