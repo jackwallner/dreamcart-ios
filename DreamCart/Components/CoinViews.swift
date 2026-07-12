@@ -60,6 +60,8 @@ struct WalletPill: View {
             .scaleEffect(bump ? 1.08 : 1)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Coin balance: \(Format.coins(coins))")
         .onChange(of: coins) { _, _ in
             withAnimation(.spring(response: 0.28, dampingFraction: 0.5)) { bump = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {

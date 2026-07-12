@@ -69,6 +69,7 @@ struct CartView: View {
                 CandyButton(title: "Check out", systemImage: "sparkles") {
                     showCheckout = true
                 }
+                .accessibilityIdentifier("cartCheckoutButton")
             } else {
                 VStack(spacing: 8) {
                     Text("You need \(Format.coins(shop.cartTotal - shop.coins)) more coins")

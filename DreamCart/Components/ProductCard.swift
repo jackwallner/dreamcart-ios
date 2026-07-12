@@ -181,5 +181,13 @@ struct ProductCard: View {
             .padding(.horizontal, 4)
             .padding(.top, 8)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    private var accessibilityDescription: String {
+        let brand = product.brands?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let prefix = brand.isEmpty ? product.name : "\(brand), \(product.name)"
+        return "\(prefix), \(Format.coins(product.price)) coins, \(product.rarityKind.label)"
     }
 }
