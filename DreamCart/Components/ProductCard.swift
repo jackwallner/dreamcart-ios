@@ -173,7 +173,7 @@ struct ProductCard: View {
                 Text(product.name)
                     .font(.dcItem)
                     .foregroundStyle(Theme.ink(scheme))
-                    .lineLimit(1)
+                    .lineLimit(2, reservesSpace: true)
                 CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))
                     .padding(.top, 1)

@@ -18,7 +18,7 @@ struct CandyButton: View {
             .padding(.vertical, 16)
             .background(
                 enabled ? AnyShapeStyle(Theme.candy) : AnyShapeStyle(Color.gray.opacity(0.5)),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                in: RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
             .shadow(color: enabled ? Theme.pink.opacity(0.35) : .clear, radius: 12, y: 6)
         }
         .buttonStyle(PressableStyle())

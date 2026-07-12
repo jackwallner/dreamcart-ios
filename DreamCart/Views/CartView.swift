@@ -93,7 +93,7 @@ struct CartRow: View {
                 Text(product.name)
                     .font(.dcItem)
                     .foregroundStyle(Theme.ink(scheme))
-                    .lineLimit(2)
+                    .lineLimit(2, reservesSpace: true)
                 CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))
             }

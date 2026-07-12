@@ -4,8 +4,8 @@
 
 - [x] Capture before screenshots in light and dark
 - [x] Enforce typography and icon tokens
-- [ ] Audit editorial and functional voice consistency
-- [ ] Polish hierarchy, spacing, radii, overlines, truncation, and contrast
+- [x] Audit editorial and functional voice consistency
+- [x] Polish hierarchy, spacing, radii, overlines, truncation, and contrast
 - [ ] Capture and inspect after screenshots in light and dark
 - [ ] Run final tests and document remaining exceptions and punts
 
@@ -31,6 +31,14 @@
 - `DreamCart/Views/ProductDetailView.swift`: moved the favorite control to `dcIconM`.
 - `DreamCart/Views/CoinShopView.swift`: normalized coin-pack feature icons.
 - `DreamCart/RootView.swift`: documented the parametric logo glyph exception.
+- `Shared/Utilities/Theme.swift`: strengthened the light-mode subtle text color and kept the existing dark-mode value.
+- `DreamCart/Components/Common.swift`: normalized the shared candy button to `Theme.cardCorner`.
+- `DreamCart/Components/ProductCard.swift`: gave every grid and shelf product title two reserved lines.
+- `DreamCart/Views/WelcomeView.swift`: normalized the Apple sign-in control to `Theme.cardCorner`.
+- `DreamCart/Views/CheckoutView.swift`: made summary product names editorial `dcItem` text with two reserved lines.
+- `DreamCart/Views/CartView.swift`: reserved two lines for product names so rows align without abrupt truncation.
+- `DreamCart/Views/OutfitBuilderView.swift`: made selected product names use the shared editorial item token.
+- `DreamCart/Views/ClosetView.swift`: gave closet tile names two reserved lines.
 
 ## Screenshot paths
 
@@ -49,6 +57,7 @@ The baseline audit captured the available authenticated screens with `xcrun simc
 
 - Token enforcement: `rg -n '\.font\(\.system' DreamCart Shared` returns only the three documented parametric cases.
 - Token enforcement tests: 6 tests passed on the required simulator with `xcodebuild test`.
+- Voice and hierarchy tests: 6 tests passed on the required simulator with `xcodebuild test`.
 
 ## Deliberately left unchanged
 

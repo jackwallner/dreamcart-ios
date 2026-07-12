@@ -43,7 +43,7 @@ struct WelcomeView: View {
                 }
                 .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
                 .frame(height: 54)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
 
                 Text("We use Sign in with Apple to save your closet and coins. Nothing is shared.")
                     .font(.dcCaption)
