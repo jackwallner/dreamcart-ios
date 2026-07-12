@@ -38,11 +38,11 @@ struct ProfileView: View {
         VStack(spacing: 10) {
             ZStack {
                 Circle().fill(Theme.candy).frame(width: 84, height: 84)
-                Text(String((shop.me?.displayName ?? "S").prefix(1)).uppercased())
+                Text(String(displayName.prefix(1)).uppercased())
                     .font(.dcHero)
                     .foregroundStyle(.white)
             }
-            Text(shop.me?.displayName ?? "Shopper")
+            Text(displayName)
                 .font(.dcTitle)
                 .foregroundStyle(Theme.ink(scheme))
             HStack(spacing: 5) {
@@ -55,6 +55,11 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
         .cardStyle(scheme)
+    }
+
+    private var displayName: String {
+        let name = shop.me?.displayName.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return name.isEmpty ? "Shopper" : name
     }
 
     private var statsGrid: some View {
