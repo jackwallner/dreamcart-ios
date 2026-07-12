@@ -7,7 +7,7 @@ Simulator UDID: `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`
 - [x] 1. Empty cart Browse shop CTA
 - [x] 2. Dismissible catalog error banner on Today and Shop
 - [x] 3. Profile real display name
-- [ ] 4. Compact claimed Daily Drop card
+- [x] 4. Compact claimed Daily Drop card
 - [ ] 5. Upright spin labels and reset hint
 - [ ] 6. Category chip icons
 - [ ] 7. Outfit compositing loading treatment
@@ -42,3 +42,11 @@ Update each item with status, files touched, screenshots, test results, and punt
 - Screenshot: Not required for this item
 - Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Punts: None
+
+### 4. Compact claimed Daily Drop card
+
+- Status: Complete
+- Files: `DreamCart/Views/TodayView.swift`, `sim77-design/ux/04-claimed-daily-chip.png`, `HANDOFF-UX.md`
+- Screenshot: `sim77-design/ux/04-claimed-daily-chip.png`, inspected. The live account was claimable, so the image shows the full pre-claim card and verifies surrounding layout only.
+- Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
+- Punts: Compact branch could not be captured without consuming the live account reward or adding debug-only state.
