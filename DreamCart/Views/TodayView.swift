@@ -14,6 +14,9 @@ struct TodayView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    if shop.loadError != nil {
+                        LoadErrorBanner()
+                    }
                     dailyCard
                     spinCard
                     if !shop.newDrops.isEmpty { newDropsSection }
