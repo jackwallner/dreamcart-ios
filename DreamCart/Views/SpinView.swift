@@ -52,6 +52,12 @@ struct SpinView: View {
                 }
                 .padding(.horizontal, 30)
 
+                if !canSpin {
+                    Text("Resets at midnight")
+                        .font(.dcSub)
+                        .foregroundStyle(Theme.subtle(scheme))
+                }
+
                 Button("Close") { dismiss() }
                     .font(.dcBody)
                     .foregroundStyle(Theme.subtle(scheme))
@@ -84,8 +90,8 @@ struct SpinView: View {
                 Text(Format.coinsShort(prizes[i]))
                     .font(.dcPrice)
                     .foregroundStyle(.white)
-                    .offset(y: -108)
-                    .rotationEffect(.degrees(Double(i) * 45))
+                    .offset(x: 108 * sin(.pi * Double(i) / 4),
+                            y: -108 * cos(.pi * Double(i) / 4))
             }
         }
         .overlay(Circle().stroke(Theme.gold, lineWidth: 6))
