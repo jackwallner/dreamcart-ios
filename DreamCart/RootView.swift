@@ -4,6 +4,7 @@ struct RootView: View {
     @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(StoreController.self) private var store
+    @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -19,11 +20,15 @@ struct RootView: View {
             }
         }
         .onChange(of: auth.state) { _, new in
+            router.setReadiness(signedIn: new == .signedIn,
+                                catalogReady: new == .signedIn && !shop.products.isEmpty)
             if new == .signedIn {
                 Task {
                     store.configure(userId: await SupabaseClient.shared.currentUserId)
                     await shop.refreshAll()
                     await shop.reconcilePurchases()
+                    router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
+                    _ = router.consumePendingRoute()
                 }
             }
         }
@@ -31,14 +36,15 @@ struct RootView: View {
 }
 
 struct SplashView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false
     var body: some View {
         ZStack {
             Theme.candy.ignoresSafeArea()
             VStack(spacing: 18) {
                 BagMark(size: 92)
-                    .scaleEffect(pulse ? 1.06 : 0.94)
-                    .animation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
+                    .scaleEffect(reduceMotion ? 1 : (pulse ? 1.06 : 0.94))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.9).repeatForever(autoreverses: true), value: pulse)
                 Text("DreamCart")
                     .font(.dcHero)
                     .foregroundStyle(.white)

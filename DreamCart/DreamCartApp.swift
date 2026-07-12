@@ -2,9 +2,12 @@ import SwiftUI
 
 @main
 struct DreamCartApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var auth = AuthController()
     @State private var shop = ShopStore()
     @State private var store = StoreController()
+    @State private var router = RouteCoordinator()
+    @State private var notifications = LocalNotificationCoordinator()
     @AppStorage("appearance") private var appearance = Appearance.light.rawValue
 
     init() {
@@ -21,15 +24,25 @@ struct DreamCartApp: App {
                 .environment(auth)
                 .environment(shop)
                 .environment(store)
+                .environment(router)
+                .environment(notifications)
                 .tint(Theme.violet)
                 .preferredColorScheme((Appearance(rawValue: appearance) ?? .light).colorScheme)
+                .onOpenURL { router.receive(url: $0) }
                 .task {
+                    AppDelegate.onNotificationRoute = { userInfo in
+                        router.receive(notificationUserInfo: userInfo)
+                    }
+                    await notifications.refreshStatus()
                     await auth.bootstrap()
                     if auth.state == .signedIn {
                         store.configure(userId: await SupabaseClient.shared.currentUserId)
                         await shop.refreshAll()
                         await shop.reconcilePurchases()
                     }
+                    router.setReadiness(signedIn: auth.state == .signedIn,
+                                        catalogReady: !shop.products.isEmpty)
+                    _ = router.consumePendingRoute()
                 }
         }
     }

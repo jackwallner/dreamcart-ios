@@ -3,8 +3,10 @@ import SwiftUI
 struct ProfileView: View {
     @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
+    @Environment(LocalNotificationCoordinator.self) private var notifications
     @Environment(\.colorScheme) private var scheme
     @State private var showCoinShop = false
+    @State private var showNotificationPrimer = false
     @State private var showLedger = false
     @State private var confirmDelete = false
     @State private var working = false
@@ -17,6 +19,7 @@ struct ProfileView: View {
                     header
                     statsGrid
                     appearanceCard
+                    notificationCard
                     actions
                     dangerZone
                     Text("DreamCart is a virtual shopping game. Everything here, including coins, items, and delivery, is imaginary and has no cash value.")
@@ -31,6 +34,8 @@ struct ProfileView: View {
             .navigationTitle("You")
             .walletToolbar($showCoinShop)
             .sheet(isPresented: $showLedger) { LedgerView() }
+            .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
+            .task { await notifications.refreshStatus() }
         }
     }
 
@@ -96,6 +101,61 @@ struct ProfileView: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
         .cardStyle(scheme)
+    }
+
+    private var notificationCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 14) {
+                Image(systemName: "bell.badge.fill").font(.dcIconM)
+                    .foregroundStyle(Theme.violet).frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("New drop reminders").font(.dcBody)
+                        .foregroundStyle(Theme.ink(scheme))
+                    Text(notificationStatusText)
+                        .font(.dcCaption)
+                        .foregroundStyle(Theme.subtle(scheme))
+                }
+                Spacer()
+                Toggle("New drop reminders", isOn: Binding(
+                    get: { notifications.isNotificationsEnabled },
+                    set: { enabled in
+                        if enabled {
+                            if notifications.authorizationState == .notDetermined {
+                                showNotificationPrimer = true
+                            } else if notifications.authorizationState.isEnabled {
+                                notifications.isNotificationsEnabled = true
+                            } else {
+                                notifications.openSettings()
+                            }
+                        } else {
+                            Task { await notifications.disable() }
+                        }
+                    }))
+                    .labelsHidden()
+            }
+            DatePicker("Reminder time", selection: Binding(
+                get: { notifications.preferredTime },
+                set: { notifications.preferredTime = $0 }), displayedComponents: .hourAndMinute)
+                .font(.dcSub)
+                .disabled(!notifications.isNotificationsEnabled)
+            if notifications.isDenied {
+                Button("Allow notifications in Settings") { notifications.openSettings() }
+                    .font(.dcLabel)
+                    .foregroundStyle(Theme.violet)
+            }
+        }
+        .padding(14)
+        .cardStyle(scheme)
+    }
+
+    private var notificationStatusText: String {
+        if notifications.isDenied { return "Notifications are off in Settings" }
+        if notifications.isNotificationsEnabled { return "One reminder daily at \(Self.timeString(notifications.preferredTime))" }
+        return "Off"
+    }
+
+    private static func timeString(_ date: Date) -> String {
+        date.formatted(date: .omitted, time: .shortened)
     }
 
     private var actions: some View {

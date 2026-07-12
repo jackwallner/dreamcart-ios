@@ -2,25 +2,26 @@ import SwiftUI
 
 struct MainTabView: View {
     @Environment(ShopStore.self) private var shop
-    @State private var tab = 0
+    @Environment(RouteCoordinator.self) private var router
 
     var body: some View {
-        TabView(selection: $tab) {
-            TodayView(tab: $tab)
-                .tabItem { Label("Today", systemImage: "sparkles") }.tag(0)
+        @Bindable var router = router
+        TabView(selection: $router.selectedTab) {
+            TodayView()
+                .tabItem { Label("Today", systemImage: "sparkles") }.tag(AppTab.today)
 
-            ShopView()
-                .tabItem { Label("Shop", systemImage: "bag.fill") }.tag(1)
+            ForYouView()
+                .tabItem { Label("For You", systemImage: "hand.thumbsup.fill") }.tag(AppTab.forYou)
 
-            CartView(tab: $tab)
-                .tabItem { Label("Cart", systemImage: "cart.fill") }.tag(2)
+            CartView()
+                .tabItem { Label("Cart", systemImage: "cart.fill") }.tag(AppTab.cart)
                 .badge(shop.cartIds.count)
 
             ClosetView()
-                .tabItem { Label("Closet", systemImage: "hanger") }.tag(3)
+                .tabItem { Label("Closet", systemImage: "hanger") }.tag(AppTab.closet)
 
             ProfileView()
-                .tabItem { Label("You", systemImage: "person.fill") }.tag(4)
+                .tabItem { Label("You", systemImage: "person.fill") }.tag(AppTab.profile)
         }
     }
 }

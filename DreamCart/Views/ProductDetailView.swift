@@ -4,6 +4,7 @@ struct ProductDetailView: View {
     let product: ProductWithBrand
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showCoinShop = false
     @State private var showCheckout = false
     @State private var addedPulse = false
@@ -56,12 +57,14 @@ struct ProductDetailView: View {
                 }
 
                 specRows
+                completeTheLook
                 Color.clear.frame(height: 90)
             }
             .padding(16)
         }
         .background(Theme.bg(scheme))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) { buyBar }
         .sheet(isPresented: $showCoinShop) { CoinShopView() }
         .sheet(isPresented: $showCheckout) {
@@ -112,6 +115,33 @@ struct ProductDetailView: View {
         .padding(.vertical, 13)
     }
 
+    @ViewBuilder
+    private var completeTheLook: some View {
+        let suggestions = shop.complementaryProducts(for: product)
+        if !suggestions.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionHeader(title: "Complete the look", subtitle: "Picked to style with this")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(suggestions) { suggestion in
+                            NavigationLink {
+                                ProductDetailView(product: suggestion)
+                            } label: {
+                                ProductCard(product: suggestion,
+                                            owned: shop.ownedIds.contains(suggestion.id),
+                                            isNew: shop.newDropIds.contains(suggestion.id))
+                                    .frame(width: 150)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Complete the look recommendations")
+        }
+    }
+
     private var buyBar: some View {
         HStack(spacing: 12) {
             CoinLabel(amount: product.price, size: 20, weight: .heavy)
@@ -128,8 +158,9 @@ struct ProductDetailView: View {
                     // First tap adds and drops you straight into checkout; once
                     // in the cart, the button re-opens checkout (removal lives
                     // in the cart itself).
-                    if !inCart { shop.toggleCart(product.id) }
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() }
+                    if !inCart { _ = shop.addToCart(product.id) }
+                    if reduceMotion { addedPulse.toggle() }
+                    else { withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() } }
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showCheckout = true }
                 } label: {
                     HStack(spacing: 7) {
