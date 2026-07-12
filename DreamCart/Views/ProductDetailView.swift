@@ -144,6 +144,7 @@ struct ProductDetailView: View {
                     .scaleEffect(addedPulse ? 1.05 : 1)
                 }
                 .buttonStyle(PressableStyle())
+                .accessibilityIdentifier("detailCheckoutButton")
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 12)

@@ -12,7 +12,7 @@ Simulator UDID: `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`
 - [x] 6. Category chip icons
 - [x] 7. Outfit compositing loading treatment
 - [x] 8. Delisted closet item navigation
-- [ ] 9. Accessibility identifiers and labels
+- [x] 9. Accessibility identifiers and labels
 
 ## Item Notes
 
@@ -83,4 +83,13 @@ Update each item with status, files touched, screenshots, test results, and punt
 - Screenshot: Not required for this item
 - Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Notes: Detail navigation falls back to the owned `Product` snapshot and uses cached brand metadata only when available.
+- Punts: None
+
+### 9. Accessibility identifiers and labels
+
+- Status: Complete
+- Files: `DreamCart/Views/CartView.swift`, `DreamCart/Views/ProductDetailView.swift`, `DreamCart/Components/ProductCard.swift`, `DreamCart/Components/CoinViews.swift`, `project.yml`, `HANDOFF-UX.md`
+- Screenshot: Not required for this item
+- Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
+- TestFlight: `./scripts/testflight.sh` succeeded. Build 7 uploaded and entered processing.
 - Punts: None
