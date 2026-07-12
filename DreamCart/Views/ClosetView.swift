@@ -37,10 +37,7 @@ struct ClosetView: View {
             .navigationTitle("Closet")
             .walletToolbar($showCoinShop)
             .navigationDestination(for: Product.self) { p in
-                // Rebuild a ProductWithBrand for detail from the catalog when possible.
-                if let full = shop.products.first(where: { $0.id == p.id }) {
-                    ProductDetailView(product: full)
-                }
+                ProductDetailView(product: detailProduct(p))
             }
             .task { await shop.loadOutfits() }
         }
@@ -52,6 +49,27 @@ struct ClosetView: View {
     private var filtered: [Product] {
         guard let c = category else { return shop.closet }
         return shop.closet.filter { $0.category == c }
+    }
+
+    private func detailProduct(_ product: Product) -> ProductWithBrand {
+        if let catalogProduct = shop.products.first(where: { $0.id == product.id }) {
+            return catalogProduct
+        }
+        return ProductWithBrand(
+            id: product.id,
+            brandId: product.brandId,
+            name: product.name,
+            category: product.category,
+            slot: product.slot,
+            styleTags: product.styleTags,
+            colorName: product.colorName,
+            price: product.price,
+            rarity: product.rarity,
+            description: product.description,
+            imageUrl: product.imageUrl,
+            dropDate: product.dropDate,
+            brands: shop.brandById[product.brandId]
+        )
     }
 
     private var categoryBar: some View {
