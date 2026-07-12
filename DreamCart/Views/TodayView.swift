@@ -54,9 +54,20 @@ struct TodayView: View {
 
     // MARK: daily reward
 
+    @ViewBuilder
     private var dailyCard: some View {
         let can = shop.me?.canClaimDaily ?? false
-        return VStack(alignment: .leading, spacing: 14) {
+        if can {
+            claimableDailyCard
+                .transition(.scale(scale: 0.96).combined(with: .opacity))
+        } else {
+            claimedDailyChip
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    private var claimableDailyCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Label("Daily Drop", systemImage: "gift.fill")
                     .font(.dcBody)
@@ -65,7 +76,7 @@ struct TodayView: View {
                 if let s = shop.me?.streak, s > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
-                        Text("\(s) day\(s == 1 ? "" : "")")
+                        Text("\(s) day\(s == 1 ? "" : "s")")
                     }
                     .font(.dcLabel)
                     .foregroundStyle(.white)
@@ -73,11 +84,10 @@ struct TodayView: View {
                     .background(.white.opacity(0.22), in: Capsule())
                 }
             }
-            Text(can ? "Your coins are waiting" : "Come back tomorrow")
+            Text("Your coins are waiting")
                 .font(.dcTitle)
                 .foregroundStyle(.white)
-            Text(can ? "Claim today's coins and keep your streak alive."
-                     : "You've claimed today. Streak safe. Spin for more below.")
+            Text("Claim today's coins and keep your streak alive.")
                 .font(.dcBodyText)
                 .foregroundStyle(.white.opacity(0.85))
 
@@ -86,21 +96,46 @@ struct TodayView: View {
             } label: {
                 HStack {
                     if claiming { ProgressView().tint(Theme.violet) }
-                    else { Text(can ? "Claim now" : "Claimed") }
+                    else { Text("Claim now") }
                 }
                 .font(.dcButton)
-                .foregroundStyle(can ? Theme.violet : Theme.subtle(scheme))
+                .foregroundStyle(Theme.violet)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(can ? Color.white : Color.white.opacity(0.4), in: Capsule())
+                .background(Color.white, in: Capsule())
             }
             .buttonStyle(PressableStyle())
-            .disabled(!can || claiming)
+            .disabled(claiming)
         }
         .padding(18)
         .frame(maxWidth: .infinity)
         .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
         .shadow(color: Theme.pink.opacity(0.3), radius: 16, y: 8)
+    }
+
+    private var claimedDailyChip: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "gift.fill")
+                .font(.dcIconM)
+            if let streak = shop.me?.streak, streak > 0 {
+                Label("\(streak)-day streak", systemImage: "flame.fill")
+                    .font(.dcLabel)
+            }
+            Spacer()
+            Text("Claimed")
+                .font(.dcLabel)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.white.opacity(0.22), in: Capsule())
+            Text("More tomorrow")
+                .font(.dcSub)
+                .foregroundStyle(.white.opacity(0.85))
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
+        .animation(.spring(response: 0.45, dampingFraction: 0.8), value: shop.me?.canClaimDaily)
     }
 
     private func claimDaily() async {
