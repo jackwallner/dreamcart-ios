@@ -6,8 +6,8 @@
 - [x] Enforce typography and icon tokens
 - [x] Audit editorial and functional voice consistency
 - [x] Polish hierarchy, spacing, radii, overlines, truncation, and contrast
-- [ ] Capture and inspect after screenshots in light and dark
-- [ ] Run final tests and document remaining exceptions and punts
+- [x] Capture and inspect after screenshots in light and dark
+- [x] Run final tests and document remaining exceptions and punts
 
 ## Policy decisions
 
@@ -45,7 +45,14 @@
 - Before: `sim77-design/before/`
 - After: `sim77-design/after/`
 
-The baseline audit captured the available authenticated screens with `xcrun simctl io` on simulator `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`. The current tester account did not expose the outfit-builder route during the automated baseline tour. Required missing or misrouted states will be supplemented where the account state permits during final verification.
+The baseline audit captured the available authenticated screens with `xcrun simctl io` on simulator `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`. The tester account did not expose the outfit-builder route during the baseline tour. That state became available and was captured during final verification.
+
+The authoritative after set uses canonical names in `sim77-design/after/`:
+
+- Light: `light-today.png`, `light-shop.png`, `light-product-detail.png`, `light-cart.png`, `light-checkout.png`, `light-coin-shop.png`, `light-closet.png`, `light-outfit-builder.png`, `light-profile.png`, `light-spin.png`.
+- Dark: `dark-today.png`, `dark-shop.png`, `dark-product-detail.png`, `dark-cart.png`, `dark-checkout.png`, `dark-coin-shop.png`, `dark-closet.png`, `dark-outfit-builder.png`, `dark-profile.png`, `dark-spin.png`.
+
+All canonical after screenshots were captured with `xcrun simctl io` and visually inspected. The tester account gained owned pieces during the audit, so the after set includes the dressing room that was unavailable in the baseline state.
 
 ## Justified remaining system fonts
 
@@ -58,7 +65,10 @@ The baseline audit captured the available authenticated screens with `xcrun simc
 - Token enforcement: `rg -n '\.font\(\.system' DreamCart Shared` returns only the three documented parametric cases.
 - Token enforcement tests: 6 tests passed on the required simulator with `xcodebuild test`.
 - Voice and hierarchy tests: 6 tests passed on the required simulator with `xcodebuild test`.
+- Final gate: 6 tests passed with 0 failures on the required simulator. The final raw-font grep still returns only the three documented parametric cases.
 
 ## Deliberately left unchanged
 
-Pending.
+- Feature surfaces keep `Theme.corner`, while standard cards use `Theme.cardCorner`. Smaller raw radii remain only on nested media, fields, confetti, and avatar placeholders where the radius follows the element scale.
+- Navigation structure, screen composition, candy gradients, gold coins, serif editorial identity, and reward moments were preserved.
+- No design issues were punted after visual inspection. Numbered after files are intermediate audit artifacts; the canonical `light-*` and `dark-*` files are the reviewed deliverables.
