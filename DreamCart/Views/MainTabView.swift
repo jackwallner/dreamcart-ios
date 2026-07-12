@@ -12,7 +12,7 @@ struct MainTabView: View {
             ShopView()
                 .tabItem { Label("Shop", systemImage: "bag.fill") }.tag(1)
 
-            CartView()
+            CartView(tab: $tab)
                 .tabItem { Label("Cart", systemImage: "cart.fill") }.tag(2)
                 .badge(shop.cartIds.count)
 
