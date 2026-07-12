@@ -8,7 +8,7 @@ Simulator UDID: `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`
 - [x] 2. Dismissible catalog error banner on Today and Shop
 - [x] 3. Profile real display name
 - [x] 4. Compact claimed Daily Drop card
-- [ ] 5. Upright spin labels and reset hint
+- [x] 5. Upright spin labels and reset hint
 - [ ] 6. Category chip icons
 - [ ] 7. Outfit compositing loading treatment
 - [ ] 8. Delisted closet item navigation
@@ -50,3 +50,12 @@ Update each item with status, files touched, screenshots, test results, and punt
 - Screenshot: `sim77-design/ux/04-claimed-daily-chip.png`, inspected. The live account was claimable, so the image shows the full pre-claim card and verifies surrounding layout only.
 - Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Punts: Compact branch could not be captured without consuming the live account reward or adding debug-only state.
+
+### 5. Upright spin labels and reset hint
+
+- Status: Complete
+- Files: `DreamCart/Views/SpinView.swift`, `sim77-design/ux/05-spin-legibility.png`, `HANDOFF-UX.md`
+- Screenshot: `sim77-design/ux/05-spin-legibility.png`, inspected. All slice labels are upright and the midnight reset hint is visible.
+- Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
+- Notes: The server returns `lastSpinDate` but no reset timestamp, so the required fallback copy is used.
+- Punts: None
