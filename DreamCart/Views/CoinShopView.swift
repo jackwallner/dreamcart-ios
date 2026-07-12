@@ -5,6 +5,7 @@ struct CoinShopView: View {
     @Environment(StoreController.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var buying: String? = nil
     @State private var reward: Int? = nil
@@ -14,6 +15,12 @@ struct CoinShopView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     balanceHeader
+                    if let error = store.lastError {
+                        Text(error)
+                            .font(.dcSub)
+                            .foregroundStyle(Theme.pink)
+                            .multilineTextAlignment(.center)
+                    }
                     ForEach(CoinPack.all) { pack in
                         packCard(pack)
                     }
@@ -32,6 +39,16 @@ struct CoinShopView: View {
                               subtitle: "Go build something you love.") {
                     withAnimation { reward = nil }
                 }
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // StoreKit's system purchase sheet can be dismissed (e.g. Apple
+            // Account sign-in cancelled) in a way that leaves the purchase
+            // task suspended, so `buy`'s defer never runs. Once we're back in
+            // the foreground with no purchase actually in flight, the spinner
+            // is stale — clear it.
+            if newPhase == .active, buying != nil, !store.isPurchasing {
+                buying = nil
             }
         }
     }
@@ -125,6 +142,7 @@ struct CoinShopView: View {
 
     private func buy(_ pack: CoinPack) async {
         buying = pack.productId
+        store.lastError = nil
         defer { buying = nil }
         let before = shop.coins
         let ok = await store.purchase(pack)
