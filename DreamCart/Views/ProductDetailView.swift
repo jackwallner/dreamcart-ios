@@ -7,6 +7,7 @@ struct ProductDetailView: View {
     @State private var showCoinShop = false
     @State private var showCheckout = false
     @State private var addedPulse = false
+    @State private var unboxing: [Product]? = nil
 
     private var owned: Bool { shop.ownedIds.contains(product.id) }
     private var inCart: Bool { shop.inCart(product.id) }
@@ -63,7 +64,17 @@ struct ProductDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) { buyBar }
         .sheet(isPresented: $showCoinShop) { CoinShopView() }
-        .sheet(isPresented: $showCheckout) { CartView() }
+        .sheet(isPresented: $showCheckout) {
+            CheckoutView { bought in
+                showCheckout = false
+                withAnimation { unboxing = bought }
+            }
+        }
+        .overlay {
+            if let items = unboxing {
+                UnboxingView(items: items) { withAnimation { unboxing = nil } }
+            }
+        }
     }
 
     private var favoriteButton: some View {
