@@ -9,6 +9,7 @@ struct CompositeAvatarView: View {
     let picks: [String: Product]          // slot -> chosen piece
     @Environment(\.colorScheme) private var scheme
     @State private var cutouts: [String: UIImage] = [:]   // productId -> cutout
+    @State private var failedCutouts: Set<String> = []
 
     var body: some View {
         GeometryReader { geo in
@@ -43,10 +44,16 @@ struct CompositeAvatarView: View {
                 Image(uiImage: cut).resizable().scaledToFit()
                     .shadow(color: .black.opacity(0.18), radius: 5, y: 3)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            } else if failedCutouts.contains(product.id) {
+                Image(systemName: "photo.badge.exclamationmark")
+                    .font(.dcIconM)
+                    .foregroundStyle(Theme.subtle(scheme))
             } else {
-                // Segmentation still running — hint with a soft chip.
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Theme.violet.opacity(0.12))
+                ProgressView()
+                    .tint(Theme.violet)
+                    .padding(12)
+                    .background(.regularMaterial, in: Circle())
+                    .accessibilityLabel("Preparing \(product.name)")
             }
         }
         .frame(width: size.width * p.w, height: size.height * p.h)
@@ -66,6 +73,8 @@ struct CompositeAvatarView: View {
         for product in picks.values where cutouts[product.id] == nil {
             if let img = await AvatarCutoutCache.shared.cutout(for: product) {
                 withAnimation(.easeOut(duration: 0.25)) { cutouts[product.id] = img }
+            } else {
+                failedCutouts.insert(product.id)
             }
         }
     }
