@@ -53,7 +53,7 @@ struct ShopView: View {
             HStack(spacing: 8) {
                 FilterChip(label: "All", selected: category == nil) { category = nil }
                 ForEach(categories, id: \.key) { c in
-                    FilterChip(label: c.label, selected: category == c.key) {
+                    FilterChip(label: c.label, icon: c.icon, selected: category == c.key) {
                         category = category == c.key ? nil : c.key
                     }
                 }

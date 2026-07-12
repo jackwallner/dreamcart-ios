@@ -93,14 +93,21 @@ struct EmptyState: View {
 // Horizontal selectable chip used for category / brand filters.
 struct FilterChip: View {
     let label: String
+    var icon: String? = nil
     let selected: Bool
     let action: () -> Void
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         Button(action: { Haptics.select(); action() }) {
-            Text(label)
-                .font(.dcBody)
+            HStack(spacing: 6) {
+                if let icon, !icon.isEmpty, UIImage(systemName: icon) != nil {
+                    Image(systemName: icon)
+                        .font(.dcIconS)
+                }
+                Text(label)
+                    .font(.dcBody)
+            }
                 .foregroundStyle(selected ? .white : Theme.ink(scheme))
                 .padding(.horizontal, 15).padding(.vertical, 9)
                 .background(
