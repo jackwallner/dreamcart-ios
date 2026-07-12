@@ -37,16 +37,41 @@ playful, short copy; anything else falls back to a generic message.
 
 File: DreamCart/Views/CoinShopView.swift
 
-`buy()` already had `defer { buying = nil }` covering the whole async function, so on
-paper it looked correct. The actual gap: when StoreKit's system sheet (e.g. Apple
-Account sign-in) is dismissed in a way that leaves the underlying `Purchases.shared.purchase`
-call suspended rather than throwing/cancelling, the awaiting Task itself never resumes,
-so the defer never runs since the function never returns control. Added a scene-phase
-guard: `@Environment(\.scenePhase)` + `.onChange(of: scenePhase)` that clears `buying`
-whenever the app returns to `.active` and `store.isPurchasing` (StoreController's own
-in-flight flag) is false. Also surfaced `store.lastError` as a small text banner above
-the pack list (P1 item from the audit, was a one-liner) and clear it at the start of
-each `buy()` attempt so stale errors don't linger.
+The bug: when StoreKit's system sheet (e.g. Apple Account sign-in) is dismissed in a way
+that leaves `Purchases.shared.purchase` suspended rather than returning or throwing, the
+awaiting task never resumes. Neither `buy()`'s `defer { buying = nil }` nor
+StoreController's `defer { isPurchasing = false }` ever runs, so the pack row's spinner
+sticks forever.
+
+The first attempt (commit 69b836e) was wrong and has been replaced. It cleared `buying`
+on return to `.active` only when `!store.isPurchasing`. But `isPurchasing` is set and
+cleared by a set-then-defer pair wrapped around that same suspended await, so in the
+stuck case it is pinned true and the guard never fires. In every non-stuck case the
+view's own defer had already cleared `buying` anyway. The condition was unsatisfiable
+exactly when it was needed.
+
+The corrected approach (this commit):
+
+- The buy operation is held in cancellable view state: `@State private var buyTask:
+  Task<Void, Never>?`, assigned when a pack row is tapped.
+- On return to `.active` with `buying != nil`, a `staleCheck` task waits a 2.5s grace
+  period (`try? await Task.sleep`). A purchase that is legitimately completing clears
+  `buying` via its own defer inside that window, so it is never killed. If the scene
+  phase leaves `.active` again (user went back into the StoreKit sheet), `onChange`
+  cancels the staleCheck and no cleanup happens.
+- If `buying` is still non-nil after the grace period, the purchase is declared stale:
+  cancel `buyTask` (so the suspended await unwinds if the SDK honors cancellation and
+  both defers run), then clear `buying` and set `store.isPurchasing = false` explicitly,
+  since the SDK's continuation may never resume even on cancel. Recovery therefore does
+  not depend on `isPurchasing` being false. Sets
+  `store.lastError = "Purchase didn't complete. You weren't charged."`.
+- False-positive safety net: a purchase we wrongly cancel that actually settled is healed
+  by the server-side grant. `shop.reconcilePurchases()` was only called at launch and on
+  sign-in (DreamCartApp.swift, RootView.swift), not on foreground, so the stale-cleanup
+  path calls it directly. If it credits coins, the error banner is cleared and the normal
+  reward overlay is shown instead.
+- The `store.lastError` banner above the pack list from the previous commit is kept, and
+  `lastError` is still cleared at the start of each `buy()` attempt.
 
 ## Verification
 

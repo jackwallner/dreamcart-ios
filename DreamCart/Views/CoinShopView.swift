@@ -9,6 +9,12 @@ struct CoinShopView: View {
 
     @State private var buying: String? = nil
     @State private var reward: Int? = nil
+    @State private var buyTask: Task<Void, Never>? = nil
+    @State private var staleCheck: Task<Void, Never>? = nil
+
+    /// How long a purchase gets to finish on its own after we come back to the
+    /// foreground before we treat its spinner as stale.
+    private let graceSeconds: Double = 2.5
 
     var body: some View {
         NavigationStack {
@@ -42,14 +48,13 @@ struct CoinShopView: View {
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
-            // StoreKit's system purchase sheet can be dismissed (e.g. Apple
-            // Account sign-in cancelled) in a way that leaves the purchase
-            // task suspended, so `buy`'s defer never runs. Once we're back in
-            // the foreground with no purchase actually in flight, the spinner
-            // is stale — clear it.
-            if newPhase == .active, buying != nil, !store.isPurchasing {
-                buying = nil
-            }
+            // Leaving .active (or a second .active while one is pending) aborts
+            // any in-flight staleness check: the user is back inside StoreKit's
+            // sheet, so the purchase is not stale.
+            staleCheck?.cancel()
+            staleCheck = nil
+            guard newPhase == .active, buying != nil else { return }
+            staleCheck = Task { await recoverIfStale() }
         }
     }
 
@@ -68,7 +73,8 @@ struct CoinShopView: View {
 
     private func packCard(_ pack: CoinPack) -> some View {
         Button {
-            Task { await buy(pack) }
+            buyTask?.cancel()
+            buyTask = Task { await buy(pack) }
         } label: {
             HStack(spacing: 14) {
                 ZStack {
@@ -143,13 +149,49 @@ struct CoinShopView: View {
     private func buy(_ pack: CoinPack) async {
         buying = pack.productId
         store.lastError = nil
-        defer { buying = nil }
+        defer {
+            buying = nil
+            buyTask = nil
+        }
         let before = shop.coins
         let ok = await store.purchase(pack)
         if ok {
             await shop.reconcilePurchases()
             let gained = shop.coins - before
             if gained > 0 { withAnimation { reward = gained } }
+        }
+    }
+
+    /// Dismissing StoreKit's system sheet (e.g. cancelling Apple Account
+    /// sign-in) can leave `Purchases.shared.purchase` suspended forever: it
+    /// neither returns nor throws, so neither `buy`'s defer nor
+    /// StoreController's own defer ever runs. `store.isPurchasing` is stuck
+    /// true in exactly that case, so it can't be used to detect it. Instead we
+    /// give the purchase a grace period after we're back in the foreground and,
+    /// if the spinner is still up, cancel the task holding the suspended await
+    /// and reset the state by hand.
+    private func recoverIfStale() async {
+        try? await Task.sleep(for: .seconds(graceSeconds))
+        // Cancelled means the phase left .active again; nil `buying` means the
+        // purchase finished on its own. Either way there's nothing stale.
+        guard !Task.isCancelled, buying != nil else { return }
+
+        buyTask?.cancel()   // unwinds the await if the SDK honors cancellation
+        buyTask = nil
+        buying = nil
+        // The SDK's continuation may never resume even on cancel, so
+        // StoreController's `defer { isPurchasing = false }` can't be trusted.
+        store.isPurchasing = false
+        store.lastError = "Purchase didn't complete. You weren't charged."
+
+        // Safety net for the false-positive case: if the purchase actually did
+        // settle, the server grants the coins and reconcile heals it here.
+        let before = shop.coins
+        await shop.reconcilePurchases()
+        let gained = shop.coins - before
+        if gained > 0 {
+            store.lastError = nil
+            withAnimation { reward = gained }
         }
     }
 }
