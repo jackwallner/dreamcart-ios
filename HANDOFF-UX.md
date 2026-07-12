@@ -10,7 +10,7 @@ Simulator UDID: `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`
 - [x] 4. Compact claimed Daily Drop card
 - [x] 5. Upright spin labels and reset hint
 - [x] 6. Category chip icons
-- [ ] 7. Outfit compositing loading treatment
+- [x] 7. Outfit compositing loading treatment
 - [ ] 8. Delisted closet item navigation
 - [ ] 9. Accessibility identifiers and labels
 
@@ -67,3 +67,11 @@ Update each item with status, files touched, screenshots, test results, and punt
 - Screenshot: `sim77-design/ux/06-category-icons.png`, inspected. Symbols align with category labels and use the compact icon scale.
 - Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Punts: None
+
+### 7. Outfit compositing loading treatment
+
+- Status: Complete
+- Files: `DreamCart/Components/CompositeAvatarView.swift`, `sim77-design/ux/07-cutout-loading.png`, `HANDOFF-UX.md`
+- Screenshot: `sim77-design/ux/07-cutout-loading.png`, inspected. The capture reached the neutral failure icon after cache regeneration and confirms the purple placeholder rectangle is removed.
+- Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
+- Punts: The transient spinner completed before the stable screenshot, but its post-load failure treatment was visually verified.
