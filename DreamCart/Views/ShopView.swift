@@ -21,10 +21,14 @@ struct ShopView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                if !query.isEmpty {
-                    grid(shop.search(query))
-                } else {
-                    VStack(spacing: 14) {
+                VStack(spacing: 14) {
+                    if shop.loadError != nil {
+                        LoadErrorBanner()
+                            .padding(.horizontal, 16)
+                    }
+                    if !query.isEmpty {
+                        grid(shop.search(query))
+                    } else {
                         categoryBar
                         grid(filtered)
                     }
