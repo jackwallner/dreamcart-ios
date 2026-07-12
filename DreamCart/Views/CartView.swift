@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CartView: View {
+    @Binding var tab: Int
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
     @State private var showCoinShop = false
@@ -12,9 +13,15 @@ struct CartView: View {
             Group {
                 if shop.cartProducts.isEmpty {
                     ScrollView {
-                        EmptyState(icon: "cart", title: "Your cart is empty",
-                                   message: "Add pieces you love. Checkout is free with coins.")
-                            .padding(.top, 80)
+                        VStack(spacing: 24) {
+                            EmptyState(icon: "cart", title: "Your cart is empty",
+                                       message: "Add pieces you love. Checkout is free with coins.")
+                            CandyButton(title: "Browse shop", systemImage: "bag.fill") {
+                                tab = 1
+                            }
+                            .padding(.horizontal, 32)
+                        }
+                        .padding(.top, 80)
                     }
                 } else {
                     ScrollView {
