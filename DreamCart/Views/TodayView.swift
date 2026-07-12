@@ -121,7 +121,7 @@ struct TodayView: View {
                 ZStack {
                     Circle().fill(Theme.goldGradient).frame(width: 54, height: 54)
                     Image(systemName: "dial.medium.fill")
-                        .font(.system(size: 26, weight: .bold))
+                        .font(.dcIconL)
                         .foregroundStyle(.white)
                 }
                 VStack(alignment: .leading, spacing: 3) {

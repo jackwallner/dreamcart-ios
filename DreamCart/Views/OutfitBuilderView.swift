@@ -68,7 +68,7 @@ struct OutfitBuilderView: View {
             if chosen.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "figure.arms.open")
-                        .font(.system(size: 40)).foregroundStyle(Theme.violet)
+                        .font(.dcIconXL).foregroundStyle(Theme.violet)
                     Text("Pick pieces below to dress your avatar")
                         .font(.dcBodyText)
                         .foregroundStyle(Theme.subtle(scheme))
@@ -111,7 +111,7 @@ struct OutfitBuilderView: View {
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: slot.icon)
-                            .font(.system(size: 17))
+                            .font(.dcIconM)
                             .foregroundStyle(available ? Theme.violet : Theme.subtle(scheme).opacity(0.4))
                             .frame(width: 26)
                         Text(slot.label)
@@ -128,7 +128,7 @@ struct OutfitBuilderView: View {
                                 Haptics.tap(); picks[slot.key] = nil
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 17))
+                                    .font(.dcIconM)
                                     .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
                             }
                         } else if available {
@@ -188,7 +188,7 @@ struct OutfitBuilderView: View {
                         Button {
                             Task { await shop.deleteOutfit(outfit.id) }
                         } label: {
-                            Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(Theme.subtle(scheme))
+                            Image(systemName: "trash").font(.dcIconS).foregroundStyle(Theme.subtle(scheme))
                         }
                         .padding(.leading, 8)
                     }

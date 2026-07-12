@@ -80,7 +80,7 @@ struct CoinShopView: View {
                 ZStack {
                     Circle().fill(Theme.goldGradient).frame(width: 58, height: 58)
                     Image(systemName: coinIcon(pack))
-                        .font(.system(size: 26, weight: .bold)).foregroundStyle(.white)
+                        .font(.dcIconL).foregroundStyle(.white)
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {

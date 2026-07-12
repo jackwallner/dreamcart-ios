@@ -8,6 +8,7 @@ struct CoinIcon: View {
             Circle().fill(Theme.goldGradient)
             Circle().strokeBorder(.white.opacity(0.55), lineWidth: size * 0.06)
             Text("$")
+                // The mark scales with its coin container, so a fixed token would drift.
                 .font(.system(size: size * 0.6, weight: .black))
                 .foregroundStyle(.white.opacity(0.9))
         }
@@ -25,6 +26,7 @@ struct CoinLabel: View {
         HStack(spacing: size * 0.28) {
             CoinIcon(size: size)
             Text(Format.coins(amount))
+                // CoinLabel is a parametric primitive whose callers set its size.
                 .font(.system(size: size, weight: weight))
                 .monospacedDigit()
         }
@@ -47,7 +49,7 @@ struct WalletPill: View {
                     .monospacedDigit()
                     .contentTransition(.numericText(value: Double(coins)))
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 17))
+                    .font(.dcIconM)
                     .foregroundStyle(Theme.violet)
             }
             .foregroundStyle(Theme.ink(scheme))

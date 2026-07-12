@@ -121,7 +121,7 @@ struct CheckoutView: View {
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: method == m ? "largecircle.fill.circle" : "circle")
-                            .font(.system(size: 20))
+                            .font(.dcIconL)
                             .foregroundStyle(method == m ? Theme.violet : Theme.subtle(scheme).opacity(0.5))
                         VStack(alignment: .leading, spacing: 2) {
                             Text(m.title).font(.dcBody).foregroundStyle(Theme.ink(scheme))
@@ -246,7 +246,7 @@ struct CheckoutView: View {
 
     private func cardHeader(_ icon: String, _ title: String) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: icon).font(.system(size: 15)).foregroundStyle(Theme.violet)
+            Image(systemName: icon).font(.dcIconS).foregroundStyle(Theme.violet)
             Text(title).font(.dcCard).foregroundStyle(Theme.ink(scheme))
         }
     }

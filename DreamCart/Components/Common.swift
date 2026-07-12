@@ -75,7 +75,7 @@ struct EmptyState: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 44, weight: .medium))
+                .font(.dcIconXL)
                 .foregroundStyle(Theme.violet.opacity(0.7))
             Text(title)
                 .font(.dcSection)

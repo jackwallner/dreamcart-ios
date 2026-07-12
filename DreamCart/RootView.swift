@@ -63,6 +63,7 @@ struct BagMark: View {
                 .offset(y: -size * 0.42)
                 .mask(Rectangle().frame(width: size, height: size * 0.5).offset(y: -size * 0.42))
             Image(systemName: "sparkles")
+                // BagMark is a parametric logo component, so its glyph tracks the mark size.
                 .font(.system(size: size * 0.34, weight: .bold))
                 .foregroundStyle(Theme.pink)
         }
