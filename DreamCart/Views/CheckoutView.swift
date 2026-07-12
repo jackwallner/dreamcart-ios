@@ -22,6 +22,7 @@ struct CheckoutView: View {
     @AppStorage("shipMethod") private var methodRaw = ShipMethod.standard.rawValue
 
     @State private var placing = false
+    @State private var errorMessage: String?
     @FocusState private var focused: Field?
 
     private enum Field { case name, street, city, state, zip }
@@ -66,6 +67,14 @@ struct CheckoutView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) { placeBar }
+        }
+        .alert("Order didn't go through", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK") { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
 
@@ -213,11 +222,25 @@ struct CheckoutView: View {
         defer { placing = false }
         let bought = shop.cartProducts
         focused = nil
-        if let r = await shop.checkout(), r.ok {
+        guard let r = await shop.checkout() else {
+            Haptics.warning()
+            errorMessage = "Couldn't place your order. Try again."
+            return
+        }
+        if r.ok {
             Haptics.celebrate()
             onPlaced(bought)
         } else {
             Haptics.warning()
+            errorMessage = failureMessage(for: r.reason)
+        }
+    }
+
+    private func failureMessage(for reason: String?) -> String {
+        switch reason {
+        case "insufficient_coins": return "You don't have enough coins for this order."
+        case "nothing_to_buy": return "Your cart looks empty. Add something first."
+        default: return "Couldn't place your order. Try again."
         }
     }
 
