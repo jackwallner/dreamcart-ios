@@ -1,14 +1,16 @@
 import SwiftUI
 
 struct TodayView: View {
-    @Binding var tab: Int
     @Environment(ShopStore.self) private var shop
+    @Environment(RouteCoordinator.self) private var router
+    @Environment(LocalNotificationCoordinator.self) private var notifications
     @Environment(\.colorScheme) private var scheme
 
     @State private var showCoinShop = false
     @State private var showSpin = false
     @State private var reward: (title: String, amount: Int, subtitle: String)?
     @State private var claiming = false
+    @State private var showNotificationPrimer = false
 
     var body: some View {
         NavigationStack {
@@ -32,11 +34,13 @@ struct TodayView: View {
             .walletToolbar($showCoinShop)
             .refreshable { await shop.refreshAll() }
             .sheet(isPresented: $showSpin) { SpinView() }
+            .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
         }
         .overlay {
             if let r = reward {
                 RewardOverlay(title: r.title, amount: r.amount, subtitle: r.subtitle) {
                     withAnimation { reward = nil }
+                    if notifications.shouldPresentPrimer { showNotificationPrimer = true }
                 }
             }
         }
@@ -192,7 +196,7 @@ struct TodayView: View {
     private var newDropsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Just dropped", subtitle: "Fresh today",
-                          actionTitle: "Shop all") { tab = 1 }
+                          actionTitle: "Shop all") { router.selectedTab = .today }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(shop.newDrops) { p in
@@ -205,6 +209,7 @@ struct TodayView: View {
                 }
             }
         }
+        .id("new-drops")
         .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
     }
 

@@ -21,7 +21,9 @@ final class StoreController {
     #endif
 
     func configure(userId: String?) {
-        #if HAS_REVENUECAT
+        #if targetEnvironment(simulator)
+        return
+        #elseif HAS_REVENUECAT
         Purchases.logLevel = .error
         if !Purchases.isConfigured {
             let builder = Configuration.Builder(withAPIKey: Config.revenueCatKey)

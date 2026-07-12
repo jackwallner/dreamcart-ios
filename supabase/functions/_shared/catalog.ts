@@ -289,10 +289,13 @@ export function composeProduct(seed: number, forcedCategory?: Category): NewProd
   const name = `${series} ${color} ${g.noun}`;
 
   const image_prompt =
-    `professional e-commerce product photograph of a single ${color.toLowerCase()} ${material} ` +
-    `${g.visual}, ${brand.aesthetic}, centered on a seamless ${brand.bgWords} studio backdrop, ` +
+    `professional e-commerce product photograph of exactly one isolated, centered, fully visible ` +
+    `${color.toLowerCase()} ${material} ${g.visual}, shown in its entirety with clear generous margins ` +
+    `on every side, ${brand.aesthetic}, on a seamless ${brand.bgWords} studio backdrop, ` +
     `soft even diffused studio lighting, sharp focus, high detail, clean catalog product shot, ` +
-    `no people, no mannequin, no text, no words, no logo, no watermark`;
+    `no people, no bodies, no faces, no hands, no models, no mannequins, no hangers, no props, ` +
+    `no packaging, no styling objects, no extra products, no unrelated additional accessories, ` +
+    `no text, no words, no logos, no watermarks`;
 
   return {
     brand_slug: brand.slug,

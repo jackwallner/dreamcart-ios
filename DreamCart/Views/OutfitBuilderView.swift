@@ -88,6 +88,8 @@ struct OutfitBuilderView: View {
             }
         }
         .aspectRatio(0.8, contentMode: .fit)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Avatar preview")
     }
 
     private var lookPicker: some View {
@@ -106,44 +108,48 @@ struct OutfitBuilderView: View {
         VStack(spacing: 10) {
             ForEach(slots, id: \.key) { slot in
                 let available = shop.closet.contains { $0.slot == slot.key }
-                Button {
-                    if available { Haptics.tap(); pickingSlot = SlotID(id: slot.key) }
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: slot.icon)
-                            .font(.dcIconM)
-                            .foregroundStyle(available ? Theme.violet : Theme.subtle(scheme).opacity(0.4))
-                            .frame(width: 26)
-                        Text(slot.label)
-                            .font(.dcBody)
-                            .foregroundStyle(available ? Theme.ink(scheme) : Theme.subtle(scheme).opacity(0.5))
-                        Spacer()
-                        if let p = picks[slot.key] {
-                            Text(p.name).font(.dcItem)
-                                .foregroundStyle(Theme.subtle(scheme)).lineLimit(1)
-                            RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
-                                .frame(width: 34, height: 42)
-                                .clipShape(RoundedRectangle(cornerRadius: 7))
-                            Button {
-                                Haptics.tap(); picks[slot.key] = nil
-                            } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.dcIconM)
-                                    .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
-                            }
-                        } else if available {
-                            Text("Choose").font(.dcLabel)
-                                .foregroundStyle(Theme.violet)
-                        } else {
-                            Text("None owned").font(.dcSub)
+                HStack(spacing: 12) {
+                    Image(systemName: slot.icon)
+                        .font(.dcIconM)
+                        .foregroundStyle(available ? Theme.violet : Theme.subtle(scheme).opacity(0.4))
+                        .frame(width: 26)
+                    Text(slot.label)
+                        .font(.dcBody)
+                        .foregroundStyle(available ? Theme.ink(scheme) : Theme.subtle(scheme).opacity(0.5))
+                    Spacer()
+                    if let p = picks[slot.key] {
+                        Text(p.name).font(.dcItem)
+                            .foregroundStyle(Theme.subtle(scheme))
+                            .lineLimit(2)
+                            .multilineTextAlignment(.trailing)
+                        RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
+                            .frame(width: 34, height: 42)
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
+                        Button {
+                            Haptics.tap(); picks[slot.key] = nil
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.dcIconM)
                                 .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remove \(p.name) from \(slot.label)")
+                    } else if available {
+                        Text("Choose").font(.dcLabel)
+                            .foregroundStyle(Theme.violet)
+                    } else {
+                        Text("None owned").font(.dcSub)
+                            .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
                     }
-                    .padding(.horizontal, 14).padding(.vertical, 11)
-                    .cardStyle(scheme)
                 }
-                .buttonStyle(.plain)
-                .disabled(!available)
+                .contentShape(Rectangle())
+                .padding(.horizontal, 14).padding(.vertical, 11)
+                .cardStyle(scheme)
+                .onTapGesture {
+                    if available { Haptics.tap(); pickingSlot = SlotID(id: slot.key) }
+                }
+                .accessibilityAddTraits(available ? .isButton : [])
+                .accessibilityHint(available ? "Opens owned \(slot.label.lowercased())" : "No owned pieces")
             }
         }
     }

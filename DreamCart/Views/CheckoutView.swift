@@ -85,10 +85,16 @@ struct CheckoutView: View {
             cardHeader("shippingbox.fill", "Shipping address")
             field("Full name", text: $name, field: .name, content: .name)
             field("Street address", text: $street, field: .street, content: .fullStreetAddress)
-            HStack(spacing: 10) {
-                field("City", text: $city, field: .city, content: .addressCity)
-                field("State", text: $state, field: .state, content: .addressState)
-                    .frame(width: 90)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) {
+                    field("City", text: $city, field: .city, content: .addressCity)
+                    field("State", text: $state, field: .state, content: .addressState)
+                        .frame(width: 90)
+                }
+                VStack(spacing: 10) {
+                    field("City", text: $city, field: .city, content: .addressCity)
+                    field("State", text: $state, field: .state, content: .addressState)
+                }
             }
             field("ZIP code", text: $zip, field: .zip, content: .postalCode, keyboard: .numberPad)
         }
