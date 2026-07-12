@@ -74,7 +74,7 @@ struct WelcomeView: View {
             ZStack {
                 Circle().fill(s.tint.opacity(0.15)).frame(width: 190, height: 190)
                 Image(systemName: s.icon)
-                    .font(.system(size: 78, weight: .semibold))
+                    .font(.dcIconHero)
                     .foregroundStyle(s.tint)
             }
             VStack(spacing: 12) {

@@ -23,7 +23,7 @@ struct RemoteImage: View {
             } else if failed {
                 VStack(spacing: 6) {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.dcIconL)
                     Text("Tap to load")
                         .font(.dcCaption)
                 }

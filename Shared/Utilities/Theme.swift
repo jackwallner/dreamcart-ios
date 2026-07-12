@@ -110,6 +110,14 @@ extension Font {
     static let dcCaption  = Font.system(size: 11, weight: .medium)    // fine print
     static let dcOverline = Font.system(size: 11, weight: .heavy)     // uppercase micro-labels
     static let dcBadge    = Font.system(size: 9, weight: .black)      // NEW / rarity chips
+
+    // SF Symbols use a shared size scale. Weight belongs to the token so icons
+    // at the same hierarchy level keep the same visual density.
+    static let dcIconS    = Font.system(size: 14, weight: .medium)    // inline controls, chevrons
+    static let dcIconM    = Font.system(size: 18, weight: .semibold)  // rows, compact actions
+    static let dcIconL    = Font.system(size: 24, weight: .bold)      // feature and purchase icons
+    static let dcIconXL   = Font.system(size: 44, weight: .medium)    // empty states, illustrations
+    static let dcIconHero = Font.system(size: 78, weight: .semibold)  // onboarding artwork
 }
 
 // User-selectable appearance. Light is the default brand look.

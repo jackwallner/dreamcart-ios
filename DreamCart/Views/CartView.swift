@@ -102,7 +102,7 @@ struct CartRow: View {
                 Haptics.tap(); onRemove()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 22))
+                    .font(.dcIconL)
                     .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
             }
         }

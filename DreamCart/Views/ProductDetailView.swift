@@ -82,7 +82,7 @@ struct ProductDetailView: View {
             Task { await shop.toggleFavorite(product.id) }
         } label: {
             Image(systemName: shop.isFavorite(product.id) ? "heart.fill" : "heart")
-                .font(.system(size: 18, weight: .bold))
+                .font(.dcIconM)
                 .foregroundStyle(shop.isFavorite(product.id) ? Theme.pink : .white)
                 .padding(10)
                 .background(.black.opacity(0.35), in: Circle())

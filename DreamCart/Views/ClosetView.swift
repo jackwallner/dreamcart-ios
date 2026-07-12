@@ -85,7 +85,7 @@ struct ClosetView: View {
 
     private func stat(_ value: String, _ label: String, _ icon: String) -> some View {
         VStack(spacing: 5) {
-            Image(systemName: icon).font(.system(size: 16)).foregroundStyle(Theme.violet)
+            Image(systemName: icon).font(.dcIconM).foregroundStyle(Theme.violet)
             Text(value).font(.dcStat)
                 .foregroundStyle(Theme.ink(scheme))
             Text(label).font(.dcCaption)
@@ -98,7 +98,7 @@ struct ClosetView: View {
         HStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 14).fill(Theme.candy).frame(width: 52, height: 52)
-                Image(systemName: "figure.arms.open").font(.system(size: 24, weight: .bold)).foregroundStyle(.white)
+                Image(systemName: "figure.arms.open").font(.dcIconL).foregroundStyle(.white)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text("Dress up your avatar")

@@ -67,7 +67,7 @@ struct ProfileView: View {
 
     private func statTile(_ v: String, _ l: String, _ icon: String, _ tint: Color) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 18)).foregroundStyle(tint)
+            Image(systemName: icon).font(.dcIconM).foregroundStyle(tint)
             Text(v).font(.dcStat).foregroundStyle(Theme.ink(scheme))
             Text(l).font(.dcCaption).foregroundStyle(Theme.subtle(scheme))
         }
@@ -76,7 +76,7 @@ struct ProfileView: View {
 
     private var appearanceCard: some View {
         HStack(spacing: 14) {
-            Image(systemName: "sun.max.fill").font(.system(size: 17))
+            Image(systemName: "sun.max.fill").font(.dcIconM)
                 .foregroundStyle(Theme.gold).frame(width: 24)
             Text("Appearance").font(.dcBody)
                 .foregroundStyle(Theme.ink(scheme))
@@ -111,11 +111,11 @@ struct ProfileView: View {
     private func row(_ title: String, _ icon: String, _ tint: Color, action: @escaping () -> Void) -> some View {
         Button { Haptics.tap(); action() } label: {
             HStack(spacing: 14) {
-                Image(systemName: icon).font(.system(size: 17)).foregroundStyle(tint).frame(width: 24)
+                Image(systemName: icon).font(.dcIconM).foregroundStyle(tint).frame(width: 24)
                 Text(title).font(.dcBody)
                     .foregroundStyle(Theme.ink(scheme))
                 Spacer()
-                Image(systemName: "chevron.right").font(.system(size: 13)).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
+                Image(systemName: "chevron.right").font(.dcIconS).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
             }
             .padding(.horizontal, 14).padding(.vertical, 14)
         }
