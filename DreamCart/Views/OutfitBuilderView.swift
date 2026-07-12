@@ -119,7 +119,7 @@ struct OutfitBuilderView: View {
                             .foregroundStyle(available ? Theme.ink(scheme) : Theme.subtle(scheme).opacity(0.5))
                         Spacer()
                         if let p = picks[slot.key] {
-                            Text(p.name).font(.dcSub)
+                            Text(p.name).font(.dcItem)
                                 .foregroundStyle(Theme.subtle(scheme)).lineLimit(1)
                             RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
                                 .frame(width: 34, height: 42)

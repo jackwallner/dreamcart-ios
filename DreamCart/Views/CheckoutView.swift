@@ -155,7 +155,10 @@ struct CheckoutView: View {
                     RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
                         .frame(width: 40, height: 50)
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    Text(p.name).font(.dcSub).foregroundStyle(Theme.ink(scheme)).lineLimit(1)
+                    Text(p.name)
+                        .font(.dcItem)
+                        .foregroundStyle(Theme.ink(scheme))
+                        .lineLimit(2, reservesSpace: true)
                     Spacer()
                     CoinLabel(amount: p.price, size: 13).foregroundStyle(Theme.ink(scheme))
                 }

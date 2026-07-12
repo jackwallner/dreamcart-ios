@@ -25,7 +25,7 @@ enum Theme {
         scheme == .dark ? Color(white: 0.96) : Color(red: 0.09, green: 0.08, blue: 0.11)
     }
     static func subtle(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(white: 0.62) : Color(red: 0.45, green: 0.44, blue: 0.48)
+        scheme == .dark ? Color(white: 0.62) : Color(red: 0.38, green: 0.37, blue: 0.41)
     }
 
     // The signature gradient — used on reward buttons and celebration moments.

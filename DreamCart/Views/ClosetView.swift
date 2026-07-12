@@ -128,7 +128,7 @@ struct ClosetTile: View {
             Text(product.name)
                 .font(.dcItem)
                 .foregroundStyle(Theme.ink(scheme))
-                .lineLimit(1)
+                .lineLimit(2, reservesSpace: true)
         }
     }
 }
