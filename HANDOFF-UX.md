@@ -11,7 +11,7 @@ Simulator UDID: `FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8`
 - [x] 5. Upright spin labels and reset hint
 - [x] 6. Category chip icons
 - [x] 7. Outfit compositing loading treatment
-- [ ] 8. Delisted closet item navigation
+- [x] 8. Delisted closet item navigation
 - [ ] 9. Accessibility identifiers and labels
 
 ## Item Notes
@@ -75,3 +75,12 @@ Update each item with status, files touched, screenshots, test results, and punt
 - Screenshot: `sim77-design/ux/07-cutout-loading.png`, inspected. The capture reached the neutral failure icon after cache regeneration and confirms the purple placeholder rectangle is removed.
 - Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
 - Punts: The transient spinner completed before the stable screenshot, but its post-load failure treatment was visually verified.
+
+### 8. Delisted closet item navigation
+
+- Status: Complete
+- Files: `DreamCart/Views/ClosetView.swift`, `HANDOFF-UX.md`
+- Screenshot: Not required for this item
+- Tests: `xcodebuild test -project DreamCart.xcodeproj -scheme DreamCart -destination "id=FE2C9DEF-4EA2-4472-8F7F-72A8F7EF28F8"`, 6 passed, 0 failed
+- Notes: Detail navigation falls back to the owned `Product` snapshot and uses cached brand metadata only when available.
+- Punts: None
