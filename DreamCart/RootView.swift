@@ -16,9 +16,17 @@ struct RootView: View {
             case .signedOut:
                 WelcomeView()
             case .signedIn:
-                MainTabView()
+                // Stay on the splash through the first catalog load. Auth resolves
+                // long before the products arrive, and cutting to the tabs early
+                // shows a shell of empty grids rather than the app.
+                if shop.hasLoadedOnce {
+                    MainTabView().transition(.opacity)
+                } else {
+                    SplashView().transition(.opacity)
+                }
             }
         }
+        .animation(.easeInOut(duration: 0.28), value: shop.hasLoadedOnce)
         .onChange(of: auth.state) { _, new in
             router.setReadiness(signedIn: new == .signedIn,
                                 catalogReady: new == .signedIn && !shop.products.isEmpty)

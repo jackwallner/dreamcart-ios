@@ -23,6 +23,13 @@ final class ShopStore {
     var isLoading = false
     var loadError: String?
 
+    /// True once the first refreshAll() has finished, successfully or not. RootView
+    /// holds the splash until then: signing in flips auth to .signedIn immediately,
+    /// so without this the tab bar renders against an empty catalog and the app
+    /// looks blank until the network catches up. Set even on failure, so a failed
+    /// load lands on the tabs (with the error banner) instead of splashing forever.
+    var hasLoadedOnce = false
+
     private let sb = SupabaseClient.shared
 
     var coins: Int { me?.coins ?? 0 }
@@ -33,7 +40,10 @@ final class ShopStore {
     func refreshAll() async {
         isLoading = true
         loadError = nil
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            hasLoadedOnce = true
+        }
         do {
             async let m: MeSnapshot = sb.rpc("me")
             async let b: [Brand] = sb.select("brands?select=*&order=sort.asc")
