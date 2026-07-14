@@ -93,7 +93,12 @@ function materialFor(row: Row, materials: string[]): string {
 async function fetchImage(prompt: string, seed: number): Promise<Uint8Array | null> {
   for (let attempt = 0; attempt < 6; attempt++) {
     try {
-      const res = await fetch(imageURL(prompt, seed), { headers: { "User-Agent": UA } });
+      // A hung Pollinations socket would otherwise stall the whole serial loop
+      // forever — Deno's fetch has no default timeout. Abort and retry instead.
+      const res = await fetch(imageURL(prompt, seed), {
+        headers: { "User-Agent": UA },
+        signal: AbortSignal.timeout(120_000),
+      });
       if (res.ok) {
         const bytes = new Uint8Array(await res.arrayBuffer());
         if (bytes.byteLength > 5000) return bytes;
@@ -101,7 +106,7 @@ async function fetchImage(prompt: string, seed: number): Promise<Uint8Array | nu
         await res.body?.cancel();
         if (res.status !== 429 && res.status < 500) return null;
       }
-    } catch { /* network blip — fall through to backoff */ }
+    } catch { /* timeout or network blip — fall through to backoff */ }
     await new Promise((r) => setTimeout(r, 15_000 * (attempt + 1)));
   }
   return null;
@@ -155,6 +160,7 @@ for (const [i, row] of work.entries()) {
       "x-upsert": "true",
     },
     body: bytes,
+    signal: AbortSignal.timeout(60_000),
   });
   if (!up.ok) {
     console.log(`[${i + 1}/${work.length}] FAIL ${row.name} (upload ${up.status})`);
