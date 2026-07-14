@@ -53,7 +53,7 @@ export const BRANDS: Brand[] = [
     accent_hex: "#A9B5C4", bg_hex: "#EEF1F4", bgWords: "cool cloud grey", sort: 10 },
 ];
 
-type Category =
+export type Category =
   | "top" | "bottom" | "dress" | "outerwear" | "shoes"
   | "bag" | "jewelry" | "sunglasses" | "hat" | "accessory";
 
@@ -64,7 +64,7 @@ export const SLOT_FOR: Record<Category, string> = {
   hat: "headwear", accessory: "accessory",
 };
 
-interface Garment {
+export interface Garment {
   noun: string;       // the item ("Cargo Pants")
   visual: string;     // how it reads to the image model
   materials: string[];
@@ -72,7 +72,7 @@ interface Garment {
 }
 
 // Per-category garment pools. `visual` is the literal thing the camera sees.
-const GARMENTS: Record<Category, Garment[]> = {
+export const GARMENTS: Record<Category, Garment[]> = {
   top: [
     { noun: "Ribbed Turtleneck", visual: "ribbed knit turtleneck sweater", materials: ["merino wool", "cashmere", "cotton rib"], base: 220 },
     { noun: "Boxy Tee", visual: "boxy heavyweight cotton t-shirt", materials: ["heavyweight cotton", "organic jersey", "pima cotton"], base: 90 },
@@ -273,6 +273,34 @@ function describe(brand: Brand, color: string, material: string, g: Garment, rar
 }
 
 /** Build one product from a fresh seed. */
+/**
+ * The product-shot prompt. Shared with scripts/backfill-product-art.ts so
+ * existing rows can be re-rendered from their stored fields without redefining
+ * the template.
+ *
+ * Three things here are load-bearing, each one learned from a failed render:
+ *
+ * 1. Flat lay, not negatives. Flux ignores piled-up negatives ("no mannequins,
+ *    no bodies") and puts body-worn garments on a torso anyway; asking for a
+ *    ghost-mannequin shot summons a literal mannequin. A garment lying flat,
+ *    alone, shot from above is the only framing that reliably yields no body.
+ * 2. Colour named AS a colour ("dyed a solid tangerine-colored shade"). Bare
+ *    colourway words are object words — Tangerine, Butter, Camel, Ruby — and a
+ *    bare adjective makes flux scatter actual tangerines around the necklace.
+ * 3. Backdrop named as a colour too, for the same reason: bgWords "soft sand"
+ *    used as a surface renders a literal sand dune.
+ */
+export function buildImagePrompt(
+  args: { color: string; material: string; visual: string; aesthetic: string; bgWords: string },
+): string {
+  return `overhead flat lay product photograph of a single ${args.visual} made of ${args.material}, ` +
+    `dyed a solid ${args.color.toLowerCase()}-colored shade, laid flat and neatly arranged on a smooth ` +
+    `seamless studio paper backdrop in a plain ${args.bgWords}-colored tone, shot straight down from above, ` +
+    `the item is the one and only object in the photograph, nothing else rests on the backdrop, entire item ` +
+    `fully visible and centered with generous empty margins on all four sides, ${args.aesthetic}, ` +
+    `soft even diffused studio lighting, sharp focus, high detail, clean catalog product shot`;
+}
+
 export function composeProduct(seed: number, forcedCategory?: Category): NewProduct {
   const rng = mulberry32(seed);
   const brand = pick(rng, BRANDS);
@@ -288,14 +316,13 @@ export function composeProduct(seed: number, forcedCategory?: Category): NewProd
   const style_tags = Array.from(new Set([pick(rng, tagPool), pick(rng, tagPool), category]));
   const name = `${series} ${color} ${g.noun}`;
 
-  const image_prompt =
-    `professional e-commerce product photograph of exactly one isolated, centered, fully visible ` +
-    `${color.toLowerCase()} ${material} ${g.visual}, shown in its entirety with clear generous margins ` +
-    `on every side, ${brand.aesthetic}, on a seamless ${brand.bgWords} studio backdrop, ` +
-    `soft even diffused studio lighting, sharp focus, high detail, clean catalog product shot, ` +
-    `no people, no bodies, no faces, no hands, no models, no mannequins, no hangers, no props, ` +
-    `no packaging, no styling objects, no extra products, no unrelated additional accessories, ` +
-    `no text, no words, no logos, no watermarks`;
+  const image_prompt = buildImagePrompt({
+    color,
+    material,
+    visual: g.visual,
+    aesthetic: brand.aesthetic,
+    bgWords: brand.bgWords,
+  });
 
   return {
     brand_slug: brand.slug,
