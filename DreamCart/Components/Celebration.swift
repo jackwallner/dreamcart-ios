@@ -16,6 +16,7 @@ struct ConfettiBurst: View {
     var coinsOnly = false
     @State private var pieces: [ConfettiPiece] = []
     @State private var go = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let palette: [Color] = [Theme.violet, Theme.pink, Theme.coral, Theme.gold, Theme.goldLite]
 
@@ -40,6 +41,7 @@ struct ConfettiBurst: View {
                 }
             }
             .onAppear {
+                guard !reduceMotion else { return }
                 pieces = (0..<44).map { i in
                     ConfettiPiece(
                         x: CGFloat.random(in: 0.05...0.95),
@@ -65,12 +67,13 @@ struct RewardOverlay: View {
     let onDismiss: () -> Void
     @Environment(\.colorScheme) private var scheme
     @State private var pop = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
             Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
                 .onTapGesture { onDismiss() }
-            ConfettiBurst(coinsOnly: coinsOnly).ignoresSafeArea()
+            if !reduceMotion { ConfettiBurst(coinsOnly: coinsOnly).ignoresSafeArea() }
             VStack(spacing: 14) {
                 Text(title)
                     .font(.dcSection)
@@ -103,7 +106,11 @@ struct RewardOverlay: View {
             .padding(28)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.5).delay(0.05)) { pop = true }
+            if reduceMotion {
+                pop = true
+            } else {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.5).delay(0.05)) { pop = true }
+            }
         }
     }
 }

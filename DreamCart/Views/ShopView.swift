@@ -26,7 +26,11 @@ struct ShopView: View {
                         LoadErrorBanner()
                             .padding(.horizontal, 16)
                     }
-                    if !query.isEmpty {
+                    if shop.isLoading && shop.products.isEmpty {
+                        ProgressView("Loading the catalog…")
+                            .font(.dcBody)
+                            .padding(.top, 80)
+                    } else if !query.isEmpty {
                         grid(shop.search(query))
                     } else {
                         categoryBar
@@ -65,9 +69,11 @@ struct ShopView: View {
 
     private func grid(_ items: [ProductWithBrand]) -> some View {
         Group {
-            if items.isEmpty {
+            if items.isEmpty && !shop.isLoading {
                 EmptyState(icon: "magnifyingglass", title: "Nothing here",
-                           message: "Try another search or category.")
+                           message: shop.loadError == nil
+                               ? "Try another search or category."
+                               : "The catalog could not be loaded. Retry above.")
                     .padding(.top, 60)
             } else {
                 LazyVGrid(columns: cols, spacing: 18) {

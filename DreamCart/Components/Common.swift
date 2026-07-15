@@ -116,5 +116,6 @@ struct FilterChip: View {
                 .overlay(Capsule().strokeBorder(selected ? .clear : Theme.subtle(scheme).opacity(0.25)))
         }
         .buttonStyle(PressableStyle())
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

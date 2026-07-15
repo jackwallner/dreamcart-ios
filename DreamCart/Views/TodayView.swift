@@ -9,6 +9,7 @@ struct TodayView: View {
     @State private var showSpin = false
     @State private var reward: (title: String, amount: Int, subtitle: String)?
     @State private var claiming = false
+    @State private var greetingDate = Date()
 
     var body: some View {
         NavigationStack {
@@ -17,10 +18,14 @@ struct TodayView: View {
                     if shop.loadError != nil {
                         LoadErrorBanner()
                     }
-                    dailyCard
-                    spinCard
-                    if !shop.newDrops.isEmpty { newDropsSection }
-                    brandShelves
+                    if shop.isLoading && shop.products.isEmpty {
+                        TodayLoadingView()
+                    } else {
+                        dailyCard
+                        spinCard
+                        if !shop.newDrops.isEmpty { newDropsSection }
+                        brandShelves
+                    }
                     Color.clear.frame(height: 10)
                 }
                 .padding(.horizontal, 16)
@@ -30,8 +35,15 @@ struct TodayView: View {
             .navigationTitle(greeting)
             .navigationBarTitleDisplayMode(.large)
             .walletToolbar($showCoinShop)
+            .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
             .refreshable { await shop.refreshAll() }
             .sheet(isPresented: $showSpin) { SpinView() }
+            .task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(60))
+                    greetingDate = Date()
+                }
+            }
         }
         .overlay {
             if let r = reward {
@@ -43,7 +55,7 @@ struct TodayView: View {
     }
 
     private var greeting: String {
-        let h = Calendar.current.component(.hour, from: Date())
+        let h = Calendar.current.component(.hour, from: greetingDate)
         switch h {
         case 5..<12: return "Good morning"
         case 12..<17: return "Good afternoon"
@@ -205,7 +217,6 @@ struct TodayView: View {
                 }
             }
         }
-        .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
     }
 
     private var brandShelves: some View {
@@ -245,6 +256,38 @@ struct TodayView: View {
                         }
                     }
                 }
+            }
+            if shop.brands.count > 4 {
+                Button("See all brands") { tab = 1 }
+                    .font(.dcButton)
+                    .foregroundStyle(Theme.violet)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .cardStyle(scheme)
+            }
+        }
+    }
+}
+
+private struct TodayLoadingView: View {
+    var body: some View {
+        VStack(spacing: 22) {
+            ProgressView("Loading today's drops…")
+                .font(.dcBody)
+                .padding(.vertical, 36)
+            ForEach(0..<2, id: \.self) { _ in
+                VStack(alignment: .leading, spacing: 12) {
+                    ShimmerView().frame(width: 150, height: 24).clipShape(Capsule())
+                    HStack(spacing: 12) {
+                        ForEach(0..<2, id: \.self) { _ in
+                            ShimmerView()
+                                .frame(maxWidth: .infinity)
+                                .aspectRatio(0.72, contentMode: .fit)
+                                .clipShape(RoundedRectangle(cornerRadius: Theme.cardCorner))
+                        }
+                    }
+                }
+                .accessibilityHidden(true)
             }
         }
     }

@@ -129,9 +129,17 @@ struct CoinShopView: View {
                 .font(.dcCaption)
                 .foregroundStyle(Theme.subtle(scheme))
                 .multilineTextAlignment(.center)
-            Button("Restore Purchases") { Task { await store.restore(); await shop.reconcilePurchases() } }
+            Button {
+                Task { await store.restore(); await shop.reconcilePurchases() }
+            } label: {
+                HStack(spacing: 6) {
+                    if store.isRestoring { ProgressView().controlSize(.small) }
+                    Text(store.isRestoring ? "Restoring…" : "Restore Purchases")
+                }
                 .font(.dcLabel)
                 .foregroundStyle(Theme.violet)
+            }
+            .disabled(store.isRestoring || buying != nil)
         }
         .padding(.top, 6)
     }
