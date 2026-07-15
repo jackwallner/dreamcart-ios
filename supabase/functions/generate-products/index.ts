@@ -79,10 +79,20 @@ Deno.serve(async (req) => {
 
   const brandMap = await ensureBrands();
 
-  // Avoid duplicate product names in one run (and against a light recent set).
+  // Avoid duplicate product names in one run and against the whole catalog.
+  // Paginated: a recent-N window silently lets dupes through once the catalog
+  // outgrows it.
   const seen = new Set<string>();
-  const existing = await (await rest("products?select=name&order=created_at.desc&limit=400")).json();
-  for (const r of existing) seen.add(r.name);
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const res = await rest("products?select=name", {
+      headers: { Range: `${from}-${from + PAGE - 1}`, "Range-Unit": "items" },
+    });
+    const page = await res.json();
+    if (!Array.isArray(page) || page.length === 0) break;
+    for (const r of page) seen.add(r.name);
+    if (page.length < PAGE) break;
+  }
 
   const rows: Record<string, unknown>[] = [];
   let attempts = 0;

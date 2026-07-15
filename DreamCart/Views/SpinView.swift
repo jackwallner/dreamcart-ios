@@ -28,22 +28,27 @@ struct SpinView: View {
                     .foregroundStyle(Theme.ink(scheme))
                     .padding(.top, 30)
 
-                ZStack {
-                    wheel
-                        .frame(width: 300, height: 300)
-                        .rotationEffect(.degrees(angle))
-                    // hub
-                    Circle().fill(Theme.surface(scheme))
-                        .frame(width: 64, height: 64)
-                        .shadow(radius: 4)
-                    CoinIcon(size: 34)
-                    // pointer
-                    Triangle()
-                        .fill(Theme.ink(scheme))
-                        .frame(width: 26, height: 22)
-                        .offset(y: -158)
-                        .shadow(radius: 2)
+                GeometryReader { geo in
+                    let diameter = min(geo.size.width - 28, geo.size.height - 28)
+                    ZStack {
+                        wheel(diameter: diameter)
+                            .frame(width: diameter, height: diameter)
+                            .rotationEffect(.degrees(angle))
+                        Circle().fill(Theme.surface(scheme))
+                            .frame(width: diameter * 0.21, height: diameter * 0.21)
+                            .shadow(radius: 4)
+                        CoinIcon(size: diameter * 0.11)
+                        Triangle()
+                            .fill(Theme.ink(scheme))
+                            .frame(width: diameter * 0.09, height: diameter * 0.075)
+                            .offset(y: -(diameter * 0.53))
+                            .shadow(radius: 2)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                .frame(maxWidth: 420)
+                .aspectRatio(1, contentMode: .fit)
+                .padding(.horizontal, 14)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Prize wheel")
                 .accessibilityValue(prizes.map { "\($0) coins" }.joined(separator: ", "))
@@ -76,7 +81,7 @@ struct SpinView: View {
                               amount: prize,
                               subtitle: prize == prizes.max() ? "Huge. Go treat yourself."
                                                      : "Added to your wallet. Spin again tomorrow.") {
-                    withAnimation { showReward = false }
+                    if reduceMotion { showReward = false } else { withAnimation { showReward = false } }
                     dismiss()
                 }
             }
@@ -85,22 +90,29 @@ struct SpinView: View {
 
     private var canSpin: Bool { shop.me?.canSpin ?? false }
 
-    private var wheel: some View {
-        ZStack {
+    private func wheel(diameter: CGFloat) -> some View {
+        let labelRadius = diameter * 0.36
+        return ZStack {
             ForEach(0..<8, id: \.self) { i in
                 WheelSlice(index: i, total: 8)
                     .fill(sliceColors[i])
                 WheelSlice(index: i, total: 8)
                     .stroke(.white.opacity(0.5), lineWidth: 2)
-                // prize label, seated in the middle of slice i (i*45° from top)
+                let angle = Double(i) * 45
                 Text(Format.coinsShort(prizes[i]))
                     .font(.dcPrice)
                     .foregroundStyle(.white)
-                    .offset(x: 108 * sin(.pi * Double(i) / 4),
-                            y: -108 * cos(.pi * Double(i) / 4))
+                    .rotationEffect(.degrees(-angle + labelAngle(for: i)))
+                    .offset(x: labelRadius * sin(.pi * angle / 180),
+                            y: -labelRadius * cos(.pi * angle / 180))
             }
         }
         .overlay(Circle().stroke(Theme.gold, lineWidth: 6))
+    }
+
+    private func labelAngle(for index: Int) -> Double {
+        let center = Double(index) * 45
+        return center > 90 && center < 270 ? 180 : 0
     }
 
     private func doSpin() async {
@@ -112,19 +124,21 @@ struct SpinView: View {
             return
         }
         result = r
-        // Land the top pointer on the center of the winning slice (slice i is
-        // centered at i*45° clockwise from the top).
         let sliceCenter = Double(slice) * 45.0
-        // Normalize current angle out, add 5 full turns, then settle so the
-        // wheel always spins forward regardless of the previous rest position.
         let base = angle - angle.truncatingRemainder(dividingBy: 360)
-        let target = base + 360.0 * 5 - sliceCenter
-        withAnimation(reduceMotion ? .linear(duration: 0.15) : .easeOut(duration: 3.2)) {
+        let target = base + 360.0 * (reduceMotion ? 0 : 5) - sliceCenter
+        if reduceMotion {
             angle = target
+        } else {
+            withAnimation(.easeOut(duration: 3.2)) { angle = target }
+            try? await Task.sleep(nanoseconds: 3_300_000_000)
         }
-        try? await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 3.3))
         Haptics.celebrate()
-        withAnimation { showReward = true }
+        if reduceMotion {
+            showReward = true
+        } else {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { showReward = true }
+        }
         if let prize = r.prize {
             UIAccessibility.post(notification: .announcement, argument: "You won \(prize) coins")
         }
@@ -140,7 +154,6 @@ struct WheelSlice: Shape {
         let center = CGPoint(x: rect.midX, y: rect.midY)
         let radius = min(rect.width, rect.height) / 2
         let per = 360.0 / Double(total)
-        // slice i spans [i*per, (i+1)*per), with 0 at the top (pointer)
         let start = Angle(degrees: Double(index) * per - 90 - per / 2)
         let end = Angle(degrees: Double(index + 1) * per - 90 - per / 2)
         var p = Path()

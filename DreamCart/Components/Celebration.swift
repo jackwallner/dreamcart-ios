@@ -14,6 +14,7 @@ struct ConfettiPiece: Identifiable {
 
 struct ConfettiBurst: View {
     var coinsOnly = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pieces: [ConfettiPiece] = []
     @State private var go = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -33,11 +34,11 @@ struct ConfettiBurst: View {
                                 .frame(width: p.size, height: p.size * 1.6)
                         }
                     }
-                    .rotationEffect(.degrees(go ? p.rotation + 260 : p.rotation))
+                    .rotationEffect(.degrees(reduceMotion ? p.rotation : (go ? p.rotation + 260 : p.rotation)))
                     .position(x: p.x * geo.size.width,
-                              y: go ? geo.size.height * 1.05 : -40)
-                    .opacity(go ? 0 : 1)
-                    .animation(.easeIn(duration: 1.5).delay(p.delay), value: go)
+                              y: reduceMotion ? geo.size.height * 0.34 : (go ? geo.size.height * 1.05 : -40))
+                    .opacity(reduceMotion ? 0.75 : (go ? 0 : 1))
+                    .animation(reduceMotion ? nil : .easeIn(duration: 1.5).delay(p.delay), value: go)
                 }
             }
             .onAppear {
@@ -51,6 +52,7 @@ struct ConfettiBurst: View {
                         rotation: Double.random(in: 0...360),
                         isCoin: coinsOnly ? true : Bool.random())
                 }
+                guard !reduceMotion else { return }
                 go = true
             }
         }
@@ -58,7 +60,7 @@ struct ConfettiBurst: View {
     }
 }
 
-// Full-screen reward moment: big number, subtitle, confetti.
+// Full-screen reward moment: staged title, coin count, and completion action.
 struct RewardOverlay: View {
     let title: String
     let amount: Int
@@ -66,32 +68,48 @@ struct RewardOverlay: View {
     var coinsOnly = true
     let onDismiss: () -> Void
     @Environment(\.colorScheme) private var scheme
-    @State private var pop = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var stage = 0
+    @State private var glow = false
 
     var body: some View {
         ZStack {
             Rectangle().fill(.ultraThinMaterial).ignoresSafeArea()
                 .onTapGesture { onDismiss() }
-            if !reduceMotion { ConfettiBurst(coinsOnly: coinsOnly).ignoresSafeArea() }
+            LinearGradient(colors: [Theme.violet.opacity(0.35), .clear, Theme.pink.opacity(0.3)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            if !reduceMotion {
+                ConfettiBurst(coinsOnly: coinsOnly).ignoresSafeArea()
+            }
             VStack(spacing: 14) {
                 Text(title)
                     .font(.dcSection)
                     .foregroundStyle(Theme.subtle(scheme))
-                HStack(spacing: 8) {
-                    CoinIcon(size: 44)
-                    Text("+\(Format.coins(amount))")
-                        .font(.dcJumbo)
-                        .foregroundStyle(Theme.ink(scheme))
-                        .monospacedDigit()
+                    .opacity(stage >= 1 ? 1 : 0)
+                    .offset(y: stage >= 1 ? 0 : 8)
+                ZStack {
+                    Circle()
+                        .fill(Theme.gold.opacity(glow ? 0.2 : 0.08))
+                        .frame(width: 156, height: 156)
+                        .blur(radius: 18)
+                    HStack(spacing: 8) {
+                        CoinIcon(size: 44)
+                        Text("+\(Format.coins(amount))")
+                            .font(.dcJumbo)
+                            .foregroundStyle(Theme.ink(scheme))
+                            .monospacedDigit()
+                    }
                 }
-                .scaleEffect(pop ? 1 : 0.5)
-                .opacity(pop ? 1 : 0)
+                .scaleEffect(stage >= 2 ? 1 : 0.72)
+                .opacity(stage >= 2 ? 1 : 0)
                 Text(subtitle)
                     .font(.dcBodyText)
                     .foregroundStyle(Theme.subtle(scheme))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
+                    .opacity(stage >= 3 ? 1 : 0)
                 Button(action: onDismiss) {
                     Text("Nice")
                         .font(.dcButton)
@@ -102,15 +120,23 @@ struct RewardOverlay: View {
                 }
                 .padding(.horizontal, 60)
                 .padding(.top, 8)
+                .opacity(stage >= 3 ? 1 : 0)
             }
             .padding(28)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
+        .accessibilityLabel("\(title), \(Format.coins(amount)) coins. \(subtitle)")
         .onAppear {
-            if reduceMotion {
-                pop = true
-            } else {
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.5).delay(0.05)) { pop = true }
+            guard !reduceMotion else {
+                stage = 3
+                glow = true
+                return
             }
+            withAnimation(.easeOut(duration: 0.22)) { stage = 1 }
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.62).delay(0.18)) { stage = 2 }
+            withAnimation(.easeOut(duration: 0.3).delay(0.48)) { stage = 3 }
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true).delay(0.35)) { glow = true }
         }
     }
 }

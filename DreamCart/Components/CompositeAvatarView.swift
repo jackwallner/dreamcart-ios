@@ -1,30 +1,57 @@
 import SwiftUI
 import UIKit
 
-// Renders the dressing-room avatar by layering on-device garment cutouts over a
-// stylized body, ordered by slot. No network, no per-outfit AI generation — the
-// only cost is a one-time Vision segmentation per product, cached forever.
+// Renders the dressing-room avatar as a server-side editorial shot when one is
+// available, with an on-device paper-doll composite that remains usable offline.
 struct CompositeAvatarView: View {
     let look: AvatarLook
-    let picks: [String: Product]          // slot -> chosen piece
+    let picks: [String: Product]
     @Environment(\.colorScheme) private var scheme
-    @State private var cutouts: [String: UIImage] = [:]   // productId -> cutout
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var cutouts: [String: UIImage] = [:]
     @State private var failedCutouts: Set<String> = []
+    @State private var renderState: RenderState = .idle
+    @State private var renderAttempt = 0
+    @State private var requestedRenderKey: String?
+
+    private enum RenderState: Equatable {
+        case idle
+        case loading
+        case ready(String)
+        case failed(String)
+    }
 
     var body: some View {
         GeometryReader { geo in
-            ZStack {
-                bodyBase(geo.size)
-                ForEach(placedSlots, id: \.slot) { entry in
-                    if let product = picks[entry.slot] {
-                        piece(product, entry.placement, in: geo.size)
-                            .zIndex(entry.placement.z)
-                    }
-                }
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
+            editorialCanvas(in: geo.size)
+                .frame(width: geo.size.width, height: geo.size.height)
         }
-        .task(id: pickKey) { await loadCutouts() }
+        .task(id: pickKey) {
+            requestedRenderKey = nil
+            renderState = .idle
+            await loadCutouts(for: pickKey)
+        }
+        .task(id: renderTaskID) {
+            guard requestedRenderKey == renderKey else { return }
+            await loadEditorial(for: renderKey)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(look.label) outfit preview")
+        .accessibilityValue(renderAccessibilityValue)
+    }
+
+    private var chosenItems: [Product] { Array(picks.values) }
+    private var renderKey: String { Avatar.renderKey(look: look, items: chosenItems) }
+    private var renderTaskID: String { "\(renderKey)#\(renderAttempt)" }
+    private var pickKey: [String: String] { picks.mapValues(\.id) }
+
+    private var renderAccessibilityValue: String {
+        switch renderState {
+        case .idle: return "Composite preview"
+        case .loading: return "Rendering editorial preview"
+        case .ready: return "Editorial preview ready"
+        case .failed: return "Editorial preview unavailable, composite preview shown"
+        }
     }
 
     // Slots that actually have a piece, ordered back-to-front.
@@ -35,7 +62,101 @@ struct CompositeAvatarView: View {
             .sorted { $0.placement.z < $1.placement.z }
     }
 
-    private var pickKey: [String: String] { picks.mapValues(\.id) }
+    @ViewBuilder
+    private func editorialCanvas(in size: CGSize) -> some View {
+        ZStack {
+            compositeCanvas(in: size)
+            if renderState == .idle, !chosenItems.isEmpty {
+                VStack {
+                    Spacer()
+                    Button {
+                        requestedRenderKey = renderKey
+                        renderAttempt += 1
+                    } label: {
+                        Label("Render editorial look", systemImage: "sparkles.rectangle.stack")
+                            .font(.dcButton)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 11)
+                            .background(Theme.candy, in: Capsule())
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityIdentifier("renderEditorialLookButton")
+                    .padding(16)
+                }
+            }
+            switch renderState {
+            case .ready(let url):
+                AsyncImage(url: URL(string: url)) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable()
+                            .scaledToFill()
+                            .transition(.opacity)
+                    case .empty:
+                        renderStatus("Finishing editorial look…", progress: true)
+                    case .failure:
+                        renderStatus("Editorial image unavailable", retry: true)
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+                .id("\(url)#\(renderAttempt)")
+                .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
+            case .loading:
+                renderStatus("Rendering editorial look…", progress: true)
+            case .failed(let message):
+                renderStatus(message, retry: true)
+            case .idle:
+                EmptyView()
+            }
+        }
+    }
+
+    private func compositeCanvas(in size: CGSize) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: Theme.corner, style: .continuous)
+                .fill(Theme.candy.opacity(0.07))
+            bodyBase(size)
+            ForEach(placedSlots, id: \.slot) { entry in
+                if let product = picks[entry.slot] {
+                    piece(product, entry.placement, in: size)
+                        .zIndex(entry.placement.z)
+                }
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+
+    @ViewBuilder
+    private func renderStatus(_ message: String, progress: Bool = false, retry: Bool = false) -> some View {
+        VStack(spacing: 8) {
+            if progress {
+                ProgressView().tint(Theme.violet)
+            } else {
+                Image(systemName: "sparkles.rectangle.stack")
+                    .font(.dcIconL)
+                    .foregroundStyle(Theme.violet)
+            }
+            Text(message)
+                .font(.dcLabel)
+                .foregroundStyle(Theme.ink(scheme))
+                .multilineTextAlignment(.center)
+            if retry {
+                Button("Try again") {
+                    requestedRenderKey = renderKey
+                    renderAttempt += 1
+                }
+                    .font(.dcLabel)
+                    .foregroundStyle(Theme.violet)
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.violet)
+            }
+        }
+        .padding(14)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(16)
+    }
 
     @ViewBuilder
     private func piece(_ product: Product, _ p: SlotPlacement, in size: CGSize) -> some View {
@@ -45,9 +166,20 @@ struct CompositeAvatarView: View {
                     .shadow(color: .black.opacity(0.18), radius: 5, y: 3)
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             } else if failedCutouts.contains(product.id) {
-                Image(systemName: "photo.badge.exclamationmark")
-                    .font(.dcIconM)
-                    .foregroundStyle(Theme.subtle(scheme))
+                ZStack {
+                    RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
+                    VStack(spacing: 4) {
+                        Image(systemName: "photo.badge.exclamationmark")
+                            .font(.dcIconM)
+                        Text("Using product image")
+                            .font(.dcCaption)
+                            .multilineTextAlignment(.center)
+                    }
+                    .foregroundStyle(.white)
+                    .padding(7)
+                    .background(.black.opacity(0.58), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .accessibilityLabel("Couldn’t prepare \(product.name). Showing product image instead.")
             } else {
                 ProgressView()
                     .tint(Theme.violet)
@@ -57,10 +189,10 @@ struct CompositeAvatarView: View {
             }
         }
         .frame(width: size.width * p.w, height: size.height * p.h)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .position(x: size.width * p.cx, y: size.height * p.cy)
     }
 
-    // A simple tinted figure so the pieces read as "worn," not floating.
     private func bodyBase(_ size: CGSize) -> some View {
         Image(systemName: "figure.stand")
             .resizable().scaledToFit()
@@ -69,11 +201,36 @@ struct CompositeAvatarView: View {
             .position(x: size.width * 0.5, y: size.height * 0.52)
     }
 
-    private func loadCutouts() async {
-        for product in picks.values where cutouts[product.id] == nil {
+    private func loadEditorial(for key: String) async {
+        guard !chosenItems.isEmpty else {
+            guard key == renderKey else { return }
+            renderState = .idle
+            return
+        }
+        guard key == renderKey else { return }
+        renderState = .loading
+        do {
+            let url = try await Avatar.render(look: look, items: chosenItems)
+            guard !Task.isCancelled, key == renderKey else { return }
+            renderState = .ready(url)
+        } catch {
+            guard !Task.isCancelled, key == renderKey else { return }
+            renderState = .failed(error.localizedDescription)
+        }
+    }
+
+    private func loadCutouts(for key: [String: String]) async {
+        for product in chosenItems where cutouts[product.id] == nil {
+            guard !Task.isCancelled, key == pickKey else { return }
             if let img = await AvatarCutoutCache.shared.cutout(for: product) {
-                withAnimation(.easeOut(duration: 0.25)) { cutouts[product.id] = img }
+                guard !Task.isCancelled, key == pickKey else { return }
+                if reduceMotion {
+                    cutouts[product.id] = img
+                } else {
+                    withAnimation(.easeOut(duration: 0.25)) { cutouts[product.id] = img }
+                }
             } else {
+                guard !Task.isCancelled, key == pickKey else { return }
                 failedCutouts.insert(product.id)
             }
         }

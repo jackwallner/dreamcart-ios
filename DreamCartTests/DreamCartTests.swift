@@ -67,6 +67,60 @@ final class DreamCartTests: XCTestCase {
         XCTAssertTrue(shop.search("zzz").isEmpty)
     }
 
+    @MainActor
+    func testForYouExcludesOwnedCartedAndDismissedProducts() {
+        let shop = ShopStore()
+        shop.products = [
+            makeProduct(id: "owned", price: 100),
+            makeProduct(id: "cart", price: 100),
+            makeProduct(id: "dismissed", price: 100),
+            makeProduct(id: "eligible", price: 100),
+        ]
+        shop.ownedIds = ["owned"]
+        shop.cartIds = ["cart"]
+        shop.dismissedRecommendationIds = ["dismissed"]
+
+        XCTAssertEqual(shop.forYouProducts.map(\.id), ["eligible"])
+    }
+
+    @MainActor
+    func testRecommendationsPreferMatchingStyleAndDifferentComplementarySlot() {
+        let shop = ShopStore()
+        let anchor = makeProduct(id: "anchor", price: 100, styleTags: ["minimal"], slot: "top")
+        shop.products = [
+            anchor,
+            makeProduct(id: "same-slot", price: 100, styleTags: ["minimal"], slot: "top"),
+            makeProduct(id: "shoes", price: 100, styleTags: ["minimal"], slot: "footwear"),
+            makeProduct(id: "random", price: 100, styleTags: ["party"], slot: "bottom"),
+        ]
+
+        XCTAssertEqual(shop.complementaryProducts(for: anchor).first?.id, "shoes")
+    }
+
+    @MainActor
+    func testAddToCartIsIdempotent() {
+        let shop = ShopStore()
+        XCTAssertTrue(shop.addToCart("x"))
+        XCTAssertFalse(shop.addToCart("x"))
+        XCTAssertEqual(shop.cartIds, ["x"])
+    }
+
+    func testRouteParsing() {
+        XCTAssertEqual(AppRoute.parse(URL(string: "dreamcart://new-drops")!), .newDrops)
+        XCTAssertEqual(AppRoute.parse(notificationUserInfo: ["route": "new-drops"]), .newDrops)
+        XCTAssertNil(AppRoute.parse(URL(string: "dreamcart://unknown")!))
+    }
+
+    @MainActor
+    func testDeferredRouteSelectsTodayWhenReady() {
+        let router = RouteCoordinator()
+        router.receive(.newDrops)
+        XCTAssertNil(router.consumePendingRoute())
+        router.setReadiness(signedIn: true, catalogReady: true)
+        XCTAssertEqual(router.consumePendingRoute(), .newDrops)
+        XCTAssertEqual(router.selectedTab, .today)
+    }
+
     func testHexColorParsingDoesNotCrash() {
         _ = Color(hex: "#7C3AED")
         _ = Color(hex: "FFFFFF")
@@ -76,9 +130,10 @@ final class DreamCartTests: XCTestCase {
     // MARK: helpers
 
     private func makeProduct(id: String, price: Int, name: String = "Item",
-                             color: String = "Black") -> ProductWithBrand {
-        ProductWithBrand(id: id, brandId: "b1", name: name, category: "top", slot: "top",
-                         styleTags: ["minimal"], colorName: color, price: price, rarity: "common",
+                             color: String = "Black", styleTags: [String] = ["minimal"],
+                             slot: String = "top") -> ProductWithBrand {
+        ProductWithBrand(id: id, brandId: "b1", name: name, category: slot, slot: slot,
+                         styleTags: styleTags, colorName: color, price: price, rarity: "common",
                          description: "", imageUrl: "", dropDate: nil, brands: nil)
     }
 
