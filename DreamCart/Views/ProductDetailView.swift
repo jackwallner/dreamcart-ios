@@ -8,6 +8,8 @@ struct ProductDetailView: View {
     @State private var showCheckout = false
     @State private var addedPulse = false
     @State private var unboxing: [Product]? = nil
+    @State private var favoriteError: String?
+    @State private var updatingFavorite = false
 
     private var owned: Bool { shop.ownedIds.contains(product.id) }
     private var inCart: Bool { shop.inCart(product.id) }
@@ -75,17 +77,41 @@ struct ProductDetailView: View {
                 UnboxingView(items: items) { withAnimation { unboxing = nil } }
             }
         }
+        .alert("Favorite not updated", isPresented: Binding(
+            get: { favoriteError != nil },
+            set: { if !$0 { favoriteError = nil } }
+        )) {
+            Button("Retry") { Task { await updateFavorite() } }
+            Button("Cancel", role: .cancel) { favoriteError = nil }
+        } message: {
+            Text(favoriteError ?? "")
+        }
     }
 
     private var favoriteButton: some View {
         Button {
-            Task { await shop.toggleFavorite(product.id) }
+            Task { await updateFavorite() }
         } label: {
             Image(systemName: shop.isFavorite(product.id) ? "heart.fill" : "heart")
                 .font(.dcIconM)
                 .foregroundStyle(shop.isFavorite(product.id) ? Theme.pink : .white)
                 .padding(10)
                 .background(.black.opacity(0.35), in: Circle())
+        }
+        .disabled(updatingFavorite)
+        .accessibilityLabel(shop.isFavorite(product.id) ? "Remove from favorites" : "Add to favorites")
+    }
+
+    private func updateFavorite() async {
+        guard !updatingFavorite else { return }
+        updatingFavorite = true
+        defer { updatingFavorite = false }
+        do {
+            try await shop.toggleFavorite(product.id)
+            favoriteError = nil
+        } catch {
+            Haptics.warning()
+            favoriteError = error.localizedDescription
         }
     }
 
@@ -134,7 +160,7 @@ struct ProductDetailView: View {
                 } label: {
                     HStack(spacing: 7) {
                         Image(systemName: inCart ? "creditcard.fill" : "cart.badge.plus")
-                        Text(inCart ? "Check out" : "Add to cart")
+                        Text(inCart ? "Go to checkout" : "Add to cart")
                     }
                     .font(.dcButton)
                     .foregroundStyle(.white)

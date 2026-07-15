@@ -24,25 +24,35 @@ struct OutfitBuilderView: View {
     @State private var pickingSlot: SlotID? = nil
     @State private var name = ""
     @State private var savedFlash = false
+    @State private var saving = false
+    @State private var deletingId: String?
+    @State private var actionError: String?
+    @State private var retryAction: (() -> Void)?
+    @State private var scrollRequest = 0
 
     private var look: AvatarLook { AvatarLook(rawValue: lookRaw) ?? .aria }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
-                if shop.closet.isEmpty {
-                    EmptyState(icon: "hanger", title: "Nothing to style yet",
-                               message: "Buy a few pieces, then come back to dress up your avatar.")
-                        .padding(.top, 40)
-                } else {
-                    avatarPreview
-                    lookPicker
-                    slotList
-                    saveRow
-                    if !shop.outfits.isEmpty { savedLooks }
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 18) {
+                    if shop.closet.isEmpty {
+                        EmptyState(icon: "hanger", title: "Nothing to style yet",
+                                   message: "Buy a few pieces, then come back to dress up your avatar.")
+                            .padding(.top, 40)
+                    } else {
+                        avatarPreview.id("avatar-preview")
+                        lookPicker
+                        slotList
+                        saveRow
+                        if !shop.outfits.isEmpty { savedLooks }
+                    }
                 }
+                .padding(16)
             }
-            .padding(16)
+            .onChange(of: scrollRequest) { _, _ in
+                withAnimation { proxy.scrollTo("avatar-preview", anchor: .top) }
+            }
         }
         .background(Theme.bg(scheme))
         .navigationTitle("Dressing room")
@@ -54,6 +64,17 @@ struct OutfitBuilderView: View {
                 pickingSlot = nil
                 Haptics.soft()
             }
+        }
+        .alert("Look not updated", isPresented: Binding(
+            get: { actionError != nil },
+            set: { if !$0 { actionError = nil; retryAction = nil } }
+        )) {
+            if retryAction != nil {
+                Button("Retry") { let action = retryAction; actionError = nil; action?() }
+            }
+            Button("Cancel", role: .cancel) { retryAction = nil }
+        } message: {
+            Text(actionError ?? "")
         }
     }
 
@@ -144,6 +165,7 @@ struct OutfitBuilderView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!available)
+                .accessibilityAddTraits(picks[slot.key] != nil ? .isSelected : [])
             }
         }
     }
@@ -155,16 +177,10 @@ struct OutfitBuilderView: View {
                 .padding(14)
                 .cardStyle(scheme)
             CandyButton(title: savedFlash ? "Saved!" : "Save look", systemImage: "square.and.arrow.down.fill",
-                        enabled: !picks.isEmpty) {
-                Task {
-                    let items = picks.mapValues { $0.id }
-                    let ok = await shop.saveOutfit(name: name.isEmpty ? "My Look" : name, items: items)
-                    if ok {
-                        savedFlash = true; picks = [:]; name = ""
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { savedFlash = false }
-                    }
-                }
+                        enabled: !picks.isEmpty && !saving) {
+                saveCurrentLook()
             }
+            if saving { ProgressView("Saving look…").font(.dcSub) }
         }
     }
 
@@ -181,16 +197,18 @@ struct OutfitBuilderView: View {
                             let items = (outfit.outfitItems ?? []).compactMap { $0.products }
                             picks = Dictionary(items.map { ($0.slot, $0) }, uniquingKeysWith: { a, _ in a })
                             Haptics.soft()
+                            scrollRequest += 1
                         } label: {
                             Text("Try on").font(.dcLabel)
                                 .foregroundStyle(Theme.violet)
                         }
                         Button {
-                            Task { await shop.deleteOutfit(outfit.id) }
+                            delete(outfit.id)
                         } label: {
                             Image(systemName: "trash").font(.dcIconS).foregroundStyle(Theme.subtle(scheme))
                         }
                         .padding(.leading, 8)
+                        .disabled(deletingId != nil)
                     }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -206,6 +224,44 @@ struct OutfitBuilderView: View {
                 }
                 .padding(12)
                 .cardStyle(scheme)
+            }
+        }
+    }
+
+    private func saveCurrentLook() {
+        guard !saving else { return }
+        let items = picks.mapValues { $0.id }
+        let outfitName = name.isEmpty ? "My Look" : name
+        Task {
+            saving = true
+            defer { saving = false }
+            do {
+                try await shop.saveOutfit(name: outfitName, items: items)
+                savedFlash = true
+                actionError = nil
+                retryAction = nil
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { savedFlash = false }
+            } catch {
+                Haptics.warning()
+                actionError = error.localizedDescription
+                retryAction = { saveCurrentLook() }
+            }
+        }
+    }
+
+    private func delete(_ id: String) {
+        guard deletingId == nil else { return }
+        Task {
+            deletingId = id
+            defer { deletingId = nil }
+            do {
+                try await shop.deleteOutfit(id)
+                actionError = nil
+                retryAction = nil
+            } catch {
+                Haptics.warning()
+                actionError = error.localizedDescription
+                retryAction = { delete(id) }
             }
         }
     }

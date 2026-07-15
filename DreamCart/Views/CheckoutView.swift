@@ -19,15 +19,12 @@ struct CheckoutView: View {
     @AppStorage("shipCity")   private var city = ""
     @AppStorage("shipState")  private var state = ""
     @AppStorage("shipZip")    private var zip = ""
-    @AppStorage("shipMethod") private var methodRaw = ShipMethod.standard.rawValue
 
     @State private var placing = false
     @State private var errorMessage: String?
     @FocusState private var focused: Field?
 
     private enum Field { case name, street, city, state, zip }
-
-    private var method: ShipMethod { ShipMethod(rawValue: methodRaw) ?? .standard }
 
     // Virtual receipt math. Coins -> pretend dollars; tax is a flat rate on the
     // subtotal; shipping is listed then discounted to free for the dopamine.
@@ -36,7 +33,7 @@ struct CheckoutView: View {
     private var orderTotal: Double { subtotal + tax }
 
     private var addressComplete: Bool {
-        [name, street, city, zip].allSatisfy { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        [name, street, city, state, zip].allSatisfy { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
     }
     private var canPlace: Bool { addressComplete && shop.canAfford && !placing }
 
@@ -45,7 +42,6 @@ struct CheckoutView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     addressCard
-                    shippingCard
                     summaryCard
                     receiptCard
                     Text("Virtual delivery — no real address is needed and nothing ships. Dollar amounts are imaginary; you pay only in coins.")
@@ -83,6 +79,9 @@ struct CheckoutView: View {
     private var addressCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             cardHeader("shippingbox.fill", "Shipping address")
+            Text("Use a pretend address. This fictional game data is saved only for checkout convenience and is never used for shipping.")
+                .font(.dcCaption)
+                .foregroundStyle(Theme.subtle(scheme))
             field("Full name", text: $name, field: .name, content: .name)
             field("Street address", text: $street, field: .street, content: .fullStreetAddress)
             HStack(spacing: 10) {
@@ -108,41 +107,6 @@ struct CheckoutView: View {
             .background(Theme.bg(scheme), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(Theme.subtle(scheme).opacity(0.2)))
-    }
-
-    // MARK: shipping method
-
-    private var shippingCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            cardHeader("shippingbox", "Delivery")
-            ForEach(ShipMethod.allCases) { m in
-                Button {
-                    Haptics.select(); methodRaw = m.rawValue
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: method == m ? "largecircle.fill.circle" : "circle")
-                            .font(.dcIconL)
-                            .foregroundStyle(method == m ? Theme.violet : Theme.subtle(scheme).opacity(0.5))
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(m.title).font(.dcBody).foregroundStyle(Theme.ink(scheme))
-                            Text(m.eta).font(.dcSub).foregroundStyle(Theme.subtle(scheme))
-                        }
-                        Spacer()
-                        HStack(spacing: 6) {
-                            Text(Format.money(m.listPrice))
-                                .font(.dcSub)
-                                .foregroundStyle(Theme.subtle(scheme))
-                                .strikethrough()
-                            Text("FREE").font(.dcLabel).foregroundStyle(.green)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(16)
-        .cardStyle(scheme)
     }
 
     // MARK: item summary
@@ -208,7 +172,7 @@ struct CheckoutView: View {
                 Text("You need \(Format.coins(shop.cartTotal - shop.coins)) more coins")
                     .font(.dcLabel).foregroundStyle(Theme.pink)
             } else if !addressComplete {
-                Text("Add your shipping address to place the order")
+                Text("Add a pretend address to place the order")
                     .font(.dcSub).foregroundStyle(Theme.subtle(scheme))
             }
             CandyButton(title: placing ? "Placing order…" : "Place order",
@@ -253,13 +217,4 @@ struct CheckoutView: View {
             Text(title).font(.dcCard).foregroundStyle(Theme.ink(scheme))
         }
     }
-}
-
-enum ShipMethod: String, CaseIterable, Identifiable {
-    case standard, express
-
-    var id: String { rawValue }
-    var title: String { self == .standard ? "Standard" : "Express" }
-    var eta: String { self == .standard ? "Arrives in your closet instantly" : "Instant — but fancier" }
-    var listPrice: Double { self == .standard ? 9.99 : 24.99 }
 }

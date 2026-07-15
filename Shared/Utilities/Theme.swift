@@ -42,8 +42,8 @@ enum Theme {
 
     // Typography: editorial serif (New York) for display/headline moments so the
     // app reads like a fashion catalog; plain SF for everything functional.
-    static func display(_ size: CGFloat, _ weight: Font.Weight = .semibold) -> Font {
-        .system(size: size, weight: weight, design: .serif)
+    static func display(_ style: Font.TextStyle, _ weight: Font.Weight = .semibold) -> Font {
+        .system(style, design: .serif, weight: weight)
     }
 
     /// New York (serif) as a UIFont — used to make navigation-bar titles match
@@ -51,7 +51,7 @@ enum Theme {
     static func serifUIFont(_ size: CGFloat, _ weight: UIFont.Weight) -> UIFont {
         let base = UIFont.systemFont(ofSize: size, weight: weight)
         guard let d = base.fontDescriptor.withDesign(.serif) else { return base }
-        return UIFont(descriptor: d, size: size)
+        return UIFontMetrics.default.scaledFont(for: UIFont(descriptor: d, size: size))
     }
 
     /// Make every UINavigationBar large + inline title render in serif so the
@@ -91,33 +91,33 @@ enum Theme {
 // a raw .system size — so the whole app reads as one catalog.
 extension Font {
     // Editorial serif
-    static let dcHero     = Theme.display(34, .bold)      // splash, welcome, unboxing
-    static let dcTitle    = Theme.display(24, .bold)      // page titles, product name
-    static let dcSection  = Theme.display(20, .bold)      // section headers
-    static let dcCard     = Theme.display(18, .bold)      // card headlines
-    static let dcItem     = Theme.display(15, .semibold)  // product names on tiles/rows
+    static let dcHero     = Theme.display(.largeTitle, .bold) // splash, welcome, unboxing
+    static let dcTitle    = Theme.display(.title, .bold)      // page titles, product name
+    static let dcSection  = Theme.display(.title2, .bold)     // section headers
+    static let dcCard     = Theme.display(.title3, .bold)     // card headlines
+    static let dcItem     = Theme.display(.headline, .semibold) // product names on tiles/rows
 
     // Functional SF
-    static let dcJumbo    = Font.system(size: 54, weight: .heavy)     // reward numerals
-    static let dcStat     = Font.system(size: 20, weight: .heavy)     // stat numbers
-    static let dcNumeral  = Font.system(size: 17, weight: .heavy)     // wallet balance
-    static let dcPrice    = Font.system(size: 15, weight: .heavy)     // prices, deltas
-    static let dcButton   = Font.system(size: 17, weight: .bold)      // CTAs
-    static let dcBody     = Font.system(size: 15, weight: .semibold)  // rows, primary labels
-    static let dcBodyText = Font.system(size: 15, weight: .medium)    // paragraphs
-    static let dcSub      = Font.system(size: 13, weight: .medium)    // secondary text
-    static let dcLabel    = Font.system(size: 13, weight: .bold)      // small action links
-    static let dcCaption  = Font.system(size: 11, weight: .medium)    // fine print
-    static let dcOverline = Font.system(size: 11, weight: .heavy)     // uppercase micro-labels
-    static let dcBadge    = Font.system(size: 9, weight: .black)      // NEW / rarity chips
+    static let dcJumbo    = Font.system(.largeTitle, weight: .heavy) // reward numerals
+    static let dcStat     = Font.system(.title2, weight: .heavy)     // stat numbers
+    static let dcNumeral  = Font.system(.headline, weight: .heavy)   // wallet balance
+    static let dcPrice    = Font.system(.subheadline, weight: .heavy) // prices, deltas
+    static let dcButton   = Font.system(.headline, weight: .bold)    // CTAs
+    static let dcBody     = Font.system(.body, weight: .semibold)    // rows, primary labels
+    static let dcBodyText = Font.system(.body, weight: .medium)      // paragraphs
+    static let dcSub      = Font.system(.subheadline, weight: .medium) // secondary text
+    static let dcLabel    = Font.system(.subheadline, weight: .bold) // small action links
+    static let dcCaption  = Font.system(.caption, weight: .medium)   // fine print
+    static let dcOverline = Font.system(.caption, weight: .heavy)    // uppercase micro-labels
+    static let dcBadge    = Font.system(.caption2, weight: .black)   // NEW / rarity chips
 
     // SF Symbols use a shared size scale. Weight belongs to the token so icons
     // at the same hierarchy level keep the same visual density.
-    static let dcIconS    = Font.system(size: 14, weight: .medium)    // inline controls, chevrons
-    static let dcIconM    = Font.system(size: 18, weight: .semibold)  // rows, compact actions
-    static let dcIconL    = Font.system(size: 24, weight: .bold)      // feature and purchase icons
-    static let dcIconXL   = Font.system(size: 44, weight: .medium)    // empty states, illustrations
-    static let dcIconHero = Font.system(size: 78, weight: .semibold)  // onboarding artwork
+    static let dcIconS    = Font.system(.subheadline, weight: .medium)
+    static let dcIconM    = Font.system(.title3, weight: .semibold)
+    static let dcIconL    = Font.system(.title, weight: .bold)
+    static let dcIconXL   = Font.system(.largeTitle, weight: .medium)
+    static let dcIconHero = Font.system(.largeTitle, weight: .semibold)
 }
 
 // User-selectable appearance. Light is the default brand look.

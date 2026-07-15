@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct SpinView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Must match the server wheel in spin() — slice i pays prizes[i].
     private let prizes = [50, 100, 150, 250, 400, 600, 800, 1000]
@@ -42,6 +44,9 @@ struct SpinView: View {
                         .offset(y: -158)
                         .shadow(radius: 2)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Prize wheel")
+                .accessibilityValue(prizes.map { "\($0) coins" }.joined(separator: ", "))
 
                 Spacer()
 
@@ -62,13 +67,14 @@ struct SpinView: View {
                     .font(.dcBody)
                     .foregroundStyle(Theme.subtle(scheme))
                     .padding(.bottom, 20)
+                    .disabled(spinning)
             }
         }
         .overlay {
             if showReward, let r = result, let prize = r.prize {
-                RewardOverlay(title: prize >= 800 ? "JACKPOT!" : "You won",
+                RewardOverlay(title: prize == prizes.max() ? "JACKPOT!" : "You won",
                               amount: prize,
-                              subtitle: prize >= 800 ? "Huge. Go treat yourself."
+                              subtitle: prize == prizes.max() ? "Huge. Go treat yourself."
                                                      : "Added to your wallet. Spin again tomorrow.") {
                     withAnimation { showReward = false }
                     dismiss()
@@ -113,12 +119,15 @@ struct SpinView: View {
         // wheel always spins forward regardless of the previous rest position.
         let base = angle - angle.truncatingRemainder(dividingBy: 360)
         let target = base + 360.0 * 5 - sliceCenter
-        withAnimation(.easeOut(duration: 3.2)) {
+        withAnimation(reduceMotion ? .linear(duration: 0.15) : .easeOut(duration: 3.2)) {
             angle = target
         }
-        try? await Task.sleep(nanoseconds: 3_300_000_000)
+        try? await Task.sleep(for: .seconds(reduceMotion ? 0.2 : 3.3))
         Haptics.celebrate()
         withAnimation { showReward = true }
+        if let prize = r.prize {
+            UIAccessibility.post(notification: .announcement, argument: "You won \(prize) coins")
+        }
         spinning = false
     }
 }

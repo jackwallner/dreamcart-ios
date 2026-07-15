@@ -8,6 +8,7 @@ struct ProfileView: View {
     @State private var showLedger = false
     @State private var confirmDelete = false
     @State private var working = false
+    @State private var deleteError: String?
     @AppStorage("appearance") private var appearance = Appearance.light.rawValue
 
     var body: some View {
@@ -31,6 +32,31 @@ struct ProfileView: View {
             .navigationTitle("You")
             .walletToolbar($showCoinShop)
             .sheet(isPresented: $showLedger) { LedgerView() }
+            .disabled(working)
+        }
+        .overlay {
+            if working {
+                ZStack {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                    VStack(spacing: 12) {
+                        ProgressView().controlSize(.large)
+                        Text("Deleting your account…").font(.dcBody)
+                    }
+                    .padding(24)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Theme.cardCorner))
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Deleting your account")
+            }
+        }
+        .alert("Account not deleted", isPresented: Binding(
+            get: { deleteError != nil },
+            set: { if !$0 { deleteError = nil } }
+        )) {
+            Button("Try again") { deleteAccount() }
+            Button("Cancel", role: .cancel) { deleteError = nil }
+        } message: {
+            Text(deleteError ?? "")
         }
     }
 
@@ -140,9 +166,24 @@ struct ProfileView: View {
         .confirmationDialog("Delete your account? This erases your closet, coins, and streak for good.",
                             isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete everything", role: .destructive) {
-                Task { working = true; try? await auth.deleteAccount(); working = false }
+                deleteAccount()
             }
             Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    private func deleteAccount() {
+        guard !working else { return }
+        Task {
+            working = true
+            defer { working = false }
+            do {
+                try await auth.deleteAccount()
+                deleteError = nil
+            } catch {
+                Haptics.warning()
+                deleteError = error.localizedDescription
+            }
         }
     }
 }
@@ -154,26 +195,33 @@ struct LedgerView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(shop.ledger) { e in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(label(e.reason))
-                                .font(.dcBody)
-                            Text(e.createdAt.prefix(10))
-                                .font(.dcSub)
-                                .foregroundStyle(Theme.subtle(scheme))
+            Group {
+                if shop.ledger.isEmpty {
+                    EmptyState(icon: "clock.arrow.circlepath", title: "No coin activity yet",
+                               message: "Daily drops, spins, shopping, and coin packs will appear here.")
+                } else {
+                    List {
+                        ForEach(shop.ledger) { e in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(label(e.reason))
+                                        .font(.dcBody)
+                                    Text(e.createdAt.prefix(10))
+                                        .font(.dcSub)
+                                        .foregroundStyle(Theme.subtle(scheme))
+                                }
+                                Spacer()
+                                Text("\(e.delta > 0 ? "+" : "")\(Format.coins(e.delta))")
+                                    .font(.dcPrice)
+                                    .foregroundStyle(e.delta > 0 ? .green : Theme.pink)
+                                    .monospacedDigit()
+                            }
+                            .listRowBackground(Theme.surface(scheme))
                         }
-                        Spacer()
-                        Text("\(e.delta > 0 ? "+" : "")\(Format.coins(e.delta))")
-                            .font(.dcPrice)
-                            .foregroundStyle(e.delta > 0 ? .green : Theme.pink)
-                            .monospacedDigit()
                     }
-                    .listRowBackground(Theme.surface(scheme))
+                    .scrollContentBackground(.hidden)
                 }
             }
-            .scrollContentBackground(.hidden)
             .background(Theme.bg(scheme))
             .navigationTitle("Coin history")
             .navigationBarTitleDisplayMode(.inline)

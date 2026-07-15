@@ -14,6 +14,7 @@ final class StoreController {
     var prices: [String: String] = [:]     // productId -> localized price
     var isReady = false
     var isPurchasing = false
+    var isRestoring = false
     var lastError: String?
 
     #if HAS_REVENUECAT
@@ -22,6 +23,9 @@ final class StoreController {
 
     func configure(userId: String?) {
         #if HAS_REVENUECAT
+        #if targetEnvironment(simulator)
+        return
+        #else
         Purchases.logLevel = .error
         if !Purchases.isConfigured {
             let builder = Configuration.Builder(withAPIKey: Config.revenueCatKey)
@@ -31,6 +35,7 @@ final class StoreController {
             Purchases.shared.logIn(userId) { _, _, _ in }
         }
         Task { await loadProducts() }
+        #endif
         #endif
     }
 
@@ -64,6 +69,10 @@ final class StoreController {
     /// reconcile step).
     func purchase(_ pack: CoinPack) async -> Bool {
         #if HAS_REVENUECAT
+        #if targetEnvironment(simulator)
+        lastError = "Coin packs are available on a device or TestFlight build."
+        return false
+        #else
         guard let product = storeProducts[pack.productId] else {
             await loadProducts()
             guard let retry = storeProducts[pack.productId] else {
@@ -73,6 +82,7 @@ final class StoreController {
             return await run(retry)
         }
         return await run(product)
+        #endif
         #else
         return false
         #endif
@@ -96,7 +106,20 @@ final class StoreController {
 
     func restore() async {
         #if HAS_REVENUECAT
-        _ = try? await Purchases.shared.restorePurchases()
+        #if targetEnvironment(simulator)
+        lastError = "Restore Purchases is available on a device or TestFlight build."
+        return
+        #else
+        guard !isRestoring else { return }
+        isRestoring = true
+        lastError = nil
+        defer { isRestoring = false }
+        do {
+            _ = try await Purchases.shared.restorePurchases()
+        } catch {
+            lastError = error.localizedDescription
+        }
+        #endif
         #endif
     }
 }

@@ -22,6 +22,7 @@ final class ShopStore {
     var loadError: String?
 
     private let sb = SupabaseClient.shared
+    private var catalogGeneration = 0
 
     var coins: Int { me?.coins ?? 0 }
     var brandById: [String: Brand] { Dictionary(brands.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a }) }
@@ -29,6 +30,8 @@ final class ShopStore {
     // MARK: bulk load
 
     func refreshAll() async {
+        catalogGeneration += 1
+        let generation = catalogGeneration
         isLoading = true
         loadError = nil
         defer { isLoading = false }
@@ -36,14 +39,27 @@ final class ShopStore {
             async let m: MeSnapshot = sb.rpc("me")
             async let b: [Brand] = sb.select("brands?select=*&order=sort.asc")
             async let p: [ProductWithBrand] =
-                sb.select("products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc&limit=1000")
+                sb.select("products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc&limit=200")
             me = try await m
             brands = try await b
             products = try await p
             await loadCloset()
             await loadFavorites()
+            Task { await loadRemainingCatalog(generation: generation) }
         } catch {
             loadError = (error as? SBError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private func loadRemainingCatalog(generation: Int) async {
+        do {
+            let remaining: [ProductWithBrand] = try await sb.select(
+                "products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc&offset=200&limit=800")
+            guard generation == catalogGeneration else { return }
+            let existing = Set(products.map(\.id))
+            products.append(contentsOf: remaining.filter { !existing.contains($0.id) })
+        } catch {
+            // The first page remains usable. Pull to refresh retries the rest.
         }
     }
 
@@ -126,16 +142,26 @@ final class ShopStore {
 
     func isFavorite(_ id: String) -> Bool { favoriteIds.contains(id) }
 
-    func toggleFavorite(_ id: String) async {
+    func toggleFavorite(_ id: String) async throws {
         if favoriteIds.contains(id) {
             favoriteIds.remove(id)
-            _ = try? await sb.write("favorites?product_id=eq.\(id)", method: "DELETE", body: nil)
+            do {
+                _ = try await sb.write("favorites?product_id=eq.\(id)", method: "DELETE", body: nil)
+            } catch {
+                favoriteIds.insert(id)
+                throw error
+            }
         } else {
+            guard let uid = await sb.currentUserId else { throw ShopActionError.signedOut }
             favoriteIds.insert(id)
-            Haptics.tap()
-            guard let uid = await sb.currentUserId else { return }
-            _ = try? await sb.write("favorites", method: "POST",
-                                    body: ["user_id": uid, "product_id": id])
+            do {
+                _ = try await sb.write("favorites", method: "POST",
+                                       body: ["user_id": uid, "product_id": id])
+                Haptics.tap()
+            } catch {
+                favoriteIds.remove(id)
+                throw error
+            }
         }
     }
 
@@ -149,25 +175,26 @@ final class ShopStore {
     }
 
     /// Save a look: slot → productId. Creates the outfit then its items.
-    @discardableResult
-    func saveOutfit(name: String, items: [String: String]) async -> Bool {
-        guard let uid = await sb.currentUserId else { return false }
+    func saveOutfit(name: String, items: [String: String]) async throws {
+        guard let uid = await sb.currentUserId else { throw ShopActionError.signedOut }
         struct Created: Decodable { let id: String }
-        guard
-            let data = try? await sb.write("outfits", method: "POST",
-                                           body: ["user_id": uid, "name": name]),
-            let created = try? SupabaseClient.decoder.decode([Created].self, from: data),
-            let outfit = created.first
-        else { return false }
+        let data = try await sb.write("outfits", method: "POST",
+                                      body: ["user_id": uid, "name": name])
+        let created = try SupabaseClient.decoder.decode([Created].self, from: data)
+        guard let outfit = created.first else { throw ShopActionError.missingResponse }
         let rows = items.map { ["outfit_id": outfit.id, "slot": $0.key, "product_id": $0.value] }
-        _ = try? await sb.write("outfit_items", method: "POST", body: rows)
+        do {
+            _ = try await sb.write("outfit_items", method: "POST", body: rows)
+        } catch {
+            _ = try? await sb.write("outfits?id=eq.\(outfit.id)", method: "DELETE", body: nil)
+            throw error
+        }
         await loadOutfits()
         Haptics.success()
-        return true
     }
 
-    func deleteOutfit(_ id: String) async {
-        _ = try? await sb.write("outfits?id=eq.\(id)", method: "DELETE", body: nil)
+    func deleteOutfit(_ id: String) async throws {
+        _ = try await sb.write("outfits?id=eq.\(id)", method: "DELETE", body: nil)
         outfits.removeAll { $0.id == id }
     }
 
@@ -221,3 +248,14 @@ final class ShopStore {
     }
 }
 
+enum ShopActionError: LocalizedError {
+    case signedOut
+    case missingResponse
+
+    var errorDescription: String? {
+        switch self {
+        case .signedOut: return "Your session expired. Sign in and try again."
+        case .missingResponse: return "The server returned an incomplete response. Try again."
+        }
+    }
+}

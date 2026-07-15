@@ -2,34 +2,49 @@ import SwiftUI
 
 // A coin glyph used everywhere prices and balances appear.
 struct CoinIcon: View {
-    var size: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var scaledSize: CGFloat = 16
+
+    init(size: CGFloat = 16) {
+        _scaledSize = ScaledMetric(wrappedValue: size, relativeTo: .body)
+    }
+
     var body: some View {
         ZStack {
             Circle().fill(Theme.goldGradient)
-            Circle().strokeBorder(.white.opacity(0.55), lineWidth: size * 0.06)
+            Circle().strokeBorder(.white.opacity(0.55), lineWidth: scaledSize * 0.06)
             Text("$")
-                // The mark scales with its coin container, so a fixed token would drift.
-                .font(.system(size: size * 0.6, weight: .black))
+                .font(.system(size: scaledSize * 0.6, weight: .black))
                 .foregroundStyle(.white.opacity(0.9))
         }
-        .frame(width: size, height: size)
-        .shadow(color: Theme.gold.opacity(0.4), radius: size * 0.12, y: 1)
+        .frame(width: scaledSize, height: scaledSize)
+        .shadow(color: Theme.gold.opacity(0.4), radius: scaledSize * 0.12, y: 1)
+        .accessibilityHidden(true)
     }
 }
 
 // Price / coin amount label.
 struct CoinLabel: View {
     let amount: Int
-    var size: CGFloat = 15
-    var weight: Font.Weight = .heavy
+    let size: CGFloat
+    let weight: Font.Weight
+    @ScaledMetric(relativeTo: .body) private var scaledSize: CGFloat = 15
+
+    init(amount: Int, size: CGFloat = 15, weight: Font.Weight = .heavy) {
+        self.amount = amount
+        self.size = size
+        self.weight = weight
+        _scaledSize = ScaledMetric(wrappedValue: size, relativeTo: .body)
+    }
+
     var body: some View {
-        HStack(spacing: size * 0.28) {
+        HStack(spacing: scaledSize * 0.28) {
             CoinIcon(size: size)
             Text(Format.coins(amount))
-                // CoinLabel is a parametric primitive whose callers set its size.
-                .font(.system(size: size, weight: weight))
+                .font(.system(size: scaledSize, weight: weight))
                 .monospacedDigit()
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(Format.coins(amount)) coins")
     }
 }
 

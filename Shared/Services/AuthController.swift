@@ -83,7 +83,7 @@ final class AuthController {
     }
 
     func deleteAccount() async throws {
-        let _: [String: Bool]? = try? await SupabaseClient.shared.callFunction("delete-account")
+        let _: [String: Bool] = try await SupabaseClient.shared.callFunction("delete-account")
         await SupabaseClient.shared.signOutLocal()
         state = .signedOut
     }

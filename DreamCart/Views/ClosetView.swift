@@ -15,7 +15,11 @@ struct ClosetView: View {
                     NavigationLink { OutfitBuilderView() } label: { styleBuilderCard }
                         .buttonStyle(PressableStyle())
 
-                    if shop.closet.isEmpty {
+                    if shop.isLoading && shop.closet.isEmpty {
+                        ProgressView("Loading your closet…")
+                            .font(.dcBody)
+                            .padding(.top, 40)
+                    } else if shop.closet.isEmpty {
                         EmptyState(icon: "hanger", title: "Your closet is empty",
                                    message: "Buy your first piece and it lands here.")
                             .padding(.top, 30)
@@ -77,11 +81,24 @@ struct ClosetView: View {
             HStack(spacing: 8) {
                 FilterChip(label: "All", selected: category == nil) { category = nil }
                 ForEach(ownedCategories, id: \.self) { c in
-                    FilterChip(label: c.capitalized, selected: category == c) {
+                    FilterChip(label: categoryLabel(c), selected: category == c) {
                         category = category == c ? nil : c
                     }
                 }
             }
+        }
+    }
+
+    private func categoryLabel(_ category: String) -> String {
+        switch category {
+        case "headwear", "hat": return "Hats"
+        case "eyewear", "sunglasses": return "Shades"
+        case "footwear", "shoes": return "Shoes"
+        case "top": return "Tops"
+        case "bottom": return "Bottoms"
+        case "bag": return "Bags"
+        case "accessory": return "Extras"
+        default: return category.capitalized
         }
     }
 
