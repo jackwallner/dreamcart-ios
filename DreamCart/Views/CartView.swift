@@ -1,9 +1,10 @@
 import SwiftUI
 
 struct CartView: View {
-    @Binding var tab: Int
     @Environment(ShopStore.self) private var shop
+    @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showCoinShop = false
     @State private var showCheckout = false
     @State private var unboxing: [Product]? = nil
@@ -17,7 +18,7 @@ struct CartView: View {
                             EmptyState(icon: "cart", title: "Your cart is empty",
                                        message: "Add pieces you love. Checkout is free with coins.")
                             CandyButton(title: "Browse shop", systemImage: "bag.fill") {
-                                tab = 1
+                                router.selectedTab = .today
                             }
                             .padding(.horizontal, 32)
                         }
@@ -45,12 +46,19 @@ struct CartView: View {
         .sheet(isPresented: $showCheckout) {
             CheckoutView { bought in
                 showCheckout = false
-                withAnimation { unboxing = bought }
+                if reduceMotion {
+                    unboxing = bought
+                } else {
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) { unboxing = bought }
+                }
             }
         }
         .overlay {
             if let items = unboxing {
-                UnboxingView(items: items) { withAnimation { unboxing = nil } }
+                UnboxingView(items: items) {
+                    if reduceMotion { unboxing = nil }
+                    else { withAnimation { unboxing = nil } }
+                }
             }
         }
     }
@@ -84,7 +92,6 @@ struct CartView: View {
         .padding(16)
         .background(.bar)
     }
-
 }
 
 struct CartRow: View {
@@ -113,6 +120,7 @@ struct CartRow: View {
                     .font(.dcIconL)
                     .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
             }
+            .accessibilityLabel("Remove \(product.name) from cart")
         }
         .padding(12)
         .cardStyle(scheme)
@@ -125,9 +133,12 @@ struct UnboxingView: View {
     let items: [Product]
     let onDone: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
     @State private var page = 0
     @State private var burst = 0
+    @State private var stage = 0
+    @State private var haloPulse = false
 
     var body: some View {
         ZStack {
@@ -144,20 +155,20 @@ struct UnboxingView: View {
                     .font(.dcHero)
                     .tracking(1.5)
                     .foregroundStyle(Theme.ink(scheme))
-                    .scaleEffect(revealed ? 1 : 0.6)
-                    .opacity(revealed ? 1 : 0)
+                    .scaleEffect(stage >= 1 ? 1 : 0.82)
+                    .opacity(stage >= 1 ? 1 : 0)
                 Text(items.count == 1 ? "Delivered to your closet"
                                       : "\(items.count) new pieces delivered to your closet")
                     .font(.dcBodyText)
                     .foregroundStyle(Theme.subtle(scheme))
+                    .opacity(stage >= 2 ? 1 : 0)
 
                 TabView(selection: $page) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { idx, p in
                         VStack(spacing: 16) {
                             ZStack {
-                                // Rarity glow halo behind the shot.
                                 Circle()
-                                    .fill(p.rarityKind.color.opacity(0.35))
+                                    .fill(p.rarityKind.color.opacity(haloPulse ? 0.42 : 0.24))
                                     .frame(width: 260, height: 260)
                                     .blur(radius: 50)
                                 RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
@@ -186,18 +197,32 @@ struct UnboxingView: View {
                 .tabViewStyle(.page(indexDisplayMode: items.count > 1 ? .automatic : .never))
                 .frame(height: 440)
                 .onChange(of: page) { _, _ in
-                    Haptics.soft()
-                    burst += 1
+                    if !reduceMotion { Haptics.soft(); burst += 1 }
                 }
 
                 CandyButton(title: "Love it", systemImage: "heart.fill") { onDone() }
                     .padding(.horizontal, 50)
+                    .opacity(stage >= 3 ? 1 : 0)
             }
             .padding(.vertical, 24)
         }
         .onAppear {
             Haptics.celebrate()
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.55)) { revealed = true }
+            guard !reduceMotion else {
+                revealed = true
+                stage = 3
+                haloPulse = true
+                return
+            }
+            withAnimation(.easeOut(duration: 0.28)) { stage = 1 }
+            withAnimation(.easeOut(duration: 0.3).delay(0.15)) { stage = 2 }
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.55).delay(0.2)) {
+                revealed = true
+            }
+            withAnimation(.easeOut(duration: 0.3).delay(0.48)) { stage = 3 }
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true).delay(0.35)) {
+                haloPulse = true
+            }
         }
     }
 }
