@@ -35,8 +35,27 @@ if (!Number.isSafeInteger(TARGET) || TARGET < 1) {
   Deno.exit(1);
 }
 
+const request = async (url: string, init: RequestInit = {}): Promise<Response> => {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...init,
+        signal: init.signal ?? AbortSignal.timeout(120_000),
+      });
+      if (![408, 429, 500, 502, 503, 504].includes(response.status) || attempt === 5) {
+        return response;
+      }
+      await response.body?.cancel();
+    } catch (error) {
+      if (attempt === 5) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5_000 * (attempt + 1)));
+  }
+  throw new Error("request retry loop exhausted");
+};
+
 const rest = (path: string, init: RequestInit = {}) =>
-  fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  request(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...init,
     headers: {
       apikey: SERVICE_KEY,
@@ -128,39 +147,53 @@ while (seen.size < TARGET && attempts < (TARGET - seen.size) * 8 + 200) {
   }
 
   const path = `${PREFIX}/${p.image_seed}.jpg`;
-  const up = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
-    method: "POST",
-    headers: {
-      apikey: SERVICE_KEY,
-      Authorization: `Bearer ${SERVICE_KEY}`,
-      "content-type": "image/jpeg",
-      "x-upsert": "true",
-    },
-    body: bytes,
-    signal: AbortSignal.timeout(60_000),
-  });
+  let up: Response;
+  try {
+    up = await request(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        "content-type": "image/jpeg",
+        "x-upsert": "true",
+      },
+      body: new Blob([bytes as Uint8Array<ArrayBuffer>]),
+      signal: AbortSignal.timeout(60_000),
+    });
+  } catch (error) {
+    console.log(`FAIL ${p.name} (upload request: ${error})`);
+    failed++;
+    continue;
+  }
   if (!up.ok) {
     console.log(`FAIL ${p.name} (upload ${up.status})`);
     failed++;
     continue;
   }
 
-  const ins = await rest("products", {
+  let ins: Response;
+  try {
+    ins = await rest("products", {
     method: "POST",
     headers: { Prefer: "return=representation" },
-    body: JSON.stringify({
-      brand_id: brandId,
-      name: p.name,
-      category: p.category,
-      slot: p.slot,
-      style_tags: p.style_tags,
-      color_name: p.color_name,
-      price: p.price,
-      rarity: p.rarity,
-      description: p.description,
-      image_url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
-    }),
-  });
+      body: JSON.stringify({
+        brand_id: brandId,
+        name: p.name,
+        category: p.category,
+        slot: p.slot,
+        style_tags: p.style_tags,
+        color_name: p.color_name,
+        price: p.price,
+        rarity: p.rarity,
+        description: p.description,
+        image_url: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`,
+      }),
+    });
+  } catch (error) {
+    console.log(`FAIL ${p.name} (insert request: ${error})`);
+    failed++;
+    continue;
+  }
   if (!ins.ok) {
     console.log(`FAIL ${p.name} (insert ${ins.status}: ${await ins.text()})`);
     failed++;

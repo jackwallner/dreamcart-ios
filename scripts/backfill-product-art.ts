@@ -50,8 +50,27 @@ const flag = (name: string): string | undefined => {
 const limit = Number(flag("--limit") ?? 0);
 const categories = flag("--category")?.split(",").map((c) => c.trim());
 
+const request = async (url: string, init: RequestInit = {}): Promise<Response> => {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...init,
+        signal: init.signal ?? AbortSignal.timeout(120_000),
+      });
+      if (![408, 429, 500, 502, 503, 504].includes(response.status) || attempt === 5) {
+        return response;
+      }
+      await response.body?.cancel();
+    } catch (error) {
+      if (attempt === 5) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5_000 * (attempt + 1)));
+  }
+  throw new Error("request retry loop exhausted");
+};
+
 const rest = (path: string, init: RequestInit = {}) =>
-  fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+  request(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...init,
     headers: {
       apikey: SERVICE_KEY,
