@@ -26,6 +26,10 @@ struct ShopView: View {
                         LoadErrorBanner()
                             .padding(.horizontal, 16)
                     }
+                    if let error = shop.catalogLoadError {
+                        catalogLoadBanner(error)
+                            .padding(.horizontal, 16)
+                    }
                     if shop.isLoading && shop.products.isEmpty {
                         ProgressView("Loading the catalog…")
                             .font(.dcBody)
@@ -35,6 +39,11 @@ struct ShopView: View {
                     } else {
                         categoryBar
                         grid(filtered)
+                    }
+                    if shop.isLoadingMoreProducts {
+                        ProgressView("Loading more products…")
+                            .font(.dcSub)
+                            .padding(.vertical, 12)
                     }
                 }
             }
@@ -50,6 +59,30 @@ struct ShopView: View {
     private var filtered: [ProductWithBrand] {
         guard let c = category else { return shop.products }
         return shop.products(category: c)
+    }
+
+    private func catalogLoadBanner(_ error: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "arrow.down.circle")
+                .font(.dcIconM)
+                .foregroundStyle(Theme.pink)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Some products are still missing")
+                    .font(.dcBody)
+                    .foregroundStyle(Theme.ink(scheme))
+                Text(error)
+                    .font(.dcSub)
+                    .foregroundStyle(Theme.subtle(scheme))
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 4)
+            Button("Retry") { shop.retryRemainingCatalog() }
+                .font(.dcLabel)
+                .foregroundStyle(Theme.violet)
+                .disabled(shop.isLoadingMoreProducts)
+        }
+        .padding(14)
+        .cardStyle(scheme)
     }
 
     private var categoryBar: some View {

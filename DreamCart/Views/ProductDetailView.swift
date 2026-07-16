@@ -72,12 +72,16 @@ struct ProductDetailView: View {
         .sheet(isPresented: $showCheckout) {
             CheckoutView { bought in
                 showCheckout = false
-                withAnimation { unboxing = bought }
+                if reduceMotion { unboxing = bought }
+                else { withAnimation { unboxing = bought } }
             }
         }
         .overlay {
             if let items = unboxing {
-                UnboxingView(items: items) { withAnimation { unboxing = nil } }
+                UnboxingView(items: items) {
+                    if reduceMotion { unboxing = nil }
+                    else { withAnimation { unboxing = nil } }
+                }
             }
         }
         .alert("Favorite not updated", isPresented: Binding(
@@ -187,7 +191,11 @@ struct ProductDetailView: View {
                     if !inCart { _ = shop.addToCart(product.id) }
                     if reduceMotion { addedPulse.toggle() }
                     else { withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() } }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showCheckout = true }
+                    if reduceMotion {
+                        showCheckout = true
+                    } else {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showCheckout = true }
+                    }
                 } label: {
                     HStack(spacing: 7) {
                         Image(systemName: inCart ? "creditcard.fill" : "cart.badge.plus")

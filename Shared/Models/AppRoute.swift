@@ -10,31 +10,40 @@ enum AppTab: String, CaseIterable, Hashable, Sendable {
 
 enum AppRoute: Hashable {
     case newDrops
+    case shop
 
     private static let routeKey = "route"
     private static let newDropsValue = "new-drops"
 
     var tab: AppTab {
         switch self {
-        case .newDrops: .today
+        case .newDrops, .shop: .today
         }
     }
 
     var url: URL {
-        URL(string: "dreamcart://new-drops")!
+        switch self {
+        case .newDrops: URL(string: "dreamcart://new-drops")!
+        case .shop: URL(string: "dreamcart://shop")!
+        }
     }
 
     var notificationPayload: [AnyHashable: Any] {
-        [
-            Self.routeKey: Self.newDropsValue,
-            "url": url.absoluteString
-        ]
+        switch self {
+        case .newDrops:
+            [Self.routeKey: Self.newDropsValue, "url": url.absoluteString]
+        case .shop:
+            ["url": url.absoluteString]
+        }
     }
 
     static func parse(_ url: URL) -> AppRoute? {
-        guard url.scheme?.lowercased() == "dreamcart",
-              url.host?.lowercased() == Self.newDropsValue else { return nil }
-        return .newDrops
+        guard url.scheme?.lowercased() == "dreamcart" else { return nil }
+        switch url.host?.lowercased() {
+        case Self.newDropsValue: return .newDrops
+        case "shop": return .shop
+        default: return nil
+        }
     }
 
     static func parse(notificationUserInfo: [AnyHashable: Any]) -> AppRoute? {

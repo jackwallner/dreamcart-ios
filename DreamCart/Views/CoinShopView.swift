@@ -47,6 +47,14 @@ struct CoinShopView: View {
                 }
             }
         }
+        .onDisappear {
+            staleCheck?.cancel()
+            staleCheck = nil
+            buyTask?.cancel()
+            buyTask = nil
+            buying = nil
+            store.isPurchasing = false
+        }
         .onChange(of: scenePhase) { _, newPhase in
             // Leaving .active (or a second .active while one is pending) aborts
             // any in-flight staleness check: the user is back inside StoreKit's

@@ -18,7 +18,7 @@ struct CartView: View {
                             EmptyState(icon: "cart", title: "Your cart is empty",
                                        message: "Add pieces you love. Checkout is free with coins.")
                             CandyButton(title: "Browse shop", systemImage: "bag.fill") {
-                                router.selectedTab = .today
+                                router.receive(.shop)
                             }
                             .padding(.horizontal, 32)
                         }

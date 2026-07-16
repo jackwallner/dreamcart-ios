@@ -53,6 +53,7 @@ struct WalletPill: View {
     let coins: Int
     var onTap: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var bump = false
 
     var body: some View {
@@ -78,6 +79,7 @@ struct WalletPill: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Coin balance: \(Format.coins(coins))")
         .onChange(of: coins) { _, _ in
+            guard !reduceMotion else { return }
             withAnimation(.spring(response: 0.28, dampingFraction: 0.5)) { bump = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
                 withAnimation(.spring) { bump = false }

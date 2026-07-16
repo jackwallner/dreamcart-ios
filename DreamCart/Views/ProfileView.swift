@@ -11,6 +11,8 @@ struct ProfileView: View {
     @State private var confirmDelete = false
     @State private var working = false
     @State private var deleteError: String?
+    @State private var profileError: String?
+    @State private var ledgerLoading = false
     @AppStorage("appearance") private var appearance = Appearance.light.rawValue
 
     var body: some View {
@@ -53,6 +55,14 @@ struct ProfileView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Deleting your account")
             }
+        }
+        .alert("Action not completed", isPresented: Binding(
+            get: { profileError != nil },
+            set: { if !$0 { profileError = nil } }
+        )) {
+            Button("OK") { profileError = nil }
+        } message: {
+            Text(profileError ?? "")
         }
         .alert("Account not deleted", isPresented: Binding(
             get: { deleteError != nil },
@@ -111,22 +121,34 @@ struct ProfileView: View {
     }
 
     private var appearanceCard: some View {
-        HStack(spacing: 14) {
-            Image(systemName: "sun.max.fill").font(.dcIconM)
-                .foregroundStyle(Theme.gold).frame(width: 24)
-            Text("Appearance").font(.dcBody)
-                .foregroundStyle(Theme.ink(scheme))
-            Spacer()
-            Picker("Appearance", selection: $appearance) {
-                ForEach(Appearance.allCases) { a in
-                    Text(a.label).tag(a.rawValue)
-                }
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) {
+                appearanceLabel
+                Spacer()
+                appearancePicker.frame(width: 180)
             }
-            .pickerStyle(.segmented)
-            .frame(width: 180)
+            VStack(alignment: .leading, spacing: 12) {
+                appearanceLabel
+                appearancePicker
+            }
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
         .cardStyle(scheme)
+    }
+
+    private var appearanceLabel: some View {
+        Label("Appearance", systemImage: "sun.max.fill")
+            .font(.dcBody)
+            .foregroundStyle(Theme.ink(scheme))
+    }
+
+    private var appearancePicker: some View {
+        Picker("Appearance", selection: $appearance) {
+            ForEach(Appearance.allCases) { option in
+                Text(option.label).tag(option.rawValue)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var notificationCard: some View {
@@ -188,12 +210,28 @@ struct ProfileView: View {
         VStack(spacing: 0) {
             row("Get more coins", "plus.circle.fill", Theme.violet) { showCoinShop = true }
             Divider().padding(.leading, 50)
-            row("Coin history", "clock.arrow.circlepath", Theme.subtle(scheme)) {
-                Task { await shop.loadLedger() }; showLedger = true
+            row(ledgerLoading ? "Loading coin history…" : "Coin history",
+                "clock.arrow.circlepath", Theme.subtle(scheme)) {
+                guard !ledgerLoading else { return }
+                Task {
+                    ledgerLoading = true
+                    defer { ledgerLoading = false }
+                    do {
+                        try await shop.loadLedger()
+                        showLedger = true
+                    } catch {
+                        profileError = error.localizedDescription
+                    }
+                }
             }
             Divider().padding(.leading, 50)
             row("Sign out", "rectangle.portrait.and.arrow.right", Theme.subtle(scheme)) {
-                Task { await auth.signOut() }
+                Task {
+                    await auth.signOut()
+                    if auth.state != .signedOut {
+                        profileError = auth.errorMessage ?? "Could not sign out. Try again."
+                    }
+                }
             }
         }
         .cardStyle(scheme)

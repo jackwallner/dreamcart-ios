@@ -21,7 +21,9 @@ final class ShopStore {
     var cartIds: [String] = []          // ordered so the cart list is stable
 
     var isLoading = false
+    var isLoadingMoreProducts = false
     var loadError: String?
+    var catalogLoadError: String?
 
     /// True once the first refreshAll() has finished, successfully or not. RootView
     /// holds the splash until then: signing in flips auth to .signedIn immediately,
@@ -43,6 +45,7 @@ final class ShopStore {
         let generation = catalogGeneration
         isLoading = true
         loadError = nil
+        catalogLoadError = nil
         defer {
             isLoading = false
             hasLoadedOnce = true
@@ -51,7 +54,7 @@ final class ShopStore {
             async let m: MeSnapshot = sb.rpc("me")
             async let b: [Brand] = sb.select("brands?select=*&order=sort.asc")
             async let p: [ProductWithBrand] =
-                sb.select("products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc&limit=200")
+                sb.select("products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc,id.asc&limit=200")
             me = try await m
             brands = try await b
             products = try await p
@@ -65,15 +68,37 @@ final class ShopStore {
     }
 
     private func loadRemainingCatalog(generation: Int) async {
-        do {
-            let remaining: [ProductWithBrand] = try await sb.select(
-                "products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc&offset=200&limit=800")
-            guard generation == catalogGeneration else { return }
-            let existing = Set(products.map(\.id))
-            products.append(contentsOf: remaining.filter { !existing.contains($0.id) })
-        } catch {
-            // The first page remains usable. Pull to refresh retries the rest.
+        let pageSize = 200
+        var offset = pageSize
+        isLoadingMoreProducts = true
+        catalogLoadError = nil
+        defer {
+            if generation == catalogGeneration { isLoadingMoreProducts = false }
         }
+
+        do {
+            while generation == catalogGeneration {
+                let page: [ProductWithBrand] = try await sb.select(
+                    "products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc,id.asc&offset=\(offset)&limit=\(pageSize)")
+                guard generation == catalogGeneration else { return }
+                appendCatalogPage(page)
+                if page.count < pageSize { return }
+                offset += pageSize
+            }
+        } catch {
+            guard generation == catalogGeneration else { return }
+            catalogLoadError = (error as? SBError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    func retryRemainingCatalog() {
+        guard !isLoadingMoreProducts else { return }
+        Task { await loadRemainingCatalog(generation: catalogGeneration) }
+    }
+
+    func appendCatalogPage(_ page: [ProductWithBrand]) {
+        var existing = Set(products.map(\.id))
+        products.append(contentsOf: page.filter { existing.insert($0.id).inserted })
     }
 
     func refreshMe() async {
@@ -96,11 +121,10 @@ final class ShopStore {
         }
     }
 
-    func loadLedger() async {
-        if let rows: [LedgerEntry] = try? await sb.select(
-            "coin_ledger?select=*&order=created_at.desc&limit=60") {
-            ledger = rows
-        }
+    func loadLedger() async throws {
+        let rows: [LedgerEntry] = try await sb.select(
+            "coin_ledger?select=*&order=created_at.desc&limit=60")
+        ledger = rows
     }
 
     // MARK: rewards

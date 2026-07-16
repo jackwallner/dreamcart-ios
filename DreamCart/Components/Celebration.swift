@@ -17,7 +17,6 @@ struct ConfettiBurst: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pieces: [ConfettiPiece] = []
     @State private var go = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let palette: [Color] = [Theme.violet, Theme.pink, Theme.coral, Theme.gold, Theme.goldLite]
 
