@@ -48,23 +48,26 @@ enum Theme {
 
     /// New York (serif) as a UIFont — used to make navigation-bar titles match
     /// the app's editorial serif voice instead of defaulting to SF.
-    static func serifUIFont(_ size: CGFloat, _ weight: UIFont.Weight) -> UIFont {
+    static func serifUIFont(_ size: CGFloat, _ weight: UIFont.Weight,
+                            relativeTo textStyle: UIFont.TextStyle) -> UIFont {
         let base = UIFont.systemFont(ofSize: size, weight: weight)
-        guard let d = base.fontDescriptor.withDesign(.serif) else { return base }
-        return UIFontMetrics.default.scaledFont(for: UIFont(descriptor: d, size: size))
+        guard let descriptor = base.fontDescriptor.withDesign(.serif) else { return base }
+        return UIFontMetrics(forTextStyle: textStyle)
+            .scaledFont(for: UIFont(descriptor: descriptor, size: size))
     }
 
     /// Make every UINavigationBar large + inline title render in serif so the
     /// system page titles ("You", "Cart", "Shop"…) stop clashing with the serif
     /// headlines the rest of the app draws by hand. Called once at launch.
+    @MainActor
     static func configureNavigationBarAppearance() {
         let ink = UIColor { $0.userInterfaceStyle == .dark
             ? UIColor(white: 0.96, alpha: 1)
             : UIColor(red: 0.09, green: 0.08, blue: 0.11, alpha: 1) }
         let titleAttrs: [NSAttributedString.Key: Any] =
-            [.font: serifUIFont(17, .bold), .foregroundColor: ink]
+            [.font: serifUIFont(17, .bold, relativeTo: .headline), .foregroundColor: ink]
         let largeAttrs: [NSAttributedString.Key: Any] =
-            [.font: serifUIFont(34, .bold), .foregroundColor: ink]
+            [.font: serifUIFont(34, .bold, relativeTo: .largeTitle), .foregroundColor: ink]
 
         // Blurred bar once content scrolls under it…
         let standard = UINavigationBarAppearance()

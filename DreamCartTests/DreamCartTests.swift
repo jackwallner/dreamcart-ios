@@ -107,6 +107,7 @@ final class DreamCartTests: XCTestCase {
 
     func testRouteParsing() {
         XCTAssertEqual(AppRoute.parse(URL(string: "dreamcart://new-drops")!), .newDrops)
+        XCTAssertEqual(AppRoute.parse(URL(string: "dreamcart://shop")!), .shop)
         XCTAssertEqual(AppRoute.parse(notificationUserInfo: ["route": "new-drops"]), .newDrops)
         XCTAssertNil(AppRoute.parse(URL(string: "dreamcart://unknown")!))
     }
@@ -119,6 +120,31 @@ final class DreamCartTests: XCTestCase {
         router.setReadiness(signedIn: true, catalogReady: true)
         XCTAssertEqual(router.consumePendingRoute(), .newDrops)
         XCTAssertEqual(router.selectedTab, .today)
+        XCTAssertEqual(router.consumePresentedRoute(), .newDrops)
+        XCTAssertNil(router.consumePresentedRoute())
+    }
+
+    @MainActor
+    func testShopRouteOpensTodayCatalog() {
+        let router = RouteCoordinator()
+        router.setReadiness(signedIn: true, catalogReady: true)
+        router.selectedTab = .cart
+        router.receive(.shop)
+
+        XCTAssertEqual(router.selectedTab, .today)
+        XCTAssertEqual(router.consumePresentedRoute(), .shop)
+    }
+
+    @MainActor
+    func testCatalogPageDeduplicatesProducts() {
+        let shop = ShopStore()
+        shop.products = [makeProduct(id: "a", price: 100)]
+        shop.appendCatalogPage([
+            makeProduct(id: "a", price: 100),
+            makeProduct(id: "b", price: 200),
+            makeProduct(id: "b", price: 200),
+        ])
+        XCTAssertEqual(shop.products.map(\.id), ["a", "b"])
     }
 
     func testHexColorParsingDoesNotCrash() {

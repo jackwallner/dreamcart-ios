@@ -4,6 +4,7 @@ import SwiftUI
 struct WelcomeView: View {
     @Environment(AuthController.self) private var auth
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var page = 0
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -27,7 +28,7 @@ struct WelcomeView: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(.easeInOut, value: page)
+                .animation(reduceMotion ? nil : .easeInOut, value: page)
 
                 HStack(spacing: 7) {
                     ForEach(slides.indices, id: \.self) { i in
@@ -35,7 +36,7 @@ struct WelcomeView: View {
                             Capsule()
                                 .fill(i == page ? Theme.violet : Theme.subtle(scheme).opacity(0.3))
                                 .frame(width: i == page ? 22 : 12, height: 12)
-                                .animation(.spring, value: page)
+                                .animation(reduceMotion ? nil : .spring, value: page)
                         }
                         .accessibilityLabel("Page \(i + 1) of \(slides.count)")
                         .accessibilityAddTraits(i == page ? .isSelected : [])
@@ -121,7 +122,7 @@ struct WelcomeView: View {
 
     @ViewBuilder
     private var legalLinks: some View {
-        Link("Privacy Policy", destination: URL(string: "https://jackwallner.github.io/dreamcart-ios/privacy-policy.html")!)
+        Link("Privacy Policy", destination: URL(string: "https://jackwallner.github.io/dreamcart/privacy-policy.html")!)
         Link("Terms", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
     }
 

@@ -5,6 +5,7 @@ import SwiftUI
 struct OutfitBuilderView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("avatarLook") private var lookRaw = AvatarLook.aria.rawValue
 
     // Slot order top-to-bottom, matching the closet_items.slot values.
@@ -51,7 +52,11 @@ struct OutfitBuilderView: View {
                 .padding(16)
             }
             .onChange(of: scrollRequest) { _, _ in
-                withAnimation { proxy.scrollTo("avatar-preview", anchor: .top) }
+                if reduceMotion {
+                    proxy.scrollTo("avatar-preview", anchor: .top)
+                } else {
+                    withAnimation { proxy.scrollTo("avatar-preview", anchor: .top) }
+                }
             }
         }
         .background(Theme.bg(scheme))

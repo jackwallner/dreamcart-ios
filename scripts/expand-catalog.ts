@@ -30,6 +30,10 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
 
 const flagIdx = Deno.args.indexOf("--target");
 const TARGET = Number(flagIdx >= 0 ? Deno.args[flagIdx + 1] : 1800);
+if (!Number.isSafeInteger(TARGET) || TARGET < 1) {
+  console.error("error: --target must be a positive integer");
+  Deno.exit(1);
+}
 
 const rest = (path: string, init: RequestInit = {}) =>
   fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
@@ -42,10 +46,20 @@ const rest = (path: string, init: RequestInit = {}) =>
     },
   });
 
+async function jsonRows(path: string, init: RequestInit = {}): Promise<Record<string, unknown>[]> {
+  const response = await rest(path, init);
+  if (!response.ok) throw new Error(`${path}: HTTP ${response.status} ${await response.text()}`);
+  const rows: unknown = await response.json();
+  if (!Array.isArray(rows)) throw new Error(`${path}: expected a JSON array`);
+  return rows;
+}
+
 async function brandIds(): Promise<Record<string, string>> {
-  const rows = await (await rest("brands?select=id,slug")).json();
+  const rows = await jsonRows("brands?select=id,slug");
   const map: Record<string, string> = {};
-  for (const r of rows) map[r.slug] = r.id;
+  for (const row of rows) {
+    if (typeof row.slug === "string" && typeof row.id === "string") map[row.slug] = row.id;
+  }
   return map;
 }
 
@@ -57,8 +71,10 @@ async function existingNames(): Promise<Set<string>> {
     const res = await rest("products?select=name", {
       headers: { Range: `${from}-${from + PAGE - 1}`, "Range-Unit": "items" },
     });
-    const page = await res.json();
-    if (!Array.isArray(page) || page.length === 0) break;
+    if (!res.ok) throw new Error(`products names: HTTP ${res.status} ${await res.text()}`);
+    const page: unknown = await res.json();
+    if (!Array.isArray(page)) throw new Error("products names: expected a JSON array");
+    if (page.length === 0) break;
     for (const r of page) names.add(r.name);
     if (page.length < PAGE) break;
   }
@@ -75,8 +91,9 @@ async function fetchImage(prompt: string, seed: number): Promise<Uint8Array | nu
         signal: AbortSignal.timeout(120_000),
       });
       if (res.ok) {
+        const contentType = res.headers.get("content-type") ?? "";
         const bytes = new Uint8Array(await res.arrayBuffer());
-        if (bytes.byteLength > 5000) return bytes;
+        if (contentType.startsWith("image/") && bytes.byteLength > 5000) return bytes;
       } else {
         await res.body?.cancel();
         if (res.status !== 429 && res.status < 500) return null;
@@ -99,6 +116,8 @@ while (seen.size < TARGET && attempts < (TARGET - seen.size) * 8 + 200) {
   const seed = (((seen.size * 2654435761) ^ (attempts * 40503)) >>> 0) & 0x7fffffff;
   const p = composeProduct(seed);
   if (seen.has(p.name)) continue;
+  const brandId = brands[p.brand_slug];
+  if (!brandId) throw new Error(`missing brand row for composer slug: ${p.brand_slug}`);
 
   // composeProduct already builds image_prompt via buildImagePrompt().
   const bytes = await fetchImage(p.image_prompt, p.image_seed);
@@ -128,9 +147,9 @@ while (seen.size < TARGET && attempts < (TARGET - seen.size) * 8 + 200) {
 
   const ins = await rest("products", {
     method: "POST",
-    headers: { Prefer: "return=minimal" },
+    headers: { Prefer: "return=representation" },
     body: JSON.stringify({
-      brand_id: brands[p.brand_slug],
+      brand_id: brandId,
       name: p.name,
       category: p.category,
       slot: p.slot,
@@ -143,15 +162,20 @@ while (seen.size < TARGET && attempts < (TARGET - seen.size) * 8 + 200) {
     }),
   });
   if (!ins.ok) {
-    console.log(`FAIL ${p.name} (insert ${ins.status})`);
+    console.log(`FAIL ${p.name} (insert ${ins.status}: ${await ins.text()})`);
     failed++;
     continue;
   }
+  const inserted: unknown = await ins.json();
+  const productId = Array.isArray(inserted) && typeof inserted[0]?.id === "string" ? inserted[0].id : null;
+  if (!productId) throw new Error(`insert succeeded without a product id: ${p.name}`);
 
   seen.add(p.name);
   added++;
-  console.log(`[${seen.size}/${TARGET}] ok ${p.name}`);
+  console.log(`[${seen.size}/${TARGET}] ok ${productId} ${p.name}`);
   await new Promise((r) => setTimeout(r, 2000));
 }
 
 console.log(`done — added ${added}, failed ${failed}, catalog now ${seen.size}`);
+console.log(JSON.stringify({ target: TARGET, added, failed, endingCount: seen.size }));
+if (seen.size < TARGET) Deno.exit(1);

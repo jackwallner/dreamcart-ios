@@ -12,6 +12,7 @@ struct TodayView: View {
     @State private var claiming = false
     @State private var greetingDate = Date()
     @State private var showNotificationPrimer = false
+    @State private var showShop = false
 
     var body: some View {
         NavigationStack {
@@ -38,7 +39,18 @@ struct TodayView: View {
             .navigationBarTitleDisplayMode(.large)
             .walletToolbar($showCoinShop)
             .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
+            .navigationDestination(isPresented: $showShop) { ShopView() }
             .refreshable { await shop.refreshAll() }
+            .onChange(of: router.presentedRoute) { _, route in
+                guard route == .shop else { return }
+                showShop = true
+                _ = router.consumePresentedRoute()
+            }
+            .onAppear {
+                guard router.presentedRoute == .shop else { return }
+                showShop = true
+                _ = router.consumePresentedRoute()
+            }
             .sheet(isPresented: $showSpin) { SpinView() }
             .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
             .task {
@@ -84,25 +96,14 @@ struct TodayView: View {
 
     private var claimableDailyCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("Daily Drop", systemImage: "gift.fill")
-                    .font(.dcBody)
-                    .foregroundStyle(.white)
-                Spacer()
-                if let s = shop.me?.streak, s > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                        Text("\(s) day\(s == 1 ? "" : "s")")
-                    }
-                    .font(.dcLabel)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(.white.opacity(0.22), in: Capsule())
-                }
+            ViewThatFits(in: .horizontal) {
+                HStack { dailyDropLabel; Spacer(); streakLabel }
+                VStack(alignment: .leading, spacing: 10) { dailyDropLabel; streakLabel }
             }
             Text("Your coins are waiting")
                 .font(.dcTitle)
                 .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
             Text("Claim today's coins and keep your streak alive.")
                 .font(.dcBodyText)
                 .foregroundStyle(.white.opacity(0.85))
@@ -127,6 +128,25 @@ struct TodayView: View {
         .frame(maxWidth: .infinity)
         .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
         .shadow(color: Theme.pink.opacity(0.3), radius: 16, y: 8)
+    }
+
+    private var dailyDropLabel: some View {
+        Label("Daily Drop", systemImage: "gift.fill")
+            .font(.dcBody)
+            .foregroundStyle(.white)
+    }
+
+    @ViewBuilder
+    private var streakLabel: some View {
+        if let streak = shop.me?.streak, streak > 0 {
+            Label("\(streak) day\(streak == 1 ? "" : "s")", systemImage: "flame.fill")
+                .font(.dcLabel)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.white.opacity(0.22), in: Capsule())
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var claimedDailyChip: some View {
@@ -208,7 +228,7 @@ struct TodayView: View {
     private var newDropsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Just dropped", subtitle: "Fresh today",
-                          actionTitle: "Shop all") { router.selectedTab = .today }
+                          actionTitle: "Shop all") { router.receive(.shop) }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(shop.newDrops) { p in
@@ -263,7 +283,7 @@ struct TodayView: View {
                 }
             }
             if shop.brands.count > 4 {
-                Button("See all brands") { tab = 1 }
+                Button("See all brands") { router.receive(.shop) }
                     .font(.dcButton)
                     .foregroundStyle(Theme.violet)
                     .frame(maxWidth: .infinity)
