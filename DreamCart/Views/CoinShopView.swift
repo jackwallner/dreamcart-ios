@@ -120,6 +120,8 @@ struct CoinShopView: View {
                     Text(store.price(for: pack))
                         .font(.dcPrice)
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                         .padding(.horizontal, 16).padding(.vertical, 9)
                         .background(Theme.candy, in: Capsule())
                 }

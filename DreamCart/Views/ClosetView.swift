@@ -123,8 +123,12 @@ struct ClosetView: View {
             Image(systemName: icon).font(.dcIconM).foregroundStyle(Theme.violet)
             Text(value).font(.dcStat)
                 .foregroundStyle(Theme.ink(scheme))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Text(label).font(.dcCaption)
                 .foregroundStyle(Theme.subtle(scheme))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
     }

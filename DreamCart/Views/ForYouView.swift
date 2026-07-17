@@ -93,13 +93,16 @@ struct ForYouView: View {
             Text(product.brands?.name.uppercased() ?? "DREAMCART")
                 .font(.dcOverline)
                 .foregroundStyle(.white.opacity(0.8))
+                .lineLimit(1)
             Text(product.name)
                 .font(.dcTitle)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.leading)
+                .lineLimit(2)
             Text(product.styleTags.prefix(3).map { "#\($0)" }.joined(separator: "  "))
                 .font(.dcLabel)
                 .foregroundStyle(.white.opacity(0.82))
+                .lineLimit(1)
         }
         .padding(20)
     }

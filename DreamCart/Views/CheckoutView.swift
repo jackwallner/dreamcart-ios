@@ -147,12 +147,13 @@ struct CheckoutView: View {
             receiptRow("Estimated tax", Format.money(tax))
             Divider()
             HStack {
-                Text("Order total").font(.dcBody).foregroundStyle(Theme.ink(scheme))
+                Text("Order total").font(.dcBody).foregroundStyle(Theme.ink(scheme)).lineLimit(1)
                 Spacer()
                 Text(Format.money(orderTotal)).font(.dcPrice).foregroundStyle(Theme.ink(scheme))
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             HStack {
-                Text("You pay").font(.dcBody).foregroundStyle(Theme.ink(scheme))
+                Text("You pay").font(.dcBody).foregroundStyle(Theme.ink(scheme)).lineLimit(1)
                 Spacer()
                 CoinLabel(amount: shop.cartTotal, size: 17).foregroundStyle(Theme.ink(scheme))
             }
@@ -164,9 +165,10 @@ struct CheckoutView: View {
 
     private func receiptRow(_ label: String, _ value: String, accent: Color? = nil) -> some View {
         HStack {
-            Text(label).font(.dcBodyText).foregroundStyle(Theme.subtle(scheme))
+            Text(label).font(.dcBodyText).foregroundStyle(Theme.subtle(scheme)).lineLimit(1)
             Spacer()
             Text(value).font(.dcSub).foregroundStyle(accent ?? Theme.ink(scheme))
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
     }
 
