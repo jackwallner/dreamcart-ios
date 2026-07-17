@@ -38,3 +38,6 @@ Read these before assuming fleet defaults (global CLAUDE.md + `ios-dev` skill):
 ---
 Shared iOS conventions (build, release/TestFlight, ASC key + metadata scripts, signing, RevenueCat, review funnel, gotchas):
 always-loaded global CLAUDE.md + the `ios-dev` skill. To bootstrap a new app like this one, see the `ios-new-project` skill.
+
+## Subagent delegation
+Follow the global CLAUDE.md subagent rules: ask Jack for the model before spawning, spawn at most one at a time unless Jack explicitly approves more, and never allow a subagent to spawn another subagent.
