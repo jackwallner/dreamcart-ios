@@ -10,6 +10,7 @@ struct DreamCartApp: App {
     @State private var notifications = LocalNotificationCoordinator()
     @State private var shipping = ShippingAddressStore()
     @AppStorage("appearance") private var appearance = Appearance.light.rawValue
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // Product art is generated on demand (pollinations); cache aggressively
@@ -32,6 +33,7 @@ struct DreamCartApp: App {
                 .preferredColorScheme((Appearance(rawValue: appearance) ?? .light).colorScheme)
                 .onOpenURL { router.receive(url: $0) }
                 .task {
+                    Analytics.track("session_start")
                     AppDelegate.onNotificationRoute = { userInfo in
                         router.receive(notificationUserInfo: userInfo)
                     }
@@ -45,6 +47,11 @@ struct DreamCartApp: App {
                     router.setReadiness(signedIn: auth.state == .signedIn,
                                         catalogReady: !shop.products.isEmpty)
                     _ = router.consumePendingRoute()
+                }
+                .onChange(of: scenePhase) { _, new in
+                    guard new == .background else { return }
+                    Analytics.track("session_end")
+                    Task { await Analytics.flushNow() }
                 }
         }
     }

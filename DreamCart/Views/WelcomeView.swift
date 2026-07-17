@@ -29,6 +29,8 @@ struct WelcomeView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(reduceMotion ? nil : .easeInOut, value: page)
+                .onAppear { Analytics.track("onboarding_step", ["step": page]) }
+                .onChange(of: page) { _, new in Analytics.track("onboarding_step", ["step": new]) }
 
                 HStack(spacing: 7) {
                     ForEach(slides.indices, id: \.self) { i in
@@ -47,6 +49,7 @@ struct WelcomeView: View {
                 CandyButton(title: page == slides.count - 1 ? "Get started" : "Next",
                             systemImage: "arrow.right") {
                     if page == slides.count - 1 {
+                        Analytics.track("onboarding_completed")
                         hasCompletedOnboarding = true
                     } else {
                         page += 1

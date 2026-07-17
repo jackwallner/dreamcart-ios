@@ -11,6 +11,7 @@ struct ProductDetailView: View {
     @State private var unboxing: [Product]? = nil
     @State private var favoriteError: String?
     @State private var updatingFavorite = false
+    @State private var viewedAt: Date?
 
     private var owned: Bool { shop.ownedIds.contains(product.id) }
     private var inCart: Bool { shop.inCart(product.id) }
@@ -92,6 +93,16 @@ struct ProductDetailView: View {
             Button("Cancel", role: .cancel) { favoriteError = nil }
         } message: {
             Text(favoriteError ?? "")
+        }
+        .onAppear {
+            viewedAt = Date()
+            Analytics.track("product_viewed", ["product_id": product.id, "category": product.category,
+                                                "price": product.price, "rarity": product.rarity])
+        }
+        .onDisappear {
+            guard let viewedAt else { return }
+            Analytics.track("product_dwell", ["product_id": product.id,
+                                              "dwell_seconds": Date().timeIntervalSince(viewedAt)])
         }
     }
 

@@ -148,8 +148,10 @@ final class ShopStore {
 
     @discardableResult
     func spin() async -> SpinResult? {
+        Analytics.track("wheel_spin_start")
         guard let r: SpinResult = try? await sb.rpc("spin") else { return nil }
         await refreshMe()
+        Analytics.track("wheel_spin_result", ["ok": r.ok, "prize": r.prize ?? 0, "slice": r.slice ?? -1])
         return r
     }
 
@@ -214,6 +216,7 @@ final class ShopStore {
         guard !cartIds.contains(id) else { return false }
         cartIds.append(id)
         Haptics.soft()
+        Analytics.track("add_to_cart", ["product_id": id, "recommendation": recommendation])
         if recommendation {
             acceptedRecommendationIds.insert(id)
             persistRecommendation(id, action: .addedToCart)
@@ -225,13 +228,19 @@ final class ShopStore {
         if let i = cartIds.firstIndex(of: id) { cartIds.remove(at: i); Haptics.tap() }
         else { _ = addToCart(id) }
     }
-    func removeFromCart(_ id: String) { cartIds.removeAll { $0 == id } }
+    func removeFromCart(_ id: String) {
+        Analytics.track("remove_from_cart", ["product_id": id])
+        cartIds.removeAll { $0 == id }
+    }
     func clearCart() { cartIds.removeAll() }
 
     @discardableResult
     func checkout() async -> PurchaseResult? {
         let ids = cartIds
         guard !ids.isEmpty else { return nil }
+        let itemCount = ids.count
+        let coinTotal = cartTotal
+        Analytics.track("checkout_started", ["item_count": itemCount, "coin_total": coinTotal])
         guard let r: PurchaseResult = try? await sb.rpc("purchase_cart", args: ["p_product_ids": ids])
         else { return nil }
         if r.ok {
@@ -239,6 +248,7 @@ final class ShopStore {
             clearCart()
             await loadCloset()
             await refreshMe()
+            Analytics.track("checkout_completed", ["item_count": itemCount, "coin_total": coinTotal])
         }
         return r
     }
