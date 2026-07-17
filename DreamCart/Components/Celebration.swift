@@ -99,6 +99,8 @@ struct RewardOverlay: View {
                             .font(.dcJumbo)
                             .foregroundStyle(Theme.ink(scheme))
                             .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                     }
                 }
                 .scaleEffect(stage >= 2 ? 1 : 0.72)
