@@ -42,6 +42,8 @@ struct CoinLabel: View {
             Text(Format.coins(amount))
                 .font(.system(size: scaledSize, weight: weight))
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(Format.coins(amount)) coins")
@@ -63,6 +65,8 @@ struct WalletPill: View {
                 Text(Format.coins(coins))
                     .font(.dcNumeral)
                     .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .contentTransition(.numericText(value: Double(coins)))
                 Image(systemName: "plus.circle.fill")
                     .font(.dcIconM)

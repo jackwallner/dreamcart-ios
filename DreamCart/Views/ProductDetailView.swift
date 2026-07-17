@@ -176,6 +176,7 @@ struct ProductDetailView: View {
         HStack(spacing: 12) {
             CoinLabel(amount: product.price, size: 20, weight: .heavy)
                 .foregroundStyle(Theme.ink(scheme))
+                .layoutPriority(1)
             Spacer()
             if owned {
                 Label("In your closet", systemImage: "checkmark.seal.fill")
@@ -200,6 +201,8 @@ struct ProductDetailView: View {
                     HStack(spacing: 7) {
                         Image(systemName: inCart ? "creditcard.fill" : "cart.badge.plus")
                         Text(inCart ? "Go to checkout" : "Add to cart")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     .font(.dcButton)
                     .foregroundStyle(.white)
