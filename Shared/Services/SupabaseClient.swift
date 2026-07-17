@@ -204,12 +204,18 @@ actor SupabaseClient {
 
     // MARK: Edge functions
 
+    // `timeout` defaults to URLSession's own request timeout (60s); pass a
+    // longer value for functions that may sit behind a slow, patiently-
+    // retrying upstream (e.g. render-avatar's own Pollinations backoff loop)
+    // so the client doesn't time out a call the server is still on track to
+    // finish and cache.
     @discardableResult
-    func callFunction<T: Decodable>(_ name: String, body: [String: Any] = [:]) async throws -> T {
+    func callFunction<T: Decodable>(_ name: String, body: [String: Any] = [:], timeout: TimeInterval? = nil) async throws -> T {
         var req = URLRequest(url: Config.functionsURL.appendingPathComponent(name))
         req.httpMethod = "POST"
         req.setValue(apikey, forHTTPHeaderField: "apikey")
         req.setValue("application/json", forHTTPHeaderField: "content-type")
+        if let timeout { req.timeoutInterval = timeout }
         let token = try await accessToken()
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)

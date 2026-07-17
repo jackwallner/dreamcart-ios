@@ -87,22 +87,15 @@ struct CompositeAvatarView: View {
             }
             switch renderState {
             case .ready(let url):
-                AsyncImage(url: URL(string: url)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable()
-                            .scaledToFill()
-                            .transition(.opacity)
-                    case .empty:
-                        renderStatus("Finishing editorial look…", progress: true)
-                    case .failure:
-                        renderStatus("Editorial image unavailable", retry: true)
-                    @unknown default:
-                        EmptyView()
-                    }
-                }
-                .id("\(url)#\(renderAttempt)")
-                .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
+                // The render-avatar bucket URL is itself the deterministic
+                // cache key (hash of look + sorted item ids), so this reuses
+                // the app's normal image pipeline — memory/disk cache plus
+                // the shared ImageFetchGate and its own 429 backoff — instead
+                // of a bare AsyncImage that would refetch and re-decode this
+                // hero shot every time the dressing room reappears.
+                RemoteImage(url: url, maxPixelSize: 1400)
+                    .transition(.opacity)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
             case .loading:
                 renderStatus("Rendering editorial look…", progress: true)
             case .failed(let message):
