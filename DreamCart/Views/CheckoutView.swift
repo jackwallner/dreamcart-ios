@@ -11,20 +11,13 @@ struct CheckoutView: View {
     let onPlaced: ([Product]) -> Void
 
     @Environment(ShopStore.self) private var shop
+    @Environment(ShippingAddressStore.self) private var shipping
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
 
-    @AppStorage("shipName")   private var name = ""
-    @AppStorage("shipStreet") private var street = ""
-    @AppStorage("shipCity")   private var city = ""
-    @AppStorage("shipState")  private var state = ""
-    @AppStorage("shipZip")    private var zip = ""
-
     @State private var placing = false
     @State private var errorMessage: String?
-    @FocusState private var focused: Field?
-
-    private enum Field { case name, street, city, state, zip }
+    @State private var showEditAddress = false
 
     // Virtual receipt math. Coins -> pretend dollars; tax is a flat rate on the
     // subtotal; shipping is listed then discounted to free for the dopamine.
@@ -32,9 +25,7 @@ struct CheckoutView: View {
     private var tax: Double { subtotal * 0.0875 }
     private var orderTotal: Double { subtotal + tax }
 
-    private var addressComplete: Bool {
-        [name, street, city, state, zip].allSatisfy { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-    }
+    private var addressComplete: Bool { shipping.address.isValid }
     private var canPlace: Bool { addressComplete && shop.canAfford && !placing }
 
     var body: some View {
@@ -58,12 +49,10 @@ struct CheckoutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .keyboard) {
-                    HStack { Spacer(); Button("Done") { focused = nil } }
-                }
             }
             .safeAreaInset(edge: .bottom) { placeBar }
         }
+        .sheet(isPresented: $showEditAddress) { ShippingAddressView() }
         .alert("Order didn't go through", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -79,40 +68,29 @@ struct CheckoutView: View {
     private var addressCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             cardHeader("shippingbox.fill", "Shipping address")
-            Text("Use a pretend address. This fictional game data is saved only for checkout convenience and is never used for shipping.")
-                .font(.dcCaption)
-                .foregroundStyle(Theme.subtle(scheme))
-            field("Full name", text: $name, field: .name, content: .name)
-            field("Street address", text: $street, field: .street, content: .fullStreetAddress)
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 10) {
-                    field("City", text: $city, field: .city, content: .addressCity)
-                    field("State", text: $state, field: .state, content: .addressState)
-                        .frame(width: 90)
+            if addressComplete {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ships to").font(.dcCaption).foregroundStyle(Theme.subtle(scheme))
+                    Text(shipping.address.multilineSummary)
+                        .font(.dcBodyText)
+                        .foregroundStyle(Theme.ink(scheme))
                 }
-                VStack(spacing: 10) {
-                    field("City", text: $city, field: .city, content: .addressCity)
-                    field("State", text: $state, field: .state, content: .addressState)
-                }
+            } else {
+                Text("Add a pretend address so your order has somewhere to \"go.\"")
+                    .font(.dcCaption)
+                    .foregroundStyle(Theme.subtle(scheme))
             }
-            field("ZIP code", text: $zip, field: .zip, content: .postalCode, keyboard: .numberPad)
+            Button {
+                Haptics.tap()
+                showEditAddress = true
+            } label: {
+                Text(addressComplete ? "Edit address" : "Add address")
+                    .font(.dcLabel)
+                    .foregroundStyle(Theme.violet)
+            }
         }
         .padding(16)
         .cardStyle(scheme)
-    }
-
-    private func field(_ placeholder: String, text: Binding<String>, field: Field,
-                       content: UITextContentType, keyboard: UIKeyboardType = .default) -> some View {
-        TextField(placeholder, text: text)
-            .font(.dcBody)
-            .foregroundStyle(Theme.ink(scheme))
-            .textContentType(content)
-            .keyboardType(keyboard)
-            .focused($focused, equals: field)
-            .padding(.horizontal, 12).padding(.vertical, 11)
-            .background(Theme.bg(scheme), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Theme.subtle(scheme).opacity(0.2)))
     }
 
     // MARK: item summary
@@ -196,7 +174,6 @@ struct CheckoutView: View {
         placing = true
         defer { placing = false }
         let bought = shop.cartProducts
-        focused = nil
         guard let r = await shop.checkout() else {
             Haptics.warning()
             errorMessage = "Couldn't place your order. Try again."
