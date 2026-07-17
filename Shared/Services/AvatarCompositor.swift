@@ -48,10 +48,14 @@ final class AvatarCutoutCache: @unchecked Sendable {
         return cut
     }
 
-    /// Reuse the grid's decoded image if it's warm; otherwise fetch (URLCache
-    /// almost always has it already since the piece was shown in the closet).
+    /// Reuse the grid's decoded image if it's warm (grid/closet/outfit rows
+    /// all decode at the same 700px bucket — plenty for Vision segmentation,
+    /// which works at moderate resolution anyway); otherwise fetch (URLCache
+    /// almost always has the bytes already since the piece was shown in the
+    /// closet).
     private func loadSource(_ url: String) async -> UIImage? {
-        if let hit = ImageMemoryCache.shared.image(for: url) { return hit }
+        let gridBucket: CGFloat = 700
+        if let hit = ImageMemoryCache.shared.image(for: url, maxPixelSize: gridBucket) { return hit }
         guard let u = URL(string: url) else { return nil }
         var req = URLRequest(url: u, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 60)
         req.setValue("image/*", forHTTPHeaderField: "Accept")

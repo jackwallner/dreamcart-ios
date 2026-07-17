@@ -58,7 +58,7 @@ struct ForYouView: View {
             ProductDetailView(product: product)
         } label: {
             ZStack(alignment: .bottomLeading) {
-                RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
+                RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
                 LinearGradient(colors: [.clear, .black.opacity(0.75)],

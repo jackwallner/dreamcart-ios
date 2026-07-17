@@ -8,6 +8,10 @@ import UIKit
 struct RemoteImage: View {
     let url: String
     var rarity: Rarity = .common
+    // Pixel cap the source is downsampled to before it's decoded/cached.
+    // Grid thumbnails default to a small bucket; hero shots (ForYou,
+    // product detail) pass a larger one so they stay sharp full-bleed.
+    var maxPixelSize: CGFloat = 700
     @Environment(\.colorScheme) private var scheme
     @State private var image: UIImage?
     @State private var failed = false
@@ -38,9 +42,21 @@ struct RemoteImage: View {
     }
 
     private func load() async {
-        if let hit = ImageMemoryCache.shared.image(for: url) { image = hit; return }
+        // Memory hit: assign outside withAnimation so an already-decoded
+        // image never flashes through the shimmer/fade — it's just there.
+        if let hit = ImageMemoryCache.shared.image(for: url, maxPixelSize: maxPixelSize) {
+            image = hit
+            return
+        }
         guard let target = URL(string: url) else { failed = true; return }
         image = nil
+        // Disk hit: a pre-downsampled thumbnail from a previous launch. Also
+        // assigned instantly — it's cached, not freshly generated.
+        if let diskHit = await ImageDiskCache.shared.image(for: url, maxPixelSize: maxPixelSize) {
+            ImageMemoryCache.shared.set(diskHit, for: url, maxPixelSize: maxPixelSize)
+            image = diskHit
+            return
+        }
         var request = URLRequest(url: target, cachePolicy: .returnCacheDataElseLoad, timeoutInterval: 60)
         request.setValue("image/*", forHTTPHeaderField: "Accept")
         for tryIndex in 0..<5 {
@@ -53,8 +69,11 @@ struct RemoteImage: View {
                     rateLimited = http.statusCode == 429
                     throw URLError(.badServerResponse)
                 }
-                guard let decoded = UIImage(data: data) else { throw URLError(.cannotDecodeContentData) }
-                ImageMemoryCache.shared.set(decoded, for: url)
+                guard let decoded = ImageDownsampler.decode(data: data, maxPixelSize: maxPixelSize) else {
+                    throw URLError(.cannotDecodeContentData)
+                }
+                ImageMemoryCache.shared.set(decoded, for: url, maxPixelSize: maxPixelSize)
+                ImageDiskCache.shared.store(decoded, for: url, maxPixelSize: maxPixelSize)
                 withAnimation(.easeOut(duration: 0.3)) { image = decoded }
                 return
             } catch {
@@ -69,25 +88,6 @@ struct RemoteImage: View {
             }
         }
         failed = true
-    }
-}
-
-// Small global gate so a grid of uncached shots trickles requests instead of
-// bursting into the generation endpoint's rate limit.
-actor ImageFetchGate {
-    static let shared = ImageFetchGate()
-    private let limit = 3
-    private var active = 0
-    private var waiters: [CheckedContinuation<Void, Never>] = []
-
-    func acquire() async {
-        if active < limit { active += 1; return }
-        await withCheckedContinuation { waiters.append($0) }
-    }
-
-    func release() {
-        if waiters.isEmpty { active -= 1 }
-        else { waiters.removeFirst().resume() }
     }
 }
 
