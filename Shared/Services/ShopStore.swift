@@ -58,9 +58,19 @@ final class ShopStore {
             me = try await m
             brands = try await b
             products = try await p
+            // Warm the shop grid's first page while the splash is still up
+            // and the rest of the bootstrap (closet/favorites/recs) is still
+            // in flight — by the time the tabs appear these are often
+            // already decoded.
+            let gridWarm = Array(products.prefix(12).map(\.imageUrl))
+            Task { await ImagePrefetcher.warmGrid(urls: gridWarm) }
             await loadCloset()
             await loadFavorites()
             await loadRecommendationFeedback()
+            // For You's ranking depends on closet/favorites/recs, so warm it
+            // once those are in — still well before the user taps the tab.
+            let forYouWarm = Array(forYouProducts.prefix(8).map(\.imageUrl))
+            Task { await ImagePrefetcher.warmGrid(urls: forYouWarm, maxPixelSize: 1400) }
             Task { await loadRemainingCatalog(generation: generation) }
         } catch {
             loadError = (error as? SBError)?.errorDescription ?? error.localizedDescription

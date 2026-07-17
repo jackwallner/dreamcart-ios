@@ -171,7 +171,7 @@ struct UnboxingView: View {
                                     .fill(p.rarityKind.color.opacity(haloPulse ? 0.42 : 0.24))
                                     .frame(width: 260, height: 260)
                                     .blur(radius: 50)
-                                RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
+                                RemoteImage(url: p.imageUrl, rarity: p.rarityKind, maxPixelSize: 1000)
                                     .frame(width: 240, height: 300)
                                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                                     .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)

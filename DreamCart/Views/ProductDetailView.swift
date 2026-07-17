@@ -19,7 +19,7 @@ struct ProductDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
+                RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400)
                     .aspectRatio(0.82, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
