@@ -114,8 +114,14 @@ struct ProfileView: View {
     private func statTile(_ v: String, _ l: String, _ icon: String, _ tint: Color) -> some View {
         VStack(spacing: 6) {
             Image(systemName: icon).font(.dcIconM).foregroundStyle(tint)
-            Text(v).font(.dcStat).foregroundStyle(Theme.ink(scheme))
-            Text(l).font(.dcCaption).foregroundStyle(Theme.subtle(scheme))
+            Text(v).font(.dcStat)
+                .foregroundStyle(Theme.ink(scheme))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            Text(l).font(.dcCaption)
+                .foregroundStyle(Theme.subtle(scheme))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 16).cardStyle(scheme)
     }
