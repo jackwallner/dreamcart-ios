@@ -1,26 +1,34 @@
 import SwiftUI
 
+/// The For You feed as a Tinder-style swipe deck: one hero card up front,
+/// the next two peeking behind it. Drag right to add to cart, left to pass.
+/// The behind cards rise into place as the front one leaves (driven by drag
+/// progress, not a post-hoc animation), so the deck never visibly "jumps"
+/// when the top card is actually removed. Mechanics mirror the fleet's other
+/// swipe decks (Sideline's BriefingDeck, MahjTrainer's FlashcardDrillView).
 struct ForYouView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var offset: CGSize = .zero
-    @State private var showCoinShop = false
+
+    @State private var drag: CGSize = .zero
+    @State private var isFlinging = false
+    @State private var crossedThreshold = false
     @State private var acceptedFlash = false
+    @State private var showCoinShop = false
 
     private var products: [ProductWithBrand] { shop.forYouProducts }
-    private var current: ProductWithBrand? { products.first }
 
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
                 VStack(spacing: 18) {
                     header
-                    if let current {
-                        card(current, size: proxy.size)
-                        controls(current)
-                    } else {
+                    if products.isEmpty {
                         exhausted
+                    } else {
+                        deck(size: proxy.size)
+                        controls(size: proxy.size)
                     }
                 }
                 .padding(16)
@@ -53,7 +61,32 @@ struct ForYouView: View {
         }
     }
 
-    private func card(_ product: ProductWithBrand, size: CGSize) -> some View {
+    // MARK: - Deck
+
+    /// Up to three cards mounted at once: the draggable front card plus two
+    /// peeking behind it. Slot 0 is the front; higher slots sit further back.
+    private func deck(size: CGSize) -> some View {
+        let visible = Array(products.prefix(3).enumerated())
+        return ZStack {
+            ForEach(visible.reversed(), id: \.element.id) { slot, product in
+                cardView(product, slot: slot, size: size)
+                    .scaleEffect(scale(forSlot: slot))
+                    .offset(y: yOffset(forSlot: slot))
+                    .offset(slot == 0 ? drag : .zero)
+                    .rotationEffect(slot == 0 ? topRotation : .zero, anchor: .bottom)
+                    .zIndex(Double(3 - slot))
+                    // Only the front card is touchable; behind cards are
+                    // decorative peeks and stay out of VoiceOver's way.
+                    .allowsHitTesting(slot == 0)
+                    .accessibilityHidden(slot != 0)
+                    .gesture(dragGesture(size: size))
+            }
+        }
+        .frame(height: min(size.height * 0.62, 560))
+        .padding(.bottom, 4)
+    }
+
+    private func cardView(_ product: ProductWithBrand, slot: Int, size: CGSize) -> some View {
         NavigationLink {
             ProductDetailView(product: product)
         } label: {
@@ -64,22 +97,21 @@ struct ForYouView: View {
                 LinearGradient(colors: [.clear, .black.opacity(0.75)],
                                startPoint: .center, endPoint: .bottom)
                 cardCopy(product)
-                swipeOverlay
+                if slot == 0 {
+                    swipeOverlay
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .strokeBorder(product.rarityKind.color.opacity(0.55), lineWidth: 2))
             .shadow(color: product.rarityKind.color.opacity(0.25), radius: 22, y: 12)
-            .rotationEffect(.degrees(Double(offset.width / 24)))
-            .offset(offset)
         }
         .buttonStyle(.plain)
-        .frame(height: min(size.height * 0.62, 560))
-        .gesture(dragGesture(product))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(product.name), \(product.brands?.name ?? "DreamCart"), \(product.rarityKind.label), \(Format.coins(product.price)) coins")
-        .accessibilityAction(named: "Pass") { pass(product) }
-        .accessibilityAction(named: "Add to cart") { accept(product) }
+        .accessibilityAction(named: "Pass") { fling(direction: -1, size: size) }
+        .accessibilityAction(named: "Add to cart") { fling(direction: 1, size: size) }
     }
 
     private func cardCopy(_ product: ProductWithBrand) -> some View {
@@ -107,29 +139,44 @@ struct ForYouView: View {
         .padding(20)
     }
 
+    /// Corner stamps that fade in with the drag, Tinder-style: cart-green on
+    /// a right pull, pass-red on a left pull. Only ever shown on the front card.
     private var swipeOverlay: some View {
-        HStack {
-            Text("PASS")
-                .foregroundStyle(.white)
-                .padding(10)
-                .background(.red.opacity(0.9), in: Capsule())
-                .opacity(max(0, -offset.width / 100))
-            Spacer()
-            Text(acceptedFlash ? "CARTED!" : "ADD")
-                .foregroundStyle(.white)
-                .padding(10)
-                .background(.green.opacity(0.9), in: Capsule())
-                .opacity(max(0, offset.width / 100))
+        ZStack {
+            stamp(acceptedFlash ? "CARTED!" : "ADD", icon: "cart.fill", color: .green, angle: -10)
+                .opacity(stampOpacity(forDirection: 1))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            stamp("PASS", icon: "xmark", color: .red, angle: 10)
+                .opacity(stampOpacity(forDirection: -1))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         }
-        .font(.dcButton)
-        .padding(18)
-        .frame(maxHeight: .infinity, alignment: .top)
+        .padding(20)
+        .allowsHitTesting(false)
     }
 
-    private func controls(_ product: ProductWithBrand) -> some View {
+    private func stamp(_ text: String, icon: String, color: Color, angle: Double) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(text)
+        }
+        .font(.dcButton)
+        .foregroundStyle(color)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.94), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(color, lineWidth: 3))
+        .rotationEffect(.degrees(angle))
+    }
+
+    private func stampOpacity(forDirection direction: CGFloat) -> Double {
+        let travel = drag.width * direction
+        return Double(min(1, max(0, travel / 90)))
+    }
+
+    private func controls(size: CGSize) -> some View {
         HStack(spacing: 28) {
-            actionButton("xmark", color: .red, label: "Pass") { pass(product) }
-            actionButton("cart.badge.plus", color: .green, label: "Add to cart") { accept(product) }
+            actionButton("xmark", color: .red, label: "Pass") { fling(direction: -1, size: size) }
+            actionButton("cart.badge.plus", color: .green, label: "Add to cart") { fling(direction: 1, size: size) }
         }
     }
 
@@ -159,45 +206,108 @@ struct ForYouView: View {
         .padding(.horizontal, 24)
     }
 
-    private func dragGesture(_ product: ProductWithBrand) -> some Gesture {
-        DragGesture()
-            .onChanged { offset = $0.translation }
+    // MARK: - Stack geometry
+
+    private func restingScale(_ slot: Int) -> CGFloat { 1 - CGFloat(slot) * 0.04 }
+    private func restingY(_ slot: Int) -> CGFloat { CGFloat(slot) * 26 }
+
+    /// 0 at rest, 1 once the front card has traveled a full swipe. Drives the
+    /// cards behind it rising into place as it's dragged (and, later, flung) away.
+    private var progress: CGFloat { min(1, abs(drag.width) / 110) }
+
+    private func scale(forSlot slot: Int) -> CGFloat {
+        guard slot > 0 else { return 1 }
+        return restingScale(slot) + (restingScale(slot - 1) - restingScale(slot)) * progress
+    }
+
+    private func yOffset(forSlot slot: Int) -> CGFloat {
+        guard slot > 0 else { return 0 }
+        return restingY(slot) + (restingY(slot - 1) - restingY(slot)) * progress
+    }
+
+    private var topRotation: Angle {
+        .degrees(Double(max(-14, min(14, drag.width / 14))))
+    }
+
+    private func dismissDistance(_ size: CGSize) -> CGFloat {
+        max(90, size.width * 0.30)
+    }
+
+    // MARK: - Swipe
+
+    private func dragGesture(size: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                guard !isFlinging else { return }
+                drag = value.translation
+                // Light tick the moment the drag crosses "let go and it
+                // flies" territory, so the threshold is felt, not guessed.
+                let past = abs(value.translation.width) > dismissDistance(size)
+                if past != crossedThreshold {
+                    crossedThreshold = past
+                    if past { Haptics.soft() }
+                }
+            }
             .onEnded { value in
-                let projected = value.predictedEndTranslation.width
-                if projected > 120 { accept(product) }
-                else if projected < -120 { pass(product) }
-                else { animateReset() }
+                guard !isFlinging else { return }
+                crossedThreshold = false
+                let dx = value.translation.width
+                let flung = abs(dx) > dismissDistance(size)
+                    || abs(value.predictedEndTranslation.width) > size.width * 0.75
+                if flung {
+                    fling(direction: dx >= 0 ? 1 : -1, size: size)
+                } else {
+                    animateReset()
+                }
             }
     }
 
-    private func pass(_ product: ProductWithBrand) {
-        animateOut(to: -500) { shop.dismissRecommendation(product.id) }
+    private func animateReset() {
+        if reduceMotion { drag = .zero }
+        else { withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { drag = .zero } }
     }
 
-    private func accept(_ product: ProductWithBrand) {
-        acceptedFlash = true
-        Haptics.success()
-        animateOut(to: 500) {
-            _ = shop.addToCart(product.id, recommendation: true)
-            acceptedFlash = false
+    /// Throws the front card off (or, under Reduce Motion, commits instantly),
+    /// then applies the cart/pass side effect with animation suppressed. By
+    /// the time the side effect fires, the card behind has already risen to
+    /// the front's resting transform (`progress` is 1), so nothing jumps when
+    /// the deck actually reflows.
+    private func fling(direction: CGFloat, size: CGSize) {
+        guard let product = products.first, !isFlinging else { return }
+        isFlinging = true
+        if direction > 0 {
+            acceptedFlash = true
+            Haptics.success()
         }
-    }
-
-    private func animateOut(to x: CGFloat, completion: @escaping () -> Void) {
-        if reduceMotion {
-            offset = .zero
-            completion()
+        guard !reduceMotion else {
+            commit(product, accepted: direction > 0)
+            drag = .zero
+            isFlinging = false
             return
         }
-        withAnimation(.easeIn(duration: 0.18)) { offset.width = x }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-            offset = .zero
-            completion()
+        let exit = CGSize(width: direction * size.width * 1.6, height: drag.height * 1.1)
+        withAnimation(.easeIn(duration: 0.24)) {
+            drag = exit
+        } completion: {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                commit(product, accepted: direction > 0)
+                drag = .zero
+                isFlinging = false
+            }
         }
     }
 
-    private func animateReset() {
-        if reduceMotion { offset = .zero }
-        else { withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { offset = .zero } }
+    /// The actual add-to-cart / discard side effects, unchanged from before:
+    /// `addToCart` records the recommendation acceptance and fires its own
+    /// haptic; `dismissRecommendation` persists the pass and fires its own.
+    private func commit(_ product: ProductWithBrand, accepted: Bool) {
+        if accepted {
+            _ = shop.addToCart(product.id, recommendation: true)
+            acceptedFlash = false
+        } else {
+            shop.dismissRecommendation(product.id)
+        }
     }
 }
