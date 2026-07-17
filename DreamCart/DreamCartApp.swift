@@ -8,6 +8,7 @@ struct DreamCartApp: App {
     @State private var store = StoreController()
     @State private var router = RouteCoordinator()
     @State private var notifications = LocalNotificationCoordinator()
+    @State private var shipping = ShippingAddressStore()
     @AppStorage("appearance") private var appearance = Appearance.light.rawValue
 
     init() {
@@ -26,6 +27,7 @@ struct DreamCartApp: App {
                 .environment(store)
                 .environment(router)
                 .environment(notifications)
+                .environment(shipping)
                 .tint(Theme.violet)
                 .preferredColorScheme((Appearance(rawValue: appearance) ?? .light).colorScheme)
                 .onOpenURL { router.receive(url: $0) }

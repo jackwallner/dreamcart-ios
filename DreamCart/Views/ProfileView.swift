@@ -4,10 +4,12 @@ struct ProfileView: View {
     @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(LocalNotificationCoordinator.self) private var notifications
+    @Environment(ShippingAddressStore.self) private var shipping
     @Environment(\.colorScheme) private var scheme
     @State private var showCoinShop = false
     @State private var showNotificationPrimer = false
     @State private var showLedger = false
+    @State private var showShipping = false
     @State private var confirmDelete = false
     @State private var working = false
     @State private var deleteError: String?
@@ -37,6 +39,7 @@ struct ProfileView: View {
             .navigationTitle("You")
             .walletToolbar($showCoinShop)
             .sheet(isPresented: $showLedger) { LedgerView() }
+            .sheet(isPresented: $showShipping) { ShippingAddressView() }
             .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
             .task { await notifications.refreshStatus() }
             .disabled(working)
@@ -216,6 +219,8 @@ struct ProfileView: View {
         VStack(spacing: 0) {
             row("Get more coins", "plus.circle.fill", Theme.violet) { showCoinShop = true }
             Divider().padding(.leading, 50)
+            subtitledRow("Shipping address", shippingSubtitle, "shippingbox.fill", Theme.coral) { showShipping = true }
+            Divider().padding(.leading, 50)
             row(ledgerLoading ? "Loading coin history…" : "Coin history",
                 "clock.arrow.circlepath", Theme.subtle(scheme)) {
                 guard !ledgerLoading else { return }
@@ -255,6 +260,32 @@ struct ProfileView: View {
             .padding(.horizontal, 14).padding(.vertical, 14)
         }
         .buttonStyle(.plain)
+    }
+
+    private func subtitledRow(_ title: String, _ subtitle: String, _ icon: String, _ tint: Color,
+                              action: @escaping () -> Void) -> some View {
+        Button { Haptics.tap(); action() } label: {
+            HStack(spacing: 14) {
+                Image(systemName: icon).font(.dcIconM).foregroundStyle(tint).frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.dcBody)
+                        .foregroundStyle(Theme.ink(scheme))
+                    Text(subtitle).font(.dcCaption)
+                        .foregroundStyle(Theme.subtle(scheme))
+                        .lineLimit(1)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.dcIconS).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
+            }
+            .padding(.horizontal, 14).padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var shippingSubtitle: String {
+        let address = shipping.address
+        if !address.isValid { return "Add an address for checkout" }
+        return [address.city, address.state].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.joined(separator: ", ")
     }
 
     private var dangerZone: some View {
