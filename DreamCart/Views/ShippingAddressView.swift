@@ -41,6 +41,7 @@ struct ShippingAddressView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
                         store.address = draft
+                        Analytics.track("shipping_address_saved")
                         Haptics.success()
                         dismiss()
                     }

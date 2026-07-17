@@ -202,6 +202,27 @@ actor SupabaseClient {
         return data
     }
 
+    /// Insert rows for best-effort telemetry: works whether or not there's a
+    /// signed-in session (falls back to the anon apikey like `select` does),
+    /// so analytics can capture pre-auth events (onboarding) too. No `Prefer`
+    /// header — the caller doesn't need the inserted rows back.
+    func insertBestEffort<T: Encodable>(_ path: String, rows: T) async throws {
+        var req = URLRequest(url: Config.restURL.appendingPathComponent(path))
+        req.httpMethod = "POST"
+        req.setValue(apikey, forHTTPHeaderField: "apikey")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        if let token = try? await accessToken() {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else {
+            req.setValue("Bearer \(apikey)", forHTTPHeaderField: "Authorization")
+        }
+        let enc = JSONEncoder()
+        enc.dateEncodingStrategy = .iso8601
+        req.httpBody = try enc.encode(rows)
+        let (data, resp) = try await URLSession.shared.data(for: req)
+        try Self.ensureOK(resp, data)
+    }
+
     // MARK: Edge functions
 
     // `timeout` defaults to URLSession's own request timeout (60s); pass a

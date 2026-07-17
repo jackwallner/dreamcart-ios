@@ -39,6 +39,7 @@ struct CoinShopView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
+        .onAppear { Analytics.track("coin_shop_viewed") }
         .overlay {
             if let r = reward {
                 RewardOverlay(title: "Coins added", amount: r,
@@ -167,6 +168,7 @@ struct CoinShopView: View {
     private func buy(_ pack: CoinPack) async {
         buying = pack.productId
         store.lastError = nil
+        Analytics.track("coin_pack_purchase_started", ["product_id": pack.productId, "coins": pack.coins])
         defer {
             buying = nil
             buyTask = nil
@@ -176,7 +178,10 @@ struct CoinShopView: View {
         if ok {
             await shop.reconcilePurchases()
             let gained = shop.coins - before
-            if gained > 0 { withAnimation { reward = gained } }
+            if gained > 0 {
+                withAnimation { reward = gained }
+                Analytics.track("coin_pack_purchase_completed", ["product_id": pack.productId, "coins_granted": gained])
+            }
         }
     }
 
