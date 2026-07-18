@@ -78,25 +78,35 @@ final class ShopStore {
     }
 
     private func loadRemainingCatalog(generation: Int) async {
-        let pageSize = 200
-        var offset = pageSize
+        // Bigger pages, buffered locally, then a SINGLE append. Draining the
+        // rest of the catalog used to append per 200-row page (~8 mutations),
+        // and each mutation re-invalidated every view observing `products`
+        // mid-interaction — a big part of the first-load jank. Fetching stays
+        // paged (PostgREST caps rows per request) but the UI sees one update.
+        let pageSize = 1000
+        var offset = products.count
         isLoadingMoreProducts = true
         catalogLoadError = nil
         defer {
             if generation == catalogGeneration { isLoadingMoreProducts = false }
         }
 
+        var collected: [ProductWithBrand] = []
         do {
             while generation == catalogGeneration {
                 let page: [ProductWithBrand] = try await sb.select(
                     "products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc,id.asc&offset=\(offset)&limit=\(pageSize)")
                 guard generation == catalogGeneration else { return }
-                appendCatalogPage(page)
-                if page.count < pageSize { return }
+                collected.append(contentsOf: page)
+                if page.count < pageSize { break }
                 offset += pageSize
             }
+            guard generation == catalogGeneration else { return }
+            if !collected.isEmpty { appendCatalogPage(collected) }
         } catch {
             guard generation == catalogGeneration else { return }
+            // Keep whatever we managed to buffer before surfacing the error.
+            if !collected.isEmpty { appendCatalogPage(collected) }
             catalogLoadError = (error as? SBError)?.errorDescription ?? error.localizedDescription
         }
     }
@@ -174,8 +184,36 @@ final class ShopStore {
         acceptedRecommendationIds = Set(rows.filter { $0.action == RecommendationAction.addedToCart.rawValue }.map(\.productId))
     }
 
+    // The ranked feed is O(n log n) over the whole catalog, and ForYouView
+    // reads it several times per body pass. Cache it against a cheap signature
+    // of the inputs so it recomputes only when those actually change, not on
+    // every SwiftUI invalidation. @ObservationIgnored keeps the cache itself
+    // out of observation — reading the real inputs below is what keeps the
+    // view subscribed and reactive.
+    @ObservationIgnored private var forYouCache: [ProductWithBrand] = []
+    @ObservationIgnored private var forYouCacheKey: Int = -1
+
     var forYouProducts: [ProductWithBrand] {
-        rankedRecommendations(limit: 30)
+        let key = forYouSignature()
+        if key == forYouCacheKey { return forYouCache }
+        let ranked = rankedRecommendations(limit: 30)
+        forYouCache = ranked
+        forYouCacheKey = key
+        return ranked
+    }
+
+    /// Cheap fingerprint of every input the ranking depends on. Reading these
+    /// here also registers the @Observable dependencies, so the view still
+    /// re-evaluates when they change (and then the key differs and we recompute).
+    private func forYouSignature() -> Int {
+        var h = Hasher()
+        h.combine(products.count)
+        h.combine(ownedIds)
+        h.combine(favoriteIds)
+        h.combine(dismissedRecommendationIds)
+        h.combine(acceptedRecommendationIds)
+        h.combine(cartIds)
+        return h.finalize()
     }
 
     func resetRecommendationDismissals() {
@@ -389,9 +427,13 @@ final class ShopStore {
                 && !cartIds.contains($0.id)
                 && !dismissedRecommendationIds.contains($0.id)
         }
+        // Hoisted out of the per-candidate loop: newDropIds rebuilds a full-
+        // catalog Set on every read, so calling it inside the score made
+        // ranking O(n²). Compute it once per pass.
+        let newDrops = newDropIds
         let scored = candidates.enumerated().map { index, candidate in
             let score = recommendationScore(candidate, anchor: anchor, positive: positive,
-                                            preferDifferentSlots: preferDifferentSlots)
+                                            preferDifferentSlots: preferDifferentSlots, newDrops: newDrops)
             return (candidate, score, index)
         }.sorted {
             if $0.1 != $1.1 { return $0.1 > $1.1 }
@@ -417,7 +459,8 @@ final class ShopStore {
     private func recommendationScore(_ candidate: ProductWithBrand,
                                      anchor: ProductWithBrand?,
                                      positive: [ProductWithBrand],
-                                     preferDifferentSlots: Bool) -> Int {
+                                     preferDifferentSlots: Bool,
+                                     newDrops: Set<String>) -> Int {
         let references = anchor.map { [$0] } ?? positive
         var score = 0
         for reference in references {
@@ -430,7 +473,7 @@ final class ShopStore {
         }
         if favoriteIds.contains(candidate.id) { score += 12 }
         if acceptedRecommendationIds.contains(candidate.id) { score += 10 }
-        if newDropIds.contains(candidate.id) { score += 2 }
+        if newDrops.contains(candidate.id) { score += 2 }
         score += candidate.rarityKind == .legendary ? 2 : candidate.rarityKind == .epic ? 1 : 0
         return score
     }
