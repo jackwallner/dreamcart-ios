@@ -96,13 +96,16 @@ struct ProductDetailView: View {
         }
         .onAppear {
             viewedAt = Date()
-            Analytics.track("product_viewed", ["product_id": product.id, "category": product.category,
-                                                "price": product.price, "rarity": product.rarity])
+            var props: AnalyticsProps = ["product_id": product.id]
+            props.merge(product.tasteProps) { current, _ in current }
+            Analytics.track("product_viewed", props)
         }
         .onDisappear {
             guard let viewedAt else { return }
-            Analytics.track("product_dwell", ["product_id": product.id,
-                                              "dwell_seconds": Date().timeIntervalSince(viewedAt)])
+            var props: AnalyticsProps = ["product_id": product.id,
+                                         "dwell_seconds": Date().timeIntervalSince(viewedAt)]
+            props.merge(product.tasteProps) { current, _ in current }
+            Analytics.track("product_dwell", props)
         }
     }
 

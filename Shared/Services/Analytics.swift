@@ -107,6 +107,11 @@ extension String: AnalyticsPropertyConvertible { var analyticsValue: AnalyticsVa
 extension Int: AnalyticsPropertyConvertible { var analyticsValue: AnalyticsValue { .int(self) } }
 extension Double: AnalyticsPropertyConvertible { var analyticsValue: AnalyticsValue { .double(self) } }
 extension Bool: AnalyticsPropertyConvertible { var analyticsValue: AnalyticsValue { .bool(self) } }
+// Arrays land as a jsonb array so downstream can query membership directly,
+// e.g. `props->'style_tags' ? 'minimalist'`.
+extension Array: AnalyticsPropertyConvertible where Element == String {
+    var analyticsValue: AnalyticsValue { .stringArray(self) }
+}
 
 /// The wire type actually sent to Supabase's jsonb `props` column.
 enum AnalyticsValue: Encodable, Sendable {
@@ -114,14 +119,43 @@ enum AnalyticsValue: Encodable, Sendable {
     case int(Int)
     case double(Double)
     case bool(Bool)
+    case stringArray([String])
 
     func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
         switch self {
-        case .string(let v): try container.encode(v)
-        case .int(let v): try container.encode(v)
-        case .double(let v): try container.encode(v)
-        case .bool(let v): try container.encode(v)
+        case .string(let v): var c = encoder.singleValueContainer(); try c.encode(v)
+        case .int(let v): var c = encoder.singleValueContainer(); try c.encode(v)
+        case .double(let v): var c = encoder.singleValueContainer(); try c.encode(v)
+        case .bool(let v): var c = encoder.singleValueContainer(); try c.encode(v)
+        case .stringArray(let v): var c = encoder.unkeyedContainer(); try c.encode(contentsOf: v)
         }
     }
 }
+
+// MARK: - Product taste vector
+
+/// The catalog attributes every high-intent event denormalizes, so each event
+/// is a self-contained signal about a shopper's taste — no join back to the
+/// catalog required, and robust to catalog drift (image regen, drop rotation).
+/// Both `Product` and `ProductWithBrand` expose the same fields, so the vector
+/// is defined once here.
+protocol ProductTasteAttributed {
+    var brandId: String { get }
+    var category: String { get }
+    var slot: String { get }
+    var styleTags: [String] { get }
+    var colorName: String { get }
+    var price: Int { get }
+    var rarity: String { get }
+}
+
+extension ProductTasteAttributed {
+    /// Merge into any event's props: `["product_id": id] + p.tasteProps`.
+    var tasteProps: AnalyticsProps {
+        ["brand_id": brandId, "category": category, "slot": slot,
+         "style_tags": styleTags, "color": colorName, "price": price, "rarity": rarity]
+    }
+}
+
+extension Product: ProductTasteAttributed {}
+extension ProductWithBrand: ProductTasteAttributed {}
