@@ -16,27 +16,38 @@ struct ForYouView: View {
     @State private var crossedThreshold = false
     @State private var acceptedFlash = false
     @State private var showCoinShop = false
+    @State private var deckSize: CGSize = .zero
 
     private var products: [ProductWithBrand] { shop.forYouProducts }
 
     var body: some View {
         NavigationStack {
-            GeometryReader { proxy in
-                VStack(spacing: 18) {
-                    header
-                    if products.isEmpty {
-                        exhausted
-                    } else {
+            VStack(spacing: 14) {
+                header
+                if products.isEmpty {
+                    Spacer(minLength: 0)
+                    exhausted
+                    Spacer(minLength: 0)
+                } else {
+                    // The deck fills whatever space is left between the header
+                    // and the controls, measured live — no hardcoded height,
+                    // so it can never overrun into the header or the buttons.
+                    GeometryReader { proxy in
                         deck(size: proxy.size)
-                        controls(size: proxy.size)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .onAppear { deckSize = proxy.size }
+                            .onChange(of: proxy.size) { _, s in deckSize = s }
                     }
+                    controls(size: deckSize)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Theme.bg(scheme))
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 6)
+            .padding(.bottom, 10)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.bg(scheme))
             .navigationTitle("For You")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .walletToolbar($showCoinShop)
         }
     }
@@ -67,9 +78,15 @@ struct ForYouView: View {
     /// peeking behind it. Slot 0 is the front; higher slots sit further back.
     private func deck(size: CGSize) -> some View {
         let visible = Array(products.prefix(3).enumerated())
+        // Pin the card to the deck's width with a capped portrait aspect, then
+        // center it. Without an explicit width the card was resolving wider
+        // than the screen, pushing the corner badges off the right edge.
+        let cardWidth = size.width
+        let cardHeight = min(size.height, cardWidth * 1.4)
         return ZStack {
             ForEach(visible.reversed(), id: \.element.id) { slot, product in
-                cardView(product, slot: slot, size: size)
+                cardView(product, slot: slot, size: CGSize(width: cardWidth, height: cardHeight))
+                    .frame(width: cardWidth, height: cardHeight)
                     .scaleEffect(scale(forSlot: slot))
                     .offset(y: yOffset(forSlot: slot))
                     .offset(slot == 0 ? drag : .zero)
@@ -82,8 +99,7 @@ struct ForYouView: View {
                     .gesture(dragGesture(size: size))
             }
         }
-        .frame(height: min(size.height * 0.62, 560))
-        .padding(.bottom, 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func cardView(_ product: ProductWithBrand, slot: Int, size: CGSize) -> some View {
@@ -94,14 +110,20 @@ struct ForYouView: View {
                 RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .clipped()
-                LinearGradient(colors: [.clear, .black.opacity(0.75)],
-                               startPoint: .center, endPoint: .bottom)
+                LinearGradient(colors: [.black.opacity(0.28), .clear, .black.opacity(0.8)],
+                               startPoint: .top, endPoint: .bottom)
                 cardCopy(product)
                 if slot == 0 {
                     swipeOverlay
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Rarity and price ride the corners so they read against any image
+            // and never drift into the middle of a tall card. Pinned via
+            // overlay(alignment:) on the framed card so they can't overflow the
+            // clip the way a nested HStack+Spacer could.
+            .overlay(alignment: .topLeading) { RarityTag(rarity: product.rarityKind).padding(16) }
+            .overlay(alignment: .topTrailing) { pricePill(product.price).padding(16) }
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .strokeBorder(product.rarityKind.color.opacity(0.55), lineWidth: 2))
@@ -114,14 +136,17 @@ struct ForYouView: View {
         .accessibilityAction(named: "Add to cart") { fling(direction: 1, size: size) }
     }
 
+    private func pricePill(_ price: Int) -> some View {
+        CoinLabel(amount: price, size: 16, weight: .heavy)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(.black.opacity(0.38), in: Capsule())
+            .overlay(Capsule().strokeBorder(.white.opacity(0.22), lineWidth: 1))
+    }
+
     private func cardCopy(_ product: ProductWithBrand) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            HStack {
-                RarityTag(rarity: product.rarityKind)
-                Spacer()
-                CoinLabel(amount: product.price, size: 17, weight: .heavy)
-                    .foregroundStyle(.white)
-            }
             Text(product.brands?.name.uppercased() ?? "DREAMCART")
                 .font(.dcOverline)
                 .foregroundStyle(.white.opacity(0.8))
@@ -208,8 +233,11 @@ struct ForYouView: View {
 
     // MARK: - Stack geometry
 
-    private func restingScale(_ slot: Int) -> CGFloat { 1 - CGFloat(slot) * 0.04 }
-    private func restingY(_ slot: Int) -> CGFloat { CGFloat(slot) * 26 }
+    private func restingScale(_ slot: Int) -> CGFloat { 1 - CGFloat(slot) * 0.05 }
+    // Negative: cards behind recede *upward*, so the front card's bottom edge
+    // (where the copy lives) stays flush and the controls below never collide
+    // with a peeking card poking out underneath.
+    private func restingY(_ slot: Int) -> CGFloat { CGFloat(slot) * -18 }
 
     /// 0 at rest, 1 once the front card has traveled a full swipe. Drives the
     /// cards behind it rising into place as it's dragged (and, later, flung) away.
