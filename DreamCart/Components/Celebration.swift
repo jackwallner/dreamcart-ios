@@ -65,6 +65,7 @@ struct RewardOverlay: View {
     let amount: Int
     let subtitle: String
     var coinsOnly = true
+    var showConfetti = true
     let onDismiss: () -> Void
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -79,7 +80,7 @@ struct RewardOverlay: View {
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
-            if !reduceMotion {
+            if !reduceMotion, showConfetti {
                 ConfettiBurst(coinsOnly: coinsOnly).ignoresSafeArea()
             }
             VStack(spacing: 14) {
