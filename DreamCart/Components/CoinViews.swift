@@ -67,7 +67,15 @@ struct WalletPill: View {
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
+                    .frame(minWidth: 40, alignment: .leading)
                     .contentTransition(.numericText(value: Double(coins)))
+                    // contentTransition only animates inside an active animation
+                    // transaction; balance updates arrive from plain (unanimated)
+                    // async state assignment, so without this the digits used to
+                    // hard-cut instead of rolling. Binding it to `coins` also keeps
+                    // it from firing on unrelated re-renders (e.g. a pull-to-refresh
+                    // that leaves the balance unchanged).
+                    .animation(.snappy(duration: 0.35), value: coins)
                 Image(systemName: "plus.circle.fill")
                     .font(.dcIconM)
                     .foregroundStyle(Theme.violet)
@@ -82,12 +90,13 @@ struct WalletPill: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Coin balance: \(Format.coins(coins))")
-        .onChange(of: coins) { _, _ in
-            guard !reduceMotion else { return }
+        .onChange(of: coins) { old, new in
+            guard !reduceMotion, old != new else { return }
+            // Drive the bump entirely through SwiftUI's animation timeline
+            // (delay, not DispatchQueue) so back-to-back balance changes can't
+            // race a stray asyncAfter callback and snap the scale back early.
             withAnimation(.spring(response: 0.28, dampingFraction: 0.5)) { bump = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
-                withAnimation(.spring) { bump = false }
-            }
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.5).delay(0.22)) { bump = false }
         }
     }
 }
