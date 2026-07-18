@@ -50,6 +50,7 @@ struct WelcomeView: View {
                             systemImage: "arrow.right") {
                     if page == slides.count - 1 {
                         Analytics.track("onboarding_completed")
+                        auth.justCompletedOnboarding = true
                         hasCompletedOnboarding = true
                     } else {
                         page += 1

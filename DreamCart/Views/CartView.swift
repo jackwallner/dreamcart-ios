@@ -7,6 +7,7 @@ struct CartView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showCoinShop = false
     @State private var showCheckout = false
+    @State private var showUpsell = false
     @State private var unboxing: [Product]? = nil
 
     var body: some View {
@@ -53,6 +54,7 @@ struct CartView: View {
                 }
             }
         }
+        .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
         .overlay {
             if let items = unboxing {
                 UnboxingView(items: items) {
@@ -84,7 +86,7 @@ struct CartView: View {
                         .font(.dcLabel)
                         .foregroundStyle(Theme.pink)
                     CandyButton(title: "Get more coins", systemImage: "plus.circle.fill") {
-                        showCoinShop = true
+                        showUpsell = true
                     }
                 }
             }
