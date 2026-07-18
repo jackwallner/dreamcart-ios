@@ -19,6 +19,9 @@ struct DreamCartApp: App {
         URLCache.shared = URLCache(memoryCapacity: 64 << 20, diskCapacity: 512 << 20)
         // Serif navigation titles so system page titles match the editorial voice.
         Theme.configureNavigationBarAppearance()
+        // Pin the tab bar to a stable translucent appearance so the canvas shows
+        // through beside the tab items instead of a stray opaque gray band.
+        Theme.configureTabBarAppearance()
     }
 
     var body: some Scene {

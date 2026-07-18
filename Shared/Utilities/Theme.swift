@@ -86,6 +86,25 @@ enum Theme {
         proxy.compactAppearance = standard
         proxy.scrollEdgeAppearance = edge
     }
+
+    /// Pin the tab bar to one well-defined translucent-material appearance so
+    /// the app canvas shows through beside the tab items (matching the system
+    /// default look) in both light and dark mode. Without this, `standardAppearance`
+    /// and `scrollEdgeAppearance` are left to UIKit's automatic defaults, and
+    /// toggling `.toolbar(.hidden, for: .tabBar)` on push/pop (ProductDetailView
+    /// hides it while its buy bar is up) can leave the bar re-rendering with a
+    /// stale opaque/gray background instead of the blur. Called once at launch,
+    /// same pattern as `configureNavigationBarAppearance`.
+    @MainActor
+    static func configureTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithDefaultBackground()
+
+        let proxy = UITabBar.appearance()
+        proxy.standardAppearance = appearance
+        proxy.scrollEdgeAppearance = appearance
+        proxy.isTranslucent = true
+    }
 }
 
 // The DreamCart type scale. Two voices: the editorial serif layer (screen
