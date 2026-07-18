@@ -304,8 +304,10 @@ struct ForYouView: View {
     /// haptic; `dismissRecommendation` persists the pass and fires its own.
     private func commit(_ product: ProductWithBrand, accepted: Bool) {
         let position = products.firstIndex(where: { $0.id == product.id }) ?? 0
-        Analytics.track(accepted ? "swipe_like" : "swipe_discard",
-                        ["product_id": product.id, "direction": accepted ? "right" : "left", "position": position])
+        var props: AnalyticsProps = ["product_id": product.id,
+                                     "direction": accepted ? "right" : "left", "position": position]
+        props.merge(product.tasteProps) { current, _ in current }
+        Analytics.track(accepted ? "swipe_like" : "swipe_discard", props)
         if accepted {
             _ = shop.addToCart(product.id, recommendation: true)
             acceptedFlash = false

@@ -211,12 +211,20 @@ final class ShopStore {
 
     func inCart(_ id: String) -> Bool { cartIds.contains(id) }
 
+    /// Denormalized taste vector for an id from the loaded catalog (empty if
+    /// the product isn't in memory). Keeps every intent event self-contained.
+    private func tasteProps(_ id: String) -> AnalyticsProps {
+        products.first { $0.id == id }?.tasteProps ?? [:]
+    }
+
     @discardableResult
     func addToCart(_ id: String, recommendation: Bool = false) -> Bool {
         guard !cartIds.contains(id) else { return false }
         cartIds.append(id)
         Haptics.soft()
-        Analytics.track("add_to_cart", ["product_id": id, "recommendation": recommendation])
+        var props: AnalyticsProps = ["product_id": id, "recommendation": recommendation]
+        props.merge(tasteProps(id)) { current, _ in current }
+        Analytics.track("add_to_cart", props)
         if recommendation {
             acceptedRecommendationIds.insert(id)
             persistRecommendation(id, action: .addedToCart)
@@ -229,7 +237,9 @@ final class ShopStore {
         else { _ = addToCart(id) }
     }
     func removeFromCart(_ id: String) {
-        Analytics.track("remove_from_cart", ["product_id": id])
+        var props: AnalyticsProps = ["product_id": id]
+        props.merge(tasteProps(id)) { current, _ in current }
+        Analytics.track("remove_from_cart", props)
         cartIds.removeAll { $0 == id }
     }
     func clearCart() { cartIds.removeAll() }
@@ -244,7 +254,16 @@ final class ShopStore {
         guard let r: PurchaseResult = try? await sb.rpc("purchase_cart", args: ["p_product_ids": ids])
         else { return nil }
         if r.ok {
-            ownedIds.formUnion(r.bought ?? [])
+            let bought = r.bought ?? ids
+            // Per-line taste signal: one event per purchased item, carrying the
+            // full attribute vector, so checkout is analyzable by brand /
+            // category / color / price / style without reconstructing baskets.
+            for pid in bought {
+                var props: AnalyticsProps = ["product_id": pid]
+                props.merge(tasteProps(pid)) { current, _ in current }
+                Analytics.track("checkout_item", props)
+            }
+            ownedIds.formUnion(bought)
             clearCart()
             await loadCloset()
             await refreshMe()
@@ -262,6 +281,9 @@ final class ShopStore {
             favoriteIds.remove(id)
             do {
                 _ = try await sb.write("favorites?product_id=eq.\(id)", method: "DELETE", body: nil)
+                var props: AnalyticsProps = ["product_id": id]
+                props.merge(tasteProps(id)) { current, _ in current }
+                Analytics.track("unfavorite", props)
             } catch {
                 favoriteIds.insert(id)
                 throw error
@@ -273,6 +295,9 @@ final class ShopStore {
                 _ = try await sb.write("favorites", method: "POST",
                                        body: ["user_id": uid, "product_id": id])
                 Haptics.tap()
+                var props: AnalyticsProps = ["product_id": id]
+                props.merge(tasteProps(id)) { current, _ in current }
+                Analytics.track("favorite", props)
             } catch {
                 favoriteIds.remove(id)
                 throw error
