@@ -20,7 +20,15 @@ struct RootView: View {
                 // long before the products arrive, and cutting to the tabs early
                 // shows a shell of empty grids rather than the app.
                 if shop.hasLoadedOnce {
-                    MainTabView().transition(.opacity)
+                    if auth.justCompletedOnboarding {
+                        // One-time final onboarding step for brand-new users only
+                        // (see AuthController.justCompletedOnboarding); clearing
+                        // the flag here means it can never show again this run.
+                        OnboardingCoinOfferView { auth.justCompletedOnboarding = false }
+                            .transition(.opacity)
+                    } else {
+                        MainTabView().transition(.opacity)
+                    }
                 } else {
                     SplashView().transition(.opacity)
                 }

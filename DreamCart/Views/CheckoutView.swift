@@ -18,6 +18,7 @@ struct CheckoutView: View {
     @State private var placing = false
     @State private var errorMessage: String?
     @State private var showEditAddress = false
+    @State private var showUpsell = false
 
     // Virtual receipt math. Coins -> pretend dollars; tax is a flat rate on the
     // subtotal; shipping is listed then discounted to free for the dopamine.
@@ -53,6 +54,7 @@ struct CheckoutView: View {
             .safeAreaInset(edge: .bottom) { placeBar }
         }
         .sheet(isPresented: $showEditAddress) { ShippingAddressView() }
+        .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
         .alert("Order didn't go through", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -157,6 +159,9 @@ struct CheckoutView: View {
             if !shop.canAfford {
                 Text("You need \(Format.coins(shop.cartTotal - shop.coins)) more coins")
                     .font(.dcLabel).foregroundStyle(Theme.pink)
+                Button("Get more coins") { showUpsell = true }
+                    .font(.dcLabel)
+                    .foregroundStyle(Theme.violet)
             } else if !addressComplete {
                 Text("Add a pretend address to place the order")
                     .font(.dcSub).foregroundStyle(Theme.subtle(scheme))

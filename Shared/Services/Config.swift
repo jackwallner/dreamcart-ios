@@ -34,4 +34,13 @@ struct CoinPack: Identifiable, Hashable, Sendable {
         .init(productId: "com.jackwallner.shop.coins.vault", coins: 60000,
               title: "Vault", blurb: "Never run dry", badge: nil),
     ]
+
+    /// The single pack showcased in upsell moments and the onboarding coin
+    /// offer — reuses the catalog's own "POPULAR" concept rather than
+    /// hardcoding a product id, so retuning the catalog automatically retunes
+    /// what gets promoted. Falls back to the middle pack if nothing is
+    /// tagged POPULAR.
+    static var recommended: CoinPack {
+        all.first { $0.badge == "POPULAR" } ?? all[all.count / 2]
+    }
 }

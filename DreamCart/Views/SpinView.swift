@@ -3,9 +3,14 @@ import UIKit
 
 struct SpinView: View {
     @Environment(ShopStore.self) private var shop
+    @Environment(UpsellCoordinator.self) private var upsell
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Below this balance, a win still isn't enough to comfortably buy most
+    /// items, so it's worth the one-per-session nudge toward topping up.
+    private let lowBalanceUpsellThreshold = 500
 
     // Must match the server wheel in spin() — slice i pays prizes[i].
     private let prizes = [50, 100, 150, 250, 400, 600, 800, 1000]
@@ -21,6 +26,7 @@ struct SpinView: View {
     @State private var spinning = false
     @State private var result: SpinResult?
     @State private var showReward = false
+    @State private var showUpsell = false
 
     // Drag-to-spin / fling
     @State private var isDragging = false
@@ -102,10 +108,24 @@ struct SpinView: View {
                               coinsOnly: t != .jackpot,
                               showConfetti: t != .small) {
                     if reduceMotion { showReward = false } else { withAnimation { showReward = false } }
-                    dismiss()
+                    if shouldOfferPostSpinUpsell {
+                        upsell.markNonBlockingShown()
+                        showUpsell = true
+                    } else {
+                        dismiss()
+                    }
                 }
             }
         }
+        .sheet(isPresented: $showUpsell, onDismiss: { dismiss() }) {
+            CoinUpsellView(trigger: .postSpinLowBalance)
+        }
+    }
+
+    /// A high-engagement moment (just spun) with a low resulting balance —
+    /// the natural spot for the proactive, session-capped upsell nudge.
+    private var shouldOfferPostSpinUpsell: Bool {
+        upsell.canShowNonBlocking() && shop.coins < lowBalanceUpsellThreshold
     }
 
     private var canSpin: Bool { shop.me?.canSpin ?? false }

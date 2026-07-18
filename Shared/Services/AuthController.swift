@@ -12,6 +12,14 @@ final class AuthController {
     var errorMessage: String?
     var isWorking = false
 
+    /// Set by `WelcomeView` the moment a brand-new user finishes the
+    /// onboarding slides (before they sign in). `RootView` checks this once
+    /// `state` flips to `.signedIn` to decide whether to show the onboarding
+    /// coin pack offer. In-memory only (not persisted), so it's naturally
+    /// false again on every future launch — a returning user who already
+    /// completed onboarding in a prior session never re-triggers it.
+    var justCompletedOnboarding = false
+
     private var currentNonce: String?
 
     func bootstrap() async {
