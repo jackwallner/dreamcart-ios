@@ -35,6 +35,7 @@ struct ProfileView: View {
                 }
                 .padding(16)
             }
+            .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
             .navigationTitle("You")
             .walletToolbar($showCoinShop)

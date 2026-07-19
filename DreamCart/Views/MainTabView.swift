@@ -3,27 +3,57 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
+    // Tabs mount lazily on first visit (like TabView), then stay alive so
+    // their navigation/scroll state survives switching away.
+    @State private var mounted: Set<AppTab> = [.today]
+    @State private var barHeight: CGFloat = 0
 
     var body: some View {
         @Bindable var router = router
-        TabView(selection: $router.selectedTab) {
-            TodayView().tag(AppTab.today)
-            ForYouView().tag(AppTab.forYou)
-            CartView().tag(AppTab.cart)
-            ClosetView().tag(AppTab.closet)
-            ProfileView().tag(AppTab.profile)
+        // Not a TabView: its pages are UIKit-hosted, so a safeAreaInset at
+        // this level never reached them — content slid under the floating bar
+        // and the system still reserved a "shadow" bar slot of its own. A
+        // ZStack is pure SwiftUI, so the inset below genuinely occupies the
+        // slot the system tab bar used to.
+        ZStack {
+            ForEach(AppTab.allCases, id: \.self) { tab in
+                if mounted.contains(tab) {
+                    tabRoot(tab)
+                        .opacity(router.selectedTab == tab ? 1 : 0)
+                        .allowsHitTesting(router.selectedTab == tab)
+                        .accessibilityHidden(router.selectedTab != tab)
+                }
+            }
         }
-        .toolbar(.hidden, for: .tabBar)
         .overlay(alignment: .bottom) {
             if !router.isTabBarHidden {
                 FloatingTabBar(selection: $router.selectedTab, cartCount: shop.cartIds.count)
-                    .ignoresSafeArea(.keyboard)
+                    .onGeometryChange(for: CGFloat.self, of: \.size.height) { barHeight = $0 }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        // Each tab root reserves the bar's measured slot via
+        // reservesFloatingTabBar() — a safeAreaInset here doesn't reach them
+        // (NavigationStack roots are UIKit-hosted and ignore it), which is
+        // what let content slide under the bar.
+        .environment(\.floatingTabBarHeight, barHeight)
+        // Keep the bar pinned when the keyboard rises (matches system tab bar).
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .animation(.easeOut(duration: 0.18), value: router.isTabBarHidden)
         .onChange(of: router.selectedTab) { old, new in
+            mounted.insert(new)
             Analytics.track("tab_switch", ["from": old.rawValue, "to": new.rawValue])
+        }
+    }
+
+    @ViewBuilder
+    private func tabRoot(_ tab: AppTab) -> some View {
+        switch tab {
+        case .today: TodayView()
+        case .forYou: ForYouView()
+        case .cart: CartView()
+        case .closet: ClosetView()
+        case .profile: ProfileView()
         }
     }
 }
@@ -94,6 +124,31 @@ private struct FloatingTabBar: View {
                         .offset(x: 10, y: -6)
                 }
             }
+    }
+}
+
+extension EnvironmentValues {
+    /// Measured height of the floating tab bar (0 while it's hidden).
+    @Entry var floatingTabBarHeight: CGFloat = 0
+}
+
+/// Reserve the floating tab bar's slot at the bottom of a tab root's content.
+/// Applied inside each tab's NavigationStack (on the scroll content) because
+/// the stacks are UIKit-hosted and don't inherit a safeAreaInset placed on
+/// their SwiftUI ancestor.
+struct FloatingTabBarReservation: ViewModifier {
+    @Environment(\.floatingTabBarHeight) private var barHeight
+
+    func body(content: Content) -> some View {
+        content.safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear.frame(height: barHeight)
+        }
+    }
+}
+
+extension View {
+    func reservesFloatingTabBar() -> some View {
+        modifier(FloatingTabBarReservation())
     }
 }
 

@@ -33,16 +33,18 @@ struct CartView: View {
                             }
                         }
                         .padding(16)
-                        Color.clear.frame(height: 120)
                     }
                 }
             }
-            .background(Theme.bg(scheme))
-            .navigationTitle("Cart")
-            .walletToolbar($showCoinShop)
             .safeAreaInset(edge: .bottom) {
                 if !shop.cartProducts.isEmpty { checkoutBar }
             }
+            // After (outside) the checkout bar's inset, so the bar's slot is
+            // reserved below it — checkout stacks above the floating tab bar.
+            .reservesFloatingTabBar()
+            .background(Theme.bg(scheme))
+            .navigationTitle("Cart")
+            .walletToolbar($showCoinShop)
         }
         .sheet(isPresented: $showCheckout) {
             CheckoutView { bought in
@@ -62,6 +64,11 @@ struct CartView: View {
                     else { withAnimation { unboxing = nil } }
                 }
             }
+        }
+        // The unboxing celebration is full-screen; the floating tab bar would
+        // otherwise stay drawn on top of it.
+        .onChange(of: unboxing == nil) { _, dismissed in
+            router.setTabBarHidden(!dismissed)
         }
     }
 

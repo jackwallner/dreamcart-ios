@@ -34,6 +34,7 @@ struct TodayView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
             }
+            .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
             .navigationTitle(greeting)
             .navigationBarTitleDisplayMode(.large)
