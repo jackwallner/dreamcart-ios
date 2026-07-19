@@ -22,7 +22,10 @@ struct CheckoutView: View {
     @State private var skippedAddress = false
 
     private var addressComplete: Bool { shipping.address.isValid }
-    private var canPlace: Bool { shop.canAfford && !placing }
+    // The shopper must make a shipping choice — enter a pretend address OR
+    // explicitly skip it — before the order can be placed.
+    private var addressResolved: Bool { addressComplete || skippedAddress }
+    private var canPlace: Bool { shop.canAfford && addressResolved && !placing }
 
     var body: some View {
         NavigationStack {
@@ -63,19 +66,26 @@ struct CheckoutView: View {
     // MARK: address
 
     private var addressCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 12) {
             cardHeader("shippingbox.fill", "Shipping address")
             if addressComplete {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(spacing: 2) {
                     Text("Ships to").font(.dcCaption).foregroundStyle(Theme.subtle(scheme))
                     Text(shipping.address.multilineSummary)
                         .font(.dcBodyText)
                         .foregroundStyle(Theme.ink(scheme))
+                        .multilineTextAlignment(.center)
                 }
-            } else {
-                Text("Optional: add a pretend address so your order has somewhere to \"go.\"")
+            } else if skippedAddress {
+                Text("No address — your haul lands straight in your closet.")
                     .font(.dcCaption)
                     .foregroundStyle(Theme.subtle(scheme))
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("Add a pretend address so your order has somewhere to \"go,\" or skip it.")
+                    .font(.dcCaption)
+                    .foregroundStyle(Theme.subtle(scheme))
+                    .multilineTextAlignment(.center)
             }
             HStack(spacing: 18) {
                 Button {
@@ -99,6 +109,8 @@ struct CheckoutView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity)
+        .multilineTextAlignment(.center)
         .padding(16)
         .cardStyle(scheme)
     }
@@ -167,6 +179,10 @@ struct CheckoutView: View {
                 Button("Get more coins") { showUpsell = true }
                     .font(.dcLabel)
                     .foregroundStyle(Theme.violet)
+            } else if !addressResolved {
+                Text("Add a shipping address or tap “Skip for now” to continue")
+                    .font(.dcLabel).foregroundStyle(Theme.subtle(scheme))
+                    .multilineTextAlignment(.center)
             }
             CandyButton(title: placing ? "Placing order…" : "Place order",
                         systemImage: "checkmark.seal.fill", enabled: canPlace) {

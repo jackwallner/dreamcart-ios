@@ -13,7 +13,7 @@ struct SpinView: View {
     private let lowBalanceUpsellThreshold = 500
 
     // Must match the server wheel in spin() — slice i pays prizes[i].
-    private let prizes = [50, 100, 150, 250, 400, 600, 800, 1000]
+    private let prizes = [800, 1500, 2000, 2500, 3500, 5000, 7500, 12000]
     private let sliceColors: [Color] = [
         Theme.violet, Theme.pink, Theme.coral, Theme.gold,
         Theme.violet, Theme.pink, Theme.coral, Theme.gold,
