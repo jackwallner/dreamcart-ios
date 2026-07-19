@@ -17,6 +17,9 @@ struct ForYouView: View {
     @State private var acceptedFlash = false
     @State private var showCoinShop = false
     @State private var deckSize: CGSize = .zero
+    @State private var selectedProduct: ProductWithBrand?
+    @State private var didHintSwipe = false
+    @AppStorage("dreamcart.hasSwipedForYou") private var hasSwipedDeck = false
 
     private var products: [ProductWithBrand] { shop.forYouProducts }
 
@@ -49,6 +52,9 @@ struct ForYouView: View {
             .navigationTitle("For You")
             .navigationBarTitleDisplayMode(.inline)
             .walletToolbar($showCoinShop)
+            .navigationDestination(item: $selectedProduct) { product in
+                ProductDetailView(product: product)
+            }
         }
     }
 
@@ -96,45 +102,37 @@ struct ForYouView: View {
                     // decorative peeks and stay out of VoiceOver's way.
                     .allowsHitTesting(slot == 0)
                     .accessibilityHidden(slot != 0)
-                    // High priority so a horizontal pull always wins over the
-                    // NavigationLink press underneath — with plain .gesture the
-                    // link's button recognizer could swallow the start of a
-                    // swipe and push the detail page instead. A true tap never
-                    // travels 8pt, so tapping through to detail still works.
-                    .highPriorityGesture(dragGesture(size: size))
+                    .gesture(dragGesture(size: size))
+                    .onTapGesture {
+                        guard slot == 0, !isFlinging, drag == .zero else { return }
+                        selectedProduct = product
+                    }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear { maybeHintSwipe() }
     }
 
     private func cardView(_ product: ProductWithBrand, slot: Int, size: CGSize) -> some View {
-        NavigationLink {
-            ProductDetailView(product: product)
-        } label: {
-            ZStack(alignment: .bottomLeading) {
-                RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
-                LinearGradient(colors: [.black.opacity(0.28), .clear, .black.opacity(0.8)],
-                               startPoint: .top, endPoint: .bottom)
-                cardCopy(product)
-                if slot == 0 {
-                    swipeOverlay
-                }
+        ZStack(alignment: .bottomLeading) {
+            RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            LinearGradient(colors: [.black.opacity(0.28), .clear, .black.opacity(0.8)],
+                           startPoint: .top, endPoint: .bottom)
+            cardCopy(product)
+            if slot == 0 {
+                swipeOverlay
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // Rarity and price ride the corners so they read against any image
-            // and never drift into the middle of a tall card. Pinned via
-            // overlay(alignment:) on the framed card so they can't overflow the
-            // clip the way a nested HStack+Spacer could.
-            .overlay(alignment: .topLeading) { RarityTag(rarity: product.rarityKind).padding(16) }
-            .overlay(alignment: .topTrailing) { pricePill(product.price).padding(16) }
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .strokeBorder(product.rarityKind.color.opacity(0.55), lineWidth: 2))
-            .shadow(color: product.rarityKind.color.opacity(0.25), radius: 22, y: 12)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .topLeading) { RarityTag(rarity: product.rarityKind).padding(16) }
+        .overlay(alignment: .topTrailing) { pricePill(product.price).padding(16) }
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
+            .strokeBorder(product.rarityKind.color.opacity(0.55), lineWidth: 2))
+        .shadow(color: product.rarityKind.color.opacity(0.25), radius: 22, y: 12)
+        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(product.name), \(product.brands?.name ?? "DreamCart"), \(product.rarityKind.label), \(Format.coins(product.price)) coins")
         .accessibilityAction(named: "Pass") { fling(direction: -1, size: size) }
@@ -300,6 +298,23 @@ struct ForYouView: View {
         else { withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { drag = .zero } }
     }
 
+    private func maybeHintSwipe() {
+        guard !hasSwipedDeck, !didHintSwipe, products.count > 1, !reduceMotion else { return }
+        didHintSwipe = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(750))
+            guard !hasSwipedDeck, !isFlinging, drag == .zero else { return }
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.6)) {
+                drag = CGSize(width: 48, height: 0)
+            }
+            try? await Task.sleep(for: .milliseconds(430))
+            guard !isFlinging else { return }
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.72)) {
+                drag = .zero
+            }
+        }
+    }
+
     /// Throws the front card off (or, under Reduce Motion, commits instantly),
     /// then applies the cart/pass side effect with animation suppressed. By
     /// the time the side effect fires, the card behind has already risen to
@@ -308,6 +323,7 @@ struct ForYouView: View {
     private func fling(direction: CGFloat, size: CGSize) {
         guard let product = products.first, !isFlinging else { return }
         isFlinging = true
+        hasSwipedDeck = true
         if direction > 0 {
             acceptedFlash = true
             Haptics.success()

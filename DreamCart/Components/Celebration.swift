@@ -220,8 +220,8 @@ struct UnboxingView: View {
 
     private var backdrop: some View {
         ZStack {
-            Color.black.opacity(0.72).ignoresSafeArea()
-            LinearGradient(colors: [Theme.violet.opacity(0.55), .clear, Theme.pink.opacity(0.45)],
+            Color.black.ignoresSafeArea()
+            LinearGradient(colors: [Theme.violet.opacity(0.72), .clear, Theme.pink.opacity(0.58)],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
@@ -303,7 +303,7 @@ struct UnboxingView: View {
             }
             CandyButton(title: "See in closet", systemImage: "sparkles") {
                 Analytics.track("celebration_completed", ["item_count": items.count, "coin_total": totalCoins])
-                router.selectedTab = .closet
+                router.showClosetHighlighting(items.map(\.id))
                 onDone()
             }
             .padding(.horizontal, 40)
@@ -370,7 +370,7 @@ struct UnboxingView: View {
     /// itself. Long on purpose: the user paces the reveal by tapping, and this
     /// only kicks in if they don't.
     private func holdDuration(for i: Int) -> Double {
-        i == items.count - 1 ? 8.0 : 6.0
+        4.0
     }
 
     /// Waits up to `seconds`, bailing early (returning `true`) if the view is
