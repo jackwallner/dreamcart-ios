@@ -43,13 +43,13 @@ struct ClosetView: View {
                         }
                     }
                     .padding(16)
-                    .padding(.bottom, 90)
                 }
                 .onAppear { scrollToHighlight(using: proxy) }
                 .onChange(of: router.highlightedClosetIds) { _, _ in
                     scrollToHighlight(using: proxy)
                 }
             }
+            .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
             .navigationTitle("Closet")
             .walletToolbar($showCoinShop)

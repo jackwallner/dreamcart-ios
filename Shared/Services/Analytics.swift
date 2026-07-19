@@ -21,7 +21,7 @@ actor Analytics {
     private let flushIntervalNanos: UInt64 = 30_000_000_000 // 30s
 
     private struct Event: Encodable, Sendable {
-        let userId: String?
+        var userId: String?
         let sessionId: String
         let name: String
         let props: [String: AnalyticsValue]
@@ -80,8 +80,17 @@ actor Analytics {
 
     private func flush() async {
         guard !buffer.isEmpty else { return }
-        let batch = buffer
+        var batch = buffer
         buffer.removeAll()
+        // Backfill user ids captured before auth resolved. The insert goes out
+        // with the *current* auth token, and RLS requires authenticated rows to
+        // carry user_id = auth.uid() — a launch-time row still tagged nil would
+        // reject the whole batch (this silently ate every session_start).
+        if let userId = await SupabaseClient.shared.currentUserId {
+            for i in batch.indices where batch[i].userId == nil {
+                batch[i].userId = userId
+            }
+        }
         // Drop silently on failure: telemetry must never retry-storm or
         // compete with real app traffic, and never surfaces to the user.
         try? await SupabaseClient.shared.insertBestEffort("analytics_events", rows: batch)

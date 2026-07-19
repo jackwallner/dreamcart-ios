@@ -48,6 +48,7 @@ struct ForYouView: View {
             .padding(.top, 6)
             .padding(.bottom, 10)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
             .navigationTitle("For You")
             .navigationBarTitleDisplayMode(.inline)
@@ -84,11 +85,13 @@ struct ForYouView: View {
     /// peeking behind it. Slot 0 is the front; higher slots sit further back.
     private func deck(size: CGSize) -> some View {
         let visible = Array(products.prefix(3).enumerated())
-        // Pin the card to the deck's width with a capped portrait aspect, then
-        // center it. Without an explicit width the card was resolving wider
-        // than the screen, pushing the corner badges off the right edge.
-        let cardWidth = size.width
-        let cardHeight = min(size.height, cardWidth * 1.4)
+        // Pin the card to the catalog art's own aspect (686x858 ≈ 0.8 w/h) so
+        // scaledToFill never crops the garment off the left/right edges. Fit
+        // the largest such rect into the available space: width-bound on tall
+        // screens, height-bound (narrower card) on short ones.
+        let artAspect: CGFloat = 0.8
+        let cardHeight = min(size.height, size.width / artAspect)
+        let cardWidth = min(size.width, cardHeight * artAspect)
         return ZStack {
             ForEach(visible.reversed(), id: \.element.id) { slot, product in
                 cardView(product, slot: slot, size: CGSize(width: cardWidth, height: cardHeight))

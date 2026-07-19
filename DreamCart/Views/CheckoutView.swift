@@ -1,10 +1,10 @@
 import SwiftUI
 
-// The virtual checkout. Reached from the cart's "Check out" button. Collects a
-// shipping address and shows a full itemized receipt — subtotal, virtual
-// shipping (always on us), estimated tax, order total — so it reads like a real
-// store checkout. The receipt dollars are imaginary; the only real cost is the
-// coin total, which is what the server actually charges via purchase_cart.
+// The virtual checkout. Reached from the cart's "Check out" button. Shows an
+// itemized coins-only receipt — subtotal, virtual shipping (always on us),
+// order total — that reads like a real store checkout without ever mixing in
+// dollar amounts. The optional pretend shipping address is pure flavor; the
+// coin total is what the server actually charges via purchase_cart.
 struct CheckoutView: View {
     /// Called after a successful order with the pieces that were bought, so the
     /// cart can run its unboxing celebration.
@@ -19,15 +19,10 @@ struct CheckoutView: View {
     @State private var errorMessage: String?
     @State private var showEditAddress = false
     @State private var showUpsell = false
-
-    // Virtual receipt math. Coins -> pretend dollars; tax is a flat rate on the
-    // subtotal; shipping is listed then discounted to free for the dopamine.
-    private var subtotal: Double { Double(shop.cartTotal) * Format.coinToDollar }
-    private var tax: Double { subtotal * 0.0875 }
-    private var orderTotal: Double { subtotal + tax }
+    @State private var skippedAddress = false
 
     private var addressComplete: Bool { shipping.address.isValid }
-    private var canPlace: Bool { addressComplete && shop.canAfford && !placing }
+    private var canPlace: Bool { shop.canAfford && !placing }
 
     var body: some View {
         NavigationStack {
@@ -36,7 +31,7 @@ struct CheckoutView: View {
                     addressCard
                     summaryCard
                     receiptCard
-                    Text("Virtual delivery: no real address is needed and nothing ships. Dollar amounts are imaginary; you pay only in coins.")
+                    Text("Virtual delivery: no real address is needed and nothing ships. You pay only in coins.")
                         .font(.dcCaption)
                         .foregroundStyle(Theme.subtle(scheme))
                         .multilineTextAlignment(.center)
@@ -78,17 +73,30 @@ struct CheckoutView: View {
                         .foregroundStyle(Theme.ink(scheme))
                 }
             } else {
-                Text("Add a pretend address so your order has somewhere to \"go.\"")
+                Text("Optional: add a pretend address so your order has somewhere to \"go.\"")
                     .font(.dcCaption)
                     .foregroundStyle(Theme.subtle(scheme))
             }
-            Button {
-                Haptics.tap()
-                showEditAddress = true
-            } label: {
-                Text(addressComplete ? "Edit address" : "Add address")
-                    .font(.dcLabel)
-                    .foregroundStyle(Theme.violet)
+            HStack(spacing: 18) {
+                Button {
+                    Haptics.tap()
+                    showEditAddress = true
+                } label: {
+                    Text(addressComplete ? "Edit address" : "Add address")
+                        .font(.dcLabel)
+                        .foregroundStyle(Theme.violet)
+                }
+                if !addressComplete && !skippedAddress {
+                    Button {
+                        Haptics.tap()
+                        skippedAddress = true
+                        Analytics.track("shipping_address_skipped")
+                    } label: {
+                        Text("Skip for now")
+                            .font(.dcLabel)
+                            .foregroundStyle(Theme.subtle(scheme))
+                    }
+                }
             }
         }
         .padding(16)
@@ -122,22 +130,19 @@ struct CheckoutView: View {
 
     private var receiptCard: some View {
         VStack(spacing: 10) {
-            receiptRow("Subtotal", Format.money(subtotal))
+            HStack {
+                Text("Subtotal").font(.dcBodyText).foregroundStyle(Theme.subtle(scheme)).lineLimit(1)
+                Spacer()
+                CoinLabel(amount: shop.cartTotal, size: 13).foregroundStyle(Theme.ink(scheme))
+            }
             receiptRow("Shipping", "FREE", accent: .green)
-            receiptRow("Estimated tax", Format.money(tax))
             Divider()
             HStack {
                 Text("Order total").font(.dcBody).foregroundStyle(Theme.ink(scheme)).lineLimit(1)
                 Spacer()
-                Text(Format.money(orderTotal)).font(.dcPrice).foregroundStyle(Theme.ink(scheme))
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                CoinLabel(amount: shop.cartTotal, size: 17, weight: .heavy)
+                    .foregroundStyle(Theme.ink(scheme))
             }
-            HStack {
-                Text("You pay").font(.dcBody).foregroundStyle(Theme.ink(scheme)).lineLimit(1)
-                Spacer()
-                CoinLabel(amount: shop.cartTotal, size: 17).foregroundStyle(Theme.ink(scheme))
-            }
-            .padding(.top, 2)
         }
         .padding(16)
         .cardStyle(scheme)
@@ -162,9 +167,6 @@ struct CheckoutView: View {
                 Button("Get more coins") { showUpsell = true }
                     .font(.dcLabel)
                     .foregroundStyle(Theme.violet)
-            } else if !addressComplete {
-                Text("Add a pretend address to place the order")
-                    .font(.dcSub).foregroundStyle(Theme.subtle(scheme))
             }
             CandyButton(title: placing ? "Placing order…" : "Place order",
                         systemImage: "checkmark.seal.fill", enabled: canPlace) {
