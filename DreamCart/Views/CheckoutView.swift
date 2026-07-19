@@ -36,7 +36,7 @@ struct CheckoutView: View {
                     addressCard
                     summaryCard
                     receiptCard
-                    Text("Virtual delivery — no real address is needed and nothing ships. Dollar amounts are imaginary; you pay only in coins.")
+                    Text("Virtual delivery: no real address is needed and nothing ships. Dollar amounts are imaginary; you pay only in coins.")
                         .font(.dcCaption)
                         .foregroundStyle(Theme.subtle(scheme))
                         .multilineTextAlignment(.center)

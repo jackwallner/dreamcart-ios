@@ -23,6 +23,7 @@ struct MainTabView: View {
             ProfileView()
                 .tabItem { Label("You", systemImage: "person.fill") }.tag(AppTab.profile)
         }
+        .toolbarBackground(.hidden, for: .tabBar)
         .onChange(of: router.selectedTab) { old, new in
             Analytics.track("tab_switch", ["from": old.rawValue, "to": new.rawValue])
         }

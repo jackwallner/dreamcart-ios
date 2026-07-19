@@ -25,7 +25,7 @@ struct ShippingAddressView: View {
                     if !store.address.isEmpty {
                         clearButton
                     }
-                    Text("Playful flourish only — DreamCart is a virtual shopping game, so nothing is ever actually shipped here.")
+                    Text("Playful flourish only. DreamCart is a virtual shopping game, so nothing is ever actually shipped here.")
                         .font(.dcCaption)
                         .foregroundStyle(Theme.subtle(scheme))
                         .multilineTextAlignment(.center)

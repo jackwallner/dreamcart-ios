@@ -100,7 +100,7 @@ struct OnboardingCoinOfferView: View {
 
     private var buyTitle: String {
         guard revenueCatEnabled else { return "See coin packs" }
-        return buying ? "Purchasing…" : "Get \(Format.coins(pack.coins)) coins — \(store.price(for: pack))"
+        return buying ? "Purchasing…" : "Get \(Format.coins(pack.coins)) coins for \(store.price(for: pack))"
     }
 
     private var packCard: some View {
