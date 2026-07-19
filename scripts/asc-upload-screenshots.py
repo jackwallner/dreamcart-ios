@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upload 6.5" iPhone App Store screenshots for DreamCart's editable version.
+"""Upload 6.9" iPhone App Store screenshots for DreamCart's editable version.
 
 Usage: source ~/.baseball_credentials && python3 scripts/asc-upload-screenshots.py [dir]
 Default dir: fastlane/screenshots/en-US
@@ -15,7 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 import asc_lib
 
 APP_ID = "6787820106"
-DISPLAY = "APP_IPHONE_65"
+# 6.9" (iPhone 16/17 Pro Max, 1320x2868) screenshots upload under the 6.7"
+# display bucket — App Store Connect has no separate APP_IPHONE_69 type.
+DISPLAY = "APP_IPHONE_67"
 
 
 def upload_file(c, reservation: dict, img: bytes) -> None:
