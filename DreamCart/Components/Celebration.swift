@@ -165,6 +165,7 @@ struct UnboxingView: View {
     let items: [Product]
     let onDone: () -> Void
 
+    @Environment(RouteCoordinator.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var index = 0
@@ -302,6 +303,7 @@ struct UnboxingView: View {
             }
             CandyButton(title: "See in closet", systemImage: "sparkles") {
                 Analytics.track("celebration_completed", ["item_count": items.count, "coin_total": totalCoins])
+                router.selectedTab = .closet
                 onDone()
             }
             .padding(.horizontal, 40)
@@ -344,7 +346,7 @@ struct UnboxingView: View {
                 phase = .revealed
             }
             fireReveal(for: i)
-            _ = await interruptibleWait(reduceMotion ? min(holdDuration(for: i), 0.5) : holdDuration(for: i))
+            _ = await interruptibleWait(holdDuration(for: i))
         }
         guard !Task.isCancelled else { return }
         withAnimation(reduceMotion ? .easeInOut(duration: 0.2)
@@ -364,8 +366,11 @@ struct UnboxingView: View {
         }
     }
 
+    /// How long a revealed item stays up before the sequence moves on by
+    /// itself. Long on purpose: the user paces the reveal by tapping, and this
+    /// only kicks in if they don't.
     private func holdDuration(for i: Int) -> Double {
-        i == items.count - 1 ? 1.4 : 0.95
+        i == items.count - 1 ? 8.0 : 6.0
     }
 
     /// Waits up to `seconds`, bailing early (returning `true`) if the view is

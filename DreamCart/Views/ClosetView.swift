@@ -29,8 +29,12 @@ struct ClosetView: View {
                         categoryBar
                         LazyVGrid(columns: cols, spacing: 18) {
                             ForEach(filtered) { p in
-                                NavigationLink(value: p) { ClosetTile(product: p) }
-                                    .buttonStyle(.plain)
+                                NavigationLink {
+                                    ProductDetailView(product: detailProduct(p))
+                                } label: {
+                                    ClosetTile(product: p)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -40,9 +44,6 @@ struct ClosetView: View {
             .background(Theme.bg(scheme))
             .navigationTitle("Closet")
             .walletToolbar($showCoinShop)
-            .navigationDestination(for: Product.self) { p in
-                ProductDetailView(product: detailProduct(p))
-            }
             .task { await shop.loadOutfits() }
         }
     }
@@ -143,7 +144,7 @@ struct ClosetView: View {
                 Text("Dress up your avatar")
                     .font(.dcCard)
                     .foregroundStyle(Theme.ink(scheme))
-                Text("Put your pieces on a model and save the look")
+                Text("Build looks instantly. Editorial render is optional")
                     .font(.dcSub)
                     .foregroundStyle(Theme.subtle(scheme))
             }
@@ -152,6 +153,7 @@ struct ClosetView: View {
         }
         .padding(16)
         .cardStyle(scheme)
+        .contentShape(Rectangle())
     }
 }
 
@@ -161,7 +163,8 @@ struct ClosetTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
-                .aspectRatio(0.82, contentMode: .fill)
+                .aspectRatio(0.82, contentMode: .fit)
+                .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
                 .overlay(alignment: .topLeading) { RarityTag(rarity: product.rarityKind).padding(6) }
             Text(product.name)

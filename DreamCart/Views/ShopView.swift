@@ -18,42 +18,40 @@ struct ShopView: View {
 
     private let cols = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
 
+    // ShopView is pushed onto the Today tab's stack. Keeping a second stack
+    // here made product taps compete with the host stack and fail to navigate.
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    if shop.loadError != nil {
-                        LoadErrorBanner()
-                            .padding(.horizontal, 16)
-                    }
-                    if let error = shop.catalogLoadError {
-                        catalogLoadBanner(error)
-                            .padding(.horizontal, 16)
-                    }
-                    if shop.isLoading && shop.products.isEmpty {
-                        ProgressView("Loading the catalog…")
-                            .font(.dcBody)
-                            .padding(.top, 80)
-                    } else if !query.isEmpty {
-                        grid(shop.search(query))
-                    } else {
-                        categoryBar
-                        grid(filtered)
-                    }
-                    if shop.isLoadingMoreProducts {
-                        ProgressView("Loading more products…")
-                            .font(.dcSub)
-                            .padding(.vertical, 12)
-                    }
+        ScrollView {
+            VStack(spacing: 14) {
+                if shop.loadError != nil {
+                    LoadErrorBanner()
+                        .padding(.horizontal, 16)
+                }
+                if let error = shop.catalogLoadError {
+                    catalogLoadBanner(error)
+                        .padding(.horizontal, 16)
+                }
+                if shop.isLoading && shop.products.isEmpty {
+                    ProgressView("Loading the catalog…")
+                        .font(.dcBody)
+                        .padding(.top, 80)
+                } else if !query.isEmpty {
+                    grid(shop.search(query))
+                } else {
+                    categoryBar
+                    grid(filtered)
+                }
+                if shop.isLoadingMoreProducts {
+                    ProgressView("Loading more products…")
+                        .font(.dcSub)
+                        .padding(.vertical, 12)
                 }
             }
-            .background(Theme.bg(scheme))
-            .navigationTitle("Shop")
-            .searchable(text: $query, prompt: "Search brands, colors, styles")
-            .walletToolbar($showCoinShop)
-            .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
-            .navigationDestination(for: Brand.self) { BrandView(brand: $0) }
         }
+        .background(Theme.bg(scheme))
+        .navigationTitle("Shop")
+        .searchable(text: $query, prompt: "Search brands, colors, styles")
+        .walletToolbar($showCoinShop)
     }
 
     private var filtered: [ProductWithBrand] {
@@ -111,7 +109,9 @@ struct ShopView: View {
             } else {
                 LazyVGrid(columns: cols, spacing: 18) {
                     ForEach(items) { p in
-                        NavigationLink(value: p) {
+                        NavigationLink {
+                            ProductDetailView(product: p)
+                        } label: {
                             ProductCard(product: p, owned: shop.ownedIds.contains(p.id),
                                         isNew: shop.newDropIds.contains(p.id))
                         }
@@ -140,7 +140,9 @@ struct BrandView: View {
                     .padding(.horizontal, 16)
                 LazyVGrid(columns: cols, spacing: 18) {
                     ForEach(shop.products(brandId: brand.id)) { p in
-                        NavigationLink(value: p) {
+                        NavigationLink {
+                            ProductDetailView(product: p)
+                        } label: {
                             ProductCard(product: p, owned: shop.ownedIds.contains(p.id),
                                         isNew: shop.newDropIds.contains(p.id))
                         }

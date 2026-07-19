@@ -39,6 +39,7 @@ struct TodayView: View {
             .navigationBarTitleDisplayMode(.large)
             .walletToolbar($showCoinShop)
             .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
+            .navigationDestination(for: Brand.self) { BrandView(brand: $0) }
             .navigationDestination(isPresented: $showShop) { ShopView() }
             .refreshable { await shop.refreshAll() }
             .onChange(of: router.presentedRoute) { _, route in

@@ -82,8 +82,7 @@ struct WalletPill: View {
             }
             .foregroundStyle(Theme.ink(scheme))
             .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(Theme.surface(scheme), in: Capsule())
-            .overlay(Capsule().strokeBorder(Theme.gold.opacity(0.35), lineWidth: 1.5))
+            .background(.regularMaterial, in: Capsule())
             .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.08), radius: 8, y: 3)
             .scaleEffect(bump ? 1.08 : 1)
         }

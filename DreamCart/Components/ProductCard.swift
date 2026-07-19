@@ -133,7 +133,6 @@ struct ProductCard: View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topLeading) {
                 RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
-                    .aspectRatio(0.82, contentMode: .fill)
                     .clipped()
                 VStack(alignment: .leading) {
                     HStack {
@@ -161,6 +160,10 @@ struct ProductCard: View {
                 }
                 .padding(8)
             }
+            // Resolve the image height from the card width. Horizontal shelves
+            // only propose a width, so an uncapped aspect-ratio image can report
+            // an unstable height and let the copy draw into the next section.
+            .aspectRatio(0.82, contentMode: .fit)
             .frame(maxWidth: .infinity)
             .clipShape(RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
 
@@ -170,6 +173,11 @@ struct ProductCard: View {
                     .foregroundStyle(Theme.subtle(scheme))
                     .textCase(.uppercase)
                     .tracking(0.4)
+                    // One line, always: a wrapping brand name ("IRONWOOD
+                    // SUPPLY") made this card taller than its shelf siblings
+                    // and its name/price bled over the section below.
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Text(product.name)
                     .font(.dcItem)
                     .foregroundStyle(Theme.ink(scheme))

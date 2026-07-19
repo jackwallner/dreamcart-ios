@@ -96,7 +96,12 @@ struct ForYouView: View {
                     // decorative peeks and stay out of VoiceOver's way.
                     .allowsHitTesting(slot == 0)
                     .accessibilityHidden(slot != 0)
-                    .gesture(dragGesture(size: size))
+                    // High priority so a horizontal pull always wins over the
+                    // NavigationLink press underneath — with plain .gesture the
+                    // link's button recognizer could swallow the start of a
+                    // swipe and push the detail page instead. A true tap never
+                    // travels 8pt, so tapping through to detail still works.
+                    .highPriorityGesture(dragGesture(size: size))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

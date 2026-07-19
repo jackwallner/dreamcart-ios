@@ -33,7 +33,9 @@ struct ProductDetailView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     if let brand {
-                        NavigationLink(value: brand) {
+                        NavigationLink {
+                            BrandView(brand: brand)
+                        } label: {
                             Text(brand.name.uppercased())
                                 .font(.dcOverline)
                                 .tracking(0.6)
@@ -200,16 +202,15 @@ struct ProductDetailView: View {
                     .background(Color.green.gradient, in: Capsule())
             } else {
                 Button {
-                    // First tap adds and drops you straight into checkout; once
-                    // in the cart, the button re-opens checkout (removal lives
-                    // in the cart itself).
-                    if !inCart { _ = shop.addToCart(product.id) }
-                    if reduceMotion { addedPulse.toggle() }
-                    else { withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() } }
-                    if reduceMotion {
+                    // First tap only adds to cart; the button then flips to
+                    // "Go to checkout" and a second tap opens checkout. No
+                    // automatic redirect (removal lives in the cart itself).
+                    if inCart {
                         showCheckout = true
                     } else {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { showCheckout = true }
+                        _ = shop.addToCart(product.id)
+                        if reduceMotion { addedPulse.toggle() }
+                        else { withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() } }
                     }
                 } label: {
                     HStack(spacing: 7) {
