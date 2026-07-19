@@ -128,6 +128,9 @@ struct ProductCard: View {
     var owned: Bool = false
     var isNew: Bool = false
     @Environment(\.colorScheme) private var scheme
+    @ScaledMetric(relativeTo: .headline) private var nameHeight: CGFloat = 44
+    @ScaledMetric(relativeTo: .headline) private var metadataHeight: CGFloat = 92
+    @ScaledMetric(relativeTo: .body) private var priceHeight: CGFloat = 24
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -173,21 +176,23 @@ struct ProductCard: View {
                     .foregroundStyle(Theme.subtle(scheme))
                     .textCase(.uppercase)
                     .tracking(0.4)
-                    // One line, always: a wrapping brand name ("IRONWOOD
-                    // SUPPLY") made this card taller than its shelf siblings
-                    // and its name/price bled over the section below.
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, minHeight: 15, alignment: .leading)
                 Text(product.name)
                     .font(.dcItem)
                     .foregroundStyle(Theme.ink(scheme))
                     .lineLimit(2, reservesSpace: true)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, minHeight: nameHeight, alignment: .topLeading)
                 CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))
-                    .padding(.top, 1)
+                    .frame(height: priceHeight, alignment: .leading)
             }
+            .frame(height: metadataHeight, alignment: .topLeading)
             .padding(.horizontal, 4)
             .padding(.top, 8)
+            .clipped()
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)

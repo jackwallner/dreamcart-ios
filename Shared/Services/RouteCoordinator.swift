@@ -9,6 +9,8 @@ final class RouteCoordinator {
     private(set) var presentedRoute: AppRoute?
     private(set) var isSignedIn = false
     private(set) var isCatalogReady = false
+    private(set) var highlightedClosetIds: Set<String> = []
+    private(set) var isTabBarHidden = false
 
     var canOpenRoutes: Bool { isSignedIn && isCatalogReady }
 
@@ -43,6 +45,19 @@ final class RouteCoordinator {
     func consumePresentedRoute() -> AppRoute? {
         defer { presentedRoute = nil }
         return presentedRoute
+    }
+
+    func setTabBarHidden(_ hidden: Bool) {
+        isTabBarHidden = hidden
+    }
+
+    func showClosetHighlighting(_ productIds: [String]) {
+        highlightedClosetIds = Set(productIds)
+        selectedTab = .closet
+    }
+
+    func clearClosetHighlight() {
+        highlightedClosetIds.removeAll()
     }
 
     func clearPendingRoute() {

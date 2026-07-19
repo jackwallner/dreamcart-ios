@@ -87,17 +87,12 @@ enum Theme {
         proxy.scrollEdgeAppearance = edge
     }
 
-    /// Pin the tab bar to one well-defined fully transparent appearance so the
-    /// app canvas shows straight through behind the tab items in both light and
-    /// dark mode. Without pinning both `standardAppearance` and
-    /// `scrollEdgeAppearance`, toggling `.toolbar(.hidden, for: .tabBar)` on
-    /// push/pop (ProductDetailView hides it while its buy bar is up) can leave
-    /// the bar re-rendering with a stale opaque/gray background. Called once at
-    /// launch, same pattern as `configureNavigationBarAppearance`.
     @MainActor
     static func configureTabBarAppearance() {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = .clear
+        appearance.shadowColor = .clear
 
         let proxy = UITabBar.appearance()
         proxy.standardAppearance = appearance

@@ -11,13 +11,14 @@ struct CoinIcon: View {
     var body: some View {
         ZStack {
             Circle().fill(Theme.goldGradient)
-            Circle().strokeBorder(.white.opacity(0.55), lineWidth: scaledSize * 0.06)
             Text("$")
-                .font(.system(size: scaledSize * 0.6, weight: .black))
-                .foregroundStyle(.white.opacity(0.9))
+                .font(.system(size: scaledSize * 0.56, weight: .black))
+                .foregroundStyle(.white)
+                .offset(y: -scaledSize * 0.015)
         }
         .frame(width: scaledSize, height: scaledSize)
-        .shadow(color: Theme.gold.opacity(0.4), radius: scaledSize * 0.12, y: 1)
+        .overlay(Circle().strokeBorder(.white.opacity(0.5), lineWidth: max(1, scaledSize * 0.055)))
+        .shadow(color: Theme.gold.opacity(0.28), radius: scaledSize * 0.1, y: 1)
         .accessibilityHidden(true)
     }
 }
@@ -37,7 +38,7 @@ struct CoinLabel: View {
     }
 
     var body: some View {
-        HStack(spacing: scaledSize * 0.28) {
+        HStack(alignment: .center, spacing: scaledSize * 0.3) {
             CoinIcon(size: size)
             Text(Format.coins(amount))
                 .font(.system(size: scaledSize, weight: weight))
@@ -45,6 +46,8 @@ struct CoinLabel: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
         }
+        .frame(minHeight: scaledSize * 1.35, alignment: .center)
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(Format.coins(amount)) coins")
     }
@@ -59,35 +62,34 @@ struct WalletPill: View {
     @State private var bump = false
 
     var body: some View {
-        Button(action: { Haptics.tap(); onTap() }) {
-            HStack(spacing: 7) {
-                CoinIcon(size: 20)
-                Text(Format.coins(coins))
-                    .font(.dcNumeral)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .frame(minWidth: 40, alignment: .leading)
-                    .contentTransition(.numericText(value: Double(coins)))
-                    // contentTransition only animates inside an active animation
-                    // transaction; balance updates arrive from plain (unanimated)
-                    // async state assignment, so without this the digits used to
-                    // hard-cut instead of rolling. Binding it to `coins` also keeps
-                    // it from firing on unrelated re-renders (e.g. a pull-to-refresh
-                    // that leaves the balance unchanged).
-                    .animation(.snappy(duration: 0.35), value: coins)
-                Image(systemName: "plus.circle.fill")
-                    .font(.dcIconM)
-                    .foregroundStyle(Theme.violet)
-            }
-            .foregroundStyle(Theme.ink(scheme))
-            .padding(.horizontal, 14).padding(.vertical, 8)
-            .background(.regularMaterial, in: Capsule())
-            .shadow(color: .black.opacity(scheme == .dark ? 0 : 0.08), radius: 8, y: 3)
-            .scaleEffect(bump ? 1.08 : 1)
+        HStack(spacing: 7) {
+            CoinIcon(size: 20)
+            Text(Format.coins(coins))
+                .font(.dcNumeral)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(minWidth: 40, alignment: .leading)
+                .contentTransition(.numericText(value: Double(coins)))
+                .animation(.snappy(duration: 0.35), value: coins)
+            Image(systemName: "plus")
+                .font(.system(.subheadline, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 25, height: 25)
+                .background(Theme.violet, in: Circle())
         }
-        .buttonStyle(.plain)
+        .foregroundStyle(Theme.ink(scheme))
+        .padding(.leading, 11)
+        .padding(.trailing, 8)
+        .frame(height: 40)
+        .background(Theme.surface(scheme), in: Capsule())
+        .overlay(Capsule().strokeBorder(.black.opacity(scheme == .dark ? 0 : 0.05), lineWidth: 1))
+        .shadow(color: .black.opacity(scheme == .dark ? 0.22 : 0.08), radius: 7, y: 3)
+        .scaleEffect(bump ? 1.05 : 1)
+        .contentShape(Capsule())
+        .onTapGesture { Haptics.tap(); onTap() }
         .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel("Coin balance: \(Format.coins(coins))")
         .onChange(of: coins) { old, new in
             guard !reduceMotion, old != new else { return }

@@ -11,6 +11,7 @@ final class ShopStore {
     var brands: [Brand] = []
     var products: [ProductWithBrand] = []
     var closet: [Product] = []
+    var closetAcquiredAt: [String: String] = [:]
     var outfits: [OutfitRow] = []
     var ledger: [LedgerEntry] = []
 
@@ -126,11 +127,19 @@ final class ShopStore {
     }
 
     func loadCloset() async {
-        struct Row: Decodable { let products: Product? }
+        struct Row: Decodable {
+            let acquiredAt: String
+            let products: Product?
+        }
         if let rows: [Row] = try? await sb.select(
-            "closet_items?select=products(*)&order=acquired_at.desc") {
-            closet = rows.compactMap { $0.products }
-            ownedIds = Set(closet.map { $0.id })
+            "closet_items?select=acquired_at,products(*)&order=acquired_at.desc") {
+            let owned = rows.compactMap { row -> (Product, String)? in
+                guard let product = row.products else { return nil }
+                return (product, row.acquiredAt)
+            }
+            closet = owned.map(\.0)
+            closetAcquiredAt = Dictionary(owned.map { ($0.0.id, $0.1) }, uniquingKeysWith: { first, _ in first })
+            ownedIds = Set(closet.map(\.id))
         }
     }
 

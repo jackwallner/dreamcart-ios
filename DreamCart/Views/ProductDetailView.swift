@@ -3,6 +3,7 @@ import SwiftUI
 struct ProductDetailView: View {
     let product: ProductWithBrand
     @Environment(ShopStore.self) private var shop
+    @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showCoinShop = false
@@ -63,7 +64,6 @@ struct ProductDetailView: View {
 
                 specRows
                 completeTheLook
-                Color.clear.frame(height: 90)
             }
             .padding(16)
         }
@@ -97,12 +97,14 @@ struct ProductDetailView: View {
             Text(favoriteError ?? "")
         }
         .onAppear {
+            router.setTabBarHidden(true)
             viewedAt = Date()
             var props: AnalyticsProps = ["product_id": product.id]
             props.merge(product.tasteProps) { current, _ in current }
             Analytics.track("product_viewed", props)
         }
         .onDisappear {
+            router.setTabBarHidden(false)
             guard let viewedAt else { return }
             var props: AnalyticsProps = ["product_id": product.id,
                                          "dwell_seconds": Date().timeIntervalSince(viewedAt)]
@@ -189,48 +191,72 @@ struct ProductDetailView: View {
     }
 
     private var buyBar: some View {
-        HStack(spacing: 12) {
-            CoinLabel(amount: product.price, size: 20, weight: .heavy)
-                .foregroundStyle(Theme.ink(scheme))
-                .layoutPriority(1)
-            Spacer()
-            if owned {
-                Label("In your closet", systemImage: "checkmark.seal.fill")
-                    .font(.dcBody)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 20).padding(.vertical, 14)
-                    .background(Color.green.gradient, in: Capsule())
-            } else {
-                Button {
-                    // First tap only adds to cart; the button then flips to
-                    // "Go to checkout" and a second tap opens checkout. No
-                    // automatic redirect (removal lives in the cart itself).
-                    if inCart {
-                        showCheckout = true
-                    } else {
-                        _ = shop.addToCart(product.id)
-                        if reduceMotion { addedPulse.toggle() }
-                        else { withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() } }
-                    }
-                } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: inCart ? "creditcard.fill" : "cart.badge.plus")
-                        Text(inCart ? "Go to checkout" : "Add to cart")
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-                    }
-                    .font(.dcButton)
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22).padding(.vertical, 14)
-                    .background(inCart ? AnyShapeStyle(Color.green.gradient) : AnyShapeStyle(Theme.candy),
-                                in: Capsule())
-                    .scaleEffect(addedPulse ? 1.05 : 1)
-                }
-                .buttonStyle(PressableStyle())
-                .accessibilityIdentifier("detailCheckoutButton")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) {
+                priceBlock
+                Spacer(minLength: 8)
+                purchaseControl
+            }
+            VStack(spacing: 10) {
+                HStack { priceBlock; Spacer() }
+                purchaseControl.frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-        .background(.bar)
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) { Divider() }
+    }
+
+    private var priceBlock: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("Price")
+                .font(.dcCaption)
+                .foregroundStyle(Theme.subtle(scheme))
+            CoinLabel(amount: product.price, size: 20, weight: .heavy)
+                .foregroundStyle(Theme.ink(scheme))
+        }
+        .fixedSize(horizontal: true, vertical: true)
+    }
+
+    @ViewBuilder
+    private var purchaseControl: some View {
+        if owned {
+            Label("In your closet", systemImage: "checkmark.seal.fill")
+                .font(.dcBody)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(Color.green.gradient, in: Capsule())
+        } else {
+            Button {
+                if inCart {
+                    showCheckout = true
+                } else {
+                    _ = shop.addToCart(product.id)
+                    if reduceMotion { addedPulse.toggle() }
+                    else { withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) { addedPulse.toggle() } }
+                }
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: inCart ? "creditcard.fill" : "cart.badge.plus")
+                    Text(inCart ? "Go to checkout" : "Add to cart")
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .font(.dcButton)
+                .foregroundStyle(.white)
+                .frame(minWidth: 180)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 14)
+                .background(inCart ? AnyShapeStyle(Color.green.gradient) : AnyShapeStyle(Theme.candy),
+                            in: Capsule())
+                .scaleEffect(addedPulse ? 1.04 : 1)
+            }
+            .buttonStyle(PressableStyle())
+            .accessibilityIdentifier("detailCheckoutButton")
+        }
     }
 }

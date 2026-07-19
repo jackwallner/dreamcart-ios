@@ -136,6 +136,20 @@ final class DreamCartTests: XCTestCase {
     }
 
     @MainActor
+    func testClosetHighlightSelectsClosetAndCanBeCleared() {
+        let router = RouteCoordinator()
+        router.selectedTab = .today
+
+        router.showClosetHighlighting(["a", "b", "a"])
+
+        XCTAssertEqual(router.selectedTab, .closet)
+        XCTAssertEqual(router.highlightedClosetIds, ["a", "b"])
+
+        router.clearClosetHighlight()
+        XCTAssertTrue(router.highlightedClosetIds.isEmpty)
+    }
+
+    @MainActor
     func testCatalogPageDeduplicatesProducts() {
         let shop = ShopStore()
         shop.products = [makeProduct(id: "a", price: 100)]
