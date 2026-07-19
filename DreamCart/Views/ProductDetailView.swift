@@ -13,6 +13,9 @@ struct ProductDetailView: View {
     @State private var favoriteError: String?
     @State private var updatingFavorite = false
     @State private var viewedAt: Date?
+    // The tab this detail was pushed onto, captured at appear so the matching
+    // pop decrements the same tab even after the selected tab has changed.
+    @State private var owningTab: AppTab?
 
     private var owned: Bool { shop.ownedIds.contains(product.id) }
     private var inCart: Bool { shop.inCart(product.id) }
@@ -97,14 +100,16 @@ struct ProductDetailView: View {
             Text(favoriteError ?? "")
         }
         .onAppear {
-            router.setTabBarHidden(true)
+            let tab = owningTab ?? router.selectedTab
+            owningTab = tab
+            router.pushedDetail(on: tab)
             viewedAt = Date()
             var props: AnalyticsProps = ["product_id": product.id]
             props.merge(product.tasteProps) { current, _ in current }
             Analytics.track("product_viewed", props)
         }
         .onDisappear {
-            router.setTabBarHidden(false)
+            if let owningTab { router.poppedDetail(on: owningTab) }
             guard let viewedAt else { return }
             var props: AnalyticsProps = ["product_id": product.id,
                                          "dwell_seconds": Date().timeIntervalSince(viewedAt)]

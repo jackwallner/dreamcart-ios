@@ -153,25 +153,30 @@ struct TodayView: View {
 
     private var claimedDailyChip: some View {
         HStack(spacing: 10) {
-            Image(systemName: "gift.fill")
+            Image(systemName: "checkmark.seal.fill")
                 .font(.dcIconM)
-            if let streak = shop.me?.streak, streak > 0 {
-                Label("\(streak)-day streak", systemImage: "flame.fill")
-                    .font(.dcLabel)
-            }
-            Spacer()
-            Text("Claimed")
+            Text("Daily claimed")
                 .font(.dcLabel)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(.white.opacity(0.22), in: Capsule())
+                .lineLimit(1)
+            if let streak = shop.me?.streak, streak > 0 {
+                // Just the flame + number so it never wraps or crowds the row.
+                Label("\(streak)", systemImage: "flame.fill")
+                    .font(.dcLabel)
+                    .lineLimit(1)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(.white.opacity(0.22), in: Capsule())
+            }
+            Spacer(minLength: 6)
             Text("More tomorrow")
                 .font(.dcSub)
                 .foregroundStyle(.white.opacity(0.85))
+                .lineLimit(1)
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
         .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
         .animation(.spring(response: 0.45, dampingFraction: 0.8), value: shop.me?.canClaimDaily)
     }
@@ -190,9 +195,19 @@ struct TodayView: View {
 
     // MARK: spin
 
+    @ViewBuilder
     private var spinCard: some View {
-        let can = shop.me?.canSpin ?? false
-        return Button { Haptics.tap(); showSpin = true } label: {
+        if shop.me?.canSpin ?? false {
+            spinCardReady
+                .transition(.scale(scale: 0.96).combined(with: .opacity))
+        } else {
+            spinUsedChip
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    private var spinCardReady: some View {
+        Button { Haptics.tap(); showSpin = true } label: {
             HStack(spacing: 14) {
                 ZStack {
                     Circle().fill(Theme.goldGradient).frame(width: 54, height: 54)
@@ -204,25 +219,44 @@ struct TodayView: View {
                     Text("Spin the wheel")
                         .font(.dcCard)
                         .foregroundStyle(Theme.ink(scheme))
-                    Text(can ? "Your free spin is ready" : "Free spin resets tomorrow")
+                    Text("Your free spin is ready")
                         .font(.dcSub)
                         .foregroundStyle(Theme.subtle(scheme))
                 }
                 Spacer()
-                if can {
-                    Text("SPIN")
-                        .font(.dcLabel)
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14).padding(.vertical, 8)
-                        .background(Theme.candy, in: Capsule())
-                } else {
-                    Image(systemName: "chevron.right").foregroundStyle(Theme.subtle(scheme))
-                }
+                Text("SPIN")
+                    .font(.dcLabel)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .background(Theme.candy, in: Capsule())
             }
             .padding(16)
             .cardStyle(scheme)
         }
         .buttonStyle(PressableStyle())
+    }
+
+    // Once the free spin is used it collapses to a slim resets-tomorrow chip,
+    // matching the claimed daily drop so the top of Today stays calm.
+    private var spinUsedChip: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "dial.medium.fill")
+                .font(.dcIconM)
+                .foregroundStyle(Theme.gold)
+            Text("Spin used")
+                .font(.dcLabel)
+                .foregroundStyle(Theme.ink(scheme))
+                .lineLimit(1)
+            Spacer(minLength: 6)
+            Text("Resets tomorrow")
+                .font(.dcSub)
+                .foregroundStyle(Theme.subtle(scheme))
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .cardStyle(scheme)
     }
 
     // MARK: shelves

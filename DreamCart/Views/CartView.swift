@@ -68,7 +68,7 @@ struct CartView: View {
         // The unboxing celebration is full-screen; the floating tab bar would
         // otherwise stay drawn on top of it.
         .onChange(of: unboxing == nil) { _, dismissed in
-            router.setTabBarHidden(!dismissed)
+            router.setOverlayVisible(!dismissed)
         }
     }
 
