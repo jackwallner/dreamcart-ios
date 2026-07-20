@@ -4,6 +4,7 @@ product + USD price schedule + en-US localization. Idempotent.
 
 Usage: source ~/.baseball_credentials && python3 scripts/asc-setup-iap.py
 """
+import json
 import sys
 from pathlib import Path
 
@@ -13,6 +14,8 @@ import asc_lib
 BUNDLE = "com.jackwallner.shop"
 V1 = "https://api.appstoreconnect.apple.com/v1"
 V2 = "https://api.appstoreconnect.apple.com/v2"
+
+IAP_LOCALIZATIONS = json.loads(Path(__file__).with_name("asc-iap-localizations.json").read_text(encoding="utf-8"))
 
 PACKS = [
     ("com.jackwallner.shop.coins.pocket", "Pocket of Coins", "1000 coins to shop with.", 1.99),
@@ -44,14 +47,19 @@ def closest_price_point(c, iap_id, target):
 
 
 def main():
-    c = asc_lib.ASCClient(asc_lib.bearer_token(*asc_lib.load_credentials()))
+    credentials = asc_lib.load_credentials()
+    c = asc_lib.ASCClient(asc_lib.bearer_token(*credentials))
+
+    def refresh_client() -> None:
+        c.token = asc_lib.bearer_token(*credentials)
+
     app_id = asc_lib.find_app(c, BUNDLE)["id"]
     print(f"app {app_id}")
 
     existing = {i["attributes"]["productId"]: i
                 for i in asc_lib.list_all(c, f"/apps/{app_id}/inAppPurchasesV2?limit=200")}
 
-    for product_id, name, desc, price in PACKS:
+    for pack_index, (product_id, name, desc, price) in enumerate(PACKS):
         iap = existing.get(product_id)
         if iap:
             iap_id = iap["id"]
@@ -68,18 +76,52 @@ def main():
             iap_id = iap["id"]
             print(f"+ created {product_id}")
 
-        # en-US localization
-        locs = {l["attributes"]["locale"]
-                for l in c.get(f"{V2}/inAppPurchases/{iap_id}/inAppPurchaseLocalizations")["data"]}
-        if "en-US" not in locs:
-            c.request("POST", f"{V1}/inAppPurchaseLocalizations", {
-                "data": {
-                    "type": "inAppPurchaseLocalizations",
-                    "attributes": {"locale": "en-US", "name": name, "description": desc},
-                    "relationships": {"inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": iap_id}}},
-                }
-            })
-            print("  + en-US localization")
+        # Localize the customer-facing pack metadata in every ASC locale.
+        def fetch_localizations() -> dict[str, dict]:
+            return {
+                l["attributes"]["locale"]: l
+                for l in c.get(f"{V2}/inAppPurchases/{iap_id}/inAppPurchaseLocalizations?limit=200")["data"]
+            }
+
+        locs = fetch_localizations()
+        for locale_index, (locale, rows) in enumerate(IAP_LOCALIZATIONS.items()):
+            if locale_index and locale_index % 20 == 0:
+                refresh_client()
+            attrs = rows[pack_index]
+            if locale in locs:
+                loc_id = locs[locale]["id"]
+                refresh_client()
+                c.request("PATCH", f"{V1}/inAppPurchaseLocalizations/{loc_id}", {
+                    "data": {
+                        "type": "inAppPurchaseLocalizations",
+                        "id": loc_id,
+                        "attributes": attrs,
+                    }
+                })
+            else:
+                try:
+                    refresh_client()
+                    c.request("POST", f"{V1}/inAppPurchaseLocalizations", {
+                        "data": {
+                            "type": "inAppPurchaseLocalizations",
+                            "attributes": {"locale": locale, **attrs},
+                            "relationships": {"inAppPurchaseV2": {"data": {"type": "inAppPurchases", "id": iap_id}}},
+                        }
+                    })
+                except RuntimeError as exc:
+                    if "ATTRIBUTE.INVALID.DUPLICATE" not in str(exc):
+                        raise
+                    locs = fetch_localizations()
+                    loc_id = locs[locale]["id"]
+                    refresh_client()
+                    c.request("PATCH", f"{V1}/inAppPurchaseLocalizations/{loc_id}", {
+                        "data": {
+                            "type": "inAppPurchaseLocalizations",
+                            "id": loc_id,
+                            "attributes": attrs,
+                        }
+                    })
+        print(f"  = localizations {len(IAP_LOCALIZATIONS)}")
 
         # USD price schedule (404 => none yet)
         try:

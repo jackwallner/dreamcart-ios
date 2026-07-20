@@ -10,7 +10,7 @@ struct WelcomeView: View {
 
     private let slides: [(icon: String, title: String, body: String, tint: Color)] = [
         ("bag.fill.badge.plus", "Shop without the guilt",
-         "Real brands, real looks, zero dollars. Fill your cart with everything you'd never actually buy.", Theme.violet),
+         "Original fashion, dream looks, zero dollars. Fill your cart with everything you'd never actually buy.", Theme.violet),
         ("gift.fill", "Free coins every day",
          "Claim a daily drop, spin the wheel, and keep your streak alive. The more you show up, the more you get.", Theme.pink),
         ("sparkles", "Build your dream closet",

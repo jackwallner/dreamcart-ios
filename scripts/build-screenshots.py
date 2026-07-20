@@ -20,7 +20,7 @@ PINK = (255, 61, 139)
 GRAY = (107, 101, 112)
 
 PLAN = [
-    ("shop.png", "appstore_01_shop.png", "Shop without", "the guilt.", "Real brands. Zero dollars.\nFill your cart with everything you'd never actually buy."),
+    ("shop.png", "appstore_01_shop.png", "Shop without", "the guilt.", "Original fashion. Zero dollars.\nFill your cart with everything you'd never actually buy."),
     ("today.png", "appstore_02_coins.png", "Free coins", "every day.", "Claim your drop, spin the wheel,\nkeep your streak alive."),
     ("cart.png", "appstore_03_checkout.png", "Checkout hits", "different.", "Add to cart, unbox, repeat.\nAll virtual — no buyer's remorse."),
     ("closet.png", "appstore_04_closet.png", "Build your", "dream closet.", "Own the pieces, mix brands,\nstyle full outfits your way."),
