@@ -6,6 +6,7 @@ Default dir: fastlane/screenshots/en-US
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import sys
 import urllib.request
@@ -57,7 +58,12 @@ def ensure_set(c, loc_id: str) -> str:
 
 
 def main():
-    shot_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "fastlane/screenshots/en-US"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("dir", nargs="?", default=str(Path(__file__).resolve().parent.parent / "fastlane/screenshots/en-US"))
+    parser.add_argument("--replace", action="store_true", help="Delete existing files in the 6.9-inch bucket first")
+    parser.add_argument("--delete-display", choices=["APP_IPHONE_65"], help="Delete a stale screenshot display bucket")
+    args = parser.parse_args()
+    shot_dir = Path(args.dir)
     images = sorted(p for p in shot_dir.glob("*.png") if p.is_file())
     if not images:
         sys.exit(f"error: no PNG screenshots in {shot_dir}")
@@ -74,8 +80,26 @@ def main():
     if not loc_id:
         sys.exit("error: no en-US localization")
 
+    sets = c.get(f"/appStoreVersionLocalizations/{loc_id}/appScreenshotSets")["data"]
+    if args.delete_display:
+        stale = next((s for s in sets if s["attributes"].get("screenshotDisplayType") == args.delete_display), None)
+        if stale:
+            for screenshot in c.get(f"/appScreenshotSets/{stale['id']}/appScreenshots")["data"]:
+                c.request("DELETE", f"/appScreenshots/{screenshot['id']}")
+            c.request("DELETE", f"/appScreenshotSets/{stale['id']}")
+            print(f"deleted screenshot set {stale['id']} ({args.delete_display})")
+        else:
+            print(f"no screenshot set for {args.delete_display}")
+        return
+
     set_id = ensure_set(c, loc_id)
-    existing = {s["attributes"]["fileName"] for s in c.get(f"/appScreenshotSets/{set_id}/appScreenshots")["data"]}
+    screenshots = c.get(f"/appScreenshotSets/{set_id}/appScreenshots")["data"]
+    if args.replace:
+        for screenshot in screenshots:
+            c.request("DELETE", f"/appScreenshots/{screenshot['id']}")
+        screenshots = []
+        print(f"cleared screenshot set {set_id} ({DISPLAY})")
+    existing = {s["attributes"]["fileName"] for s in screenshots}
     print(f"screenshot set {set_id} ({DISPLAY})")
 
     for img_path in images:

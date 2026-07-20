@@ -13,13 +13,17 @@ import asc_lib
 APP_ID = "6787820106"
 BUNDLE = "com.jackwallner.shop"
 COPYRIGHT = "2026 Jack Wallner"
-REVIEW_NOTES = """DreamCart is a virtual fashion shopping game. All items, coins, and delivery are imaginary and have no cash value.
+REVIEW_NOTES = """DreamCart is a virtual fashion shopping game. All brands, products, coins, checkout, and delivery are imaginary and have no cash value. No physical merchandise is sold or shipped.
 
-- Sign in with Apple is required to save closet progress and coins.
-- Flow: Today tab → claim daily coins → spin the wheel → Shop tab → browse/add to cart → checkout with coins → items appear in Closet → style outfits in the outfit builder.
-- Optional consumable coin packs ($1.99–$49.99) are available via Get more coins; purchases are processed by Apple via RevenueCat.
-- Product images are AI-generated fashion photography loaded on demand.
-- Account deletion is available under You → Delete account.
+Reviewer access:
+- Sign in with Apple is the production authentication path. It creates a Supabase-backed account so coin balances, the closet, outfits, and purchase reconciliation persist correctly.
+- Flow: complete onboarding → Sign in with Apple → claim the free daily coin drop → use the free daily spin → browse Shop/For You → add an item → check out with coins → open Closet.
+- The daily wheel is free, cannot be purchased, awards only no-cash-value virtual coins, and has no real-world prize.
+- Five optional consumable coin packs ($1.99–$49.99 in the US, localized by Apple) are available through the wallet plus button and coin shop. Apple processes payment and RevenueCat validates the transaction. The first-launch offer is optional and has an always-available Not now button.
+- Product imagery is AI-generated fashion photography loaded on demand. Prompts contain no personal data.
+- The optional checkout address is fictional flavor, stored only on device, and is not required. Nothing ships.
+- Account deletion is available under You → Delete account and permanently removes the server-side profile and game data.
+- Privacy Policy and Apple Standard EULA links are available before sign-in.
 - The app does not use non-exempt encryption."""
 
 
@@ -90,26 +94,34 @@ def main():
         "data": {
             "type": "appStoreVersions",
             "id": vid,
-            "attributes": {"copyright": COPYRIGHT},
+            "attributes": {"copyright": COPYRIGHT, "releaseType": "AFTER_APPROVAL"},
         }
     })
     print(f"copyright set ({COPYRIGHT})")
 
+    review_attributes = {
+        "contactFirstName": "Jack",
+        "contactLastName": "Wallner",
+        "contactPhone": "14257533411",
+        "contactEmail": "jackwallner+q@gmail.com",
+        "demoAccountRequired": False,
+        "notes": REVIEW_NOTES,
+    }
     rd = c.get(f"/appStoreVersions/{vid}/appStoreReviewDetail").get("data")
     if rd:
-        print("review detail exists")
+        c.patch(f"/appStoreReviewDetails/{rd['id']}", {
+            "data": {
+                "type": "appStoreReviewDetails",
+                "id": rd["id"],
+                "attributes": review_attributes,
+            }
+        })
+        print("review detail updated")
     else:
         c.post("/appStoreReviewDetails", {
             "data": {
                 "type": "appStoreReviewDetails",
-                "attributes": {
-                    "contactFirstName": "Jack",
-                    "contactLastName": "Wallner",
-                    "contactPhone": "14257533411",
-                    "contactEmail": "jackwallner+q@gmail.com",
-                    "demoAccountRequired": False,
-                    "notes": REVIEW_NOTES,
-                },
+                "attributes": review_attributes,
                 "relationships": {
                     "appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}},
                 },

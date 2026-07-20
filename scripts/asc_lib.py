@@ -27,6 +27,7 @@ EDITABLE_STATES = frozenset(
         "REJECTED",
         "METADATA_REJECTED",
         "WAITING_FOR_REVIEW",
+        "READY_FOR_REVIEW",
     }
 )
 
