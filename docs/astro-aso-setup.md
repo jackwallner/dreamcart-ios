@@ -40,11 +40,11 @@ Examples at the floor: `dopamine shopping`, `virtual shopping`, `virtual mall`, 
 
 ## US indexed-field strategy
 
-- Name: `DreamCart: Fashion Shopping`
+- Name: `DreamCart: Dopamine Shopping`
 - Subtitle: `Outfit Maker & Dress Up Game`
-- Keywords: `retailtherapy,outfitplanner,creator,clothesgame,shoppinggame,dressup,shopaholic,closetapp,stylist`
+- Keywords: `fashion,retail,therapy,stylist,planner,creator,clothes,closet,app,wardrobe,shopaholic,simulator,glam`
 
-The keyword field excludes words already supplied by the name and subtitle. `DreamCart` remains the brand. `Dopamine shopping` stays available in promotional copy rather than consuming high-priority indexed space.
+`Dopamine Shopping` is the brand-canonical name. The keyword field holds single comma-separated words (never glued compounds and never spaces): Apple recombines individual words across name + subtitle + keywords into search phrases, so `planner` pairs with `outfit` from the subtitle, `clothes` with `game`, etc. Words already supplied by the name/subtitle (`shopping`, `outfit`, `maker`, `dress`, `up`, `game`) are excluded to avoid wasting characters. `fashion` lives in the keyword field because the name no longer carries it.
 
 ## Files and commands
 
