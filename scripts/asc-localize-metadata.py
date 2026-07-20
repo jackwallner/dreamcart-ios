@@ -91,10 +91,10 @@ FIELD_OVERRIDES = {
     "ar-SA": ("DreamCart: لعبة تسوق أزياء", "نسّق إطلالاتك وتسوق افتراضياً"),
     "ca": ("DreamCart: Joc de moda virtual", "Crea looks, compra moda gratis"),
     "da": ("DreamCart: Virtuelt modespil", "Skab outfits, shop mode gratis"),
-    "en-AU": ("DreamCart: Fashion Shopping", "Outfit Maker & Dress Up Game"),
-    "en-CA": ("DreamCart: Fashion Shopping", "Outfit Maker & Dress Up Game"),
-    "en-GB": ("DreamCart: Fashion Shopping", "Outfit Maker & Dress Up Game"),
-    "en-US": ("DreamCart: Fashion Shopping", "Outfit Maker & Dress Up Game"),
+    "en-AU": ("DreamCart: Dopamine Shopping", "Outfit Maker & Dress Up Game"),
+    "en-CA": ("DreamCart: Dopamine Shopping", "Outfit Maker & Dress Up Game"),
+    "en-GB": ("DreamCart: Dopamine Shopping", "Outfit Maker & Dress Up Game"),
+    "en-US": ("DreamCart: Dopamine Shopping", "Outfit Maker & Dress Up Game"),
     "he": ("DreamCart: משחק קניות אופנה", "יוצרים לוקים וקונים בחינם"),
     "hr": ("DreamCart: Igra modne kupnje", "Složi outfite, kupuj virtualno"),
     "ja": ("DreamCart：ファッションショッピングゲーム", "コーデを作って無料で着せ替えショッピングを楽しもう"),
@@ -112,10 +112,10 @@ FIELD_OVERRIDES = {
 }
 
 KEYWORD_OVERRIDES = {
-    "en-AU": "retailtherapy,outfitplanner,creator,clothesgame,shoppinggame,dressup,shopaholic,closetapp,stylist",
-    "en-CA": "retailtherapy,outfitplanner,creator,clothesgame,shoppinggame,dressup,shopaholic,closetapp,stylist",
-    "en-GB": "retailtherapy,outfitplanner,creator,clothesgame,shoppinggame,dressup,shopaholic,closetapp,stylist",
-    "en-US": "retailtherapy,outfitplanner,creator,clothesgame,shoppinggame,dressup,shopaholic,closetapp,stylist",
+    "en-AU": "fashion,retail,therapy,stylist,planner,creator,clothes,closet,app,wardrobe,shopaholic,simulator,glam",
+    "en-CA": "fashion,retail,therapy,stylist,planner,creator,clothes,closet,app,wardrobe,shopaholic,simulator,glam",
+    "en-GB": "fashion,retail,therapy,stylist,planner,creator,clothes,closet,app,wardrobe,shopaholic,simulator,glam",
+    "en-US": "fashion,retail,therapy,stylist,planner,creator,clothes,closet,app,wardrobe,shopaholic,simulator,glam",
     "ja": "ファッション,ショッピング,着せ替え,コーデ,服,スタイリスト,クローゼット,ゲーム,コイン,アクセサリー,アウトフィット,洋服,コーディネート,おしゃれ,メイク,アバター,衣装,買い物,服集め",
     "ko": "패션,쇼핑,옷,스타일,코디,옷장,게임,코인,드레스업,액세서리,아웃핏,스타일리스트,의상,꾸미기,가상쇼핑,패션게임,코디게임,의상게임,캐주얼,수집,쇼핑게임,옷게임,코디추천,패션수집",
     "zh-Hans": "时尚,购物,服装,穿搭,造型,衣橱,游戏,金币,换装,配饰,服饰,搭配,虚拟购物,时尚游戏,穿搭游戏,购物游戏,造型师,装扮,收集,每日金币,转盘,裙子,鞋子,包包,首饰,街头风,休闲游戏,模拟购物",
@@ -140,17 +140,17 @@ def family(locale: str) -> str:
 
 def keyword_string(terms: list[str], locale: str) -> str:
     extras = {
-        "en": ["trend", "brand", "haul", "tryon", "fashiongame", "virtualstyle"],
-        "es": ["tendencias", "marcas", "haul", "armadordeoutfits", "modavirtual"],
-        "fr": ["tendances", "marques", "haul", "essayage", "modevirtuelle"],
-        "de": ["trends", "marken", "haul", "anprobe", "modegame"],
-        "it": ["tendenze", "brand", "haul", "prova", "modavirtuale"],
-        "pt": ["tendências", "marcas", "haul", "provador", "modavirtual"],
+        "en": ["trend", "brand", "haul", "fashion", "game", "virtual", "style"],
+        "es": ["tendencias", "marcas", "haul", "moda", "virtual", "outfits"],
+        "fr": ["tendances", "marques", "haul", "mode", "virtuelle", "essayage"],
+        "de": ["trends", "marken", "haul", "mode", "game", "anprobe"],
+        "it": ["tendenze", "brand", "haul", "moda", "virtuale", "prova"],
+        "pt": ["tendências", "marcas", "haul", "moda", "virtual", "provador"],
         "ja": ["トレンド", "ブランド", "コーデ", "試着", "仮想モール"],
         "ko": ["트렌드", "브랜드", "하울", "가상몰", "스타일게임"],
         "zh-Hans": ["潮流", "品牌", "开箱", "虚拟商城", "搭配游戏"],
         "zh-Hant": ["潮流", "品牌", "開箱", "虛擬商城", "穿搭遊戲"],
-    }.get(family(locale), ["trend", "brand", "style", "fashiongame"])
+    }.get(family(locale), ["trend", "brand", "style", "fashion", "game"])
     out: list[str] = []
     seen: set[str] = set()
     for term in terms + extras:
