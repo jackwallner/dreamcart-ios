@@ -7,6 +7,7 @@ import SwiftUI
 /// when the top card is actually removed. Mechanics mirror the fleet's other
 /// swipe decks (Sideline's BriefingDeck, MahjTrainer's FlashcardDrillView).
 struct ForYouView: View {
+    @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -361,6 +362,12 @@ struct ForYouView: View {
         props.merge(product.tasteProps) { current, _ in current }
         Analytics.track(accepted ? "swipe_like" : "swipe_discard", props)
         if accepted {
+            // The cart needs an account; the card stays in the deck so the
+            // swipe isn't silently lost while the sign-in sheet is up.
+            guard auth.requireAccount("add_to_cart") else {
+                acceptedFlash = false
+                return
+            }
             _ = shop.addToCart(product.id, recommendation: true)
             acceptedFlash = false
         } else {

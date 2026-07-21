@@ -8,6 +8,7 @@ struct RootView: View {
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        @Bindable var auth = auth
         ZStack {
             Theme.bg(scheme).ignoresSafeArea()
             switch auth.state {
@@ -15,12 +16,12 @@ struct RootView: View {
                 SplashView()
             case .signedOut:
                 WelcomeView()
-            case .signedIn:
+            case .guest, .signedIn:
                 // Stay on the splash through the first catalog load. Auth resolves
                 // long before the products arrive, and cutting to the tabs early
                 // shows a shell of empty grids rather than the app.
                 if shop.hasLoadedOnce {
-                    if auth.justCompletedOnboarding {
+                    if auth.state == .signedIn && auth.justCompletedOnboarding {
                         // One-time final onboarding step for brand-new users only
                         // (see AuthController.justCompletedOnboarding); clearing
                         // the flag here means it can never show again this run.
@@ -35,10 +36,15 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.28), value: shop.hasLoadedOnce)
+        // Any account-based action a guest taps raises this instead of doing
+        // the work (AuthController.requireAccount).
+        .sheet(isPresented: $auth.promptSignIn) { SignInPromptView() }
         .onChange(of: auth.state) { _, new in
-            router.setReadiness(signedIn: new == .signedIn,
-                                catalogReady: new == .signedIn && !shop.products.isEmpty)
-            if new == .signedIn {
+            let browsing = new == .signedIn || new == .guest
+            router.setReadiness(signedIn: browsing,
+                                catalogReady: browsing && !shop.products.isEmpty)
+            switch new {
+            case .signedIn:
                 Task {
                     store.configure(userId: await SupabaseClient.shared.currentUserId)
                     await shop.refreshAll()
@@ -46,6 +52,14 @@ struct RootView: View {
                     router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
                     _ = router.consumePendingRoute()
                 }
+            case .guest:
+                Task {
+                    await shop.refreshCatalogForGuest()
+                    router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
+                    _ = router.consumePendingRoute()
+                }
+            case .unknown, .signedOut:
+                break
             }
         }
     }

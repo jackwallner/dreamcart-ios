@@ -111,6 +111,65 @@ FIELD_OVERRIDES = {
     "zh-Hant": ("DreamCart：時尚購物穿搭與衣櫥收藏模擬遊戲", "製作造型並體驗免費的虛擬時尚購物與穿搭收藏遊戲樂趣"),
 }
 
+# Subtitles are the single source of truth for the field and win over both
+# PACKS and FIELD_OVERRIDES. App Review rejected 1.0 under guideline 2.3.7
+# because localized subtitles advertised the service as free ("gratis",
+# "zdarma", "무료", "免费", "sin gastar", "без трат", …). Price and
+# free/discount references belong in the description, never here — keep every
+# entry in this table free of them.
+SUBTITLES = {
+    "ar-SA": "نسّق إطلالاتك وتسوق افتراضياً",
+    "bn-BD": "লুক বানান, ভার্চুয়াল শপিং",
+    "ca": "Crea looks i omple l'armari",
+    "cs": "Tvoř outfity a plň si šatník",
+    "da": "Skab outfits og fyld dit skab",
+    "de-DE": "Looks stylen, Outfits sammeln",
+    "el": "Φτιάξε looks και κάνε shopping",
+    "en-AU": "Outfit Maker & Dress Up Game",
+    "en-CA": "Outfit Maker & Dress Up Game",
+    "en-GB": "Outfit Maker & Dress Up Game",
+    "en-US": "Outfit Maker & Dress Up Game",
+    "es-ES": "Crea looks y llena tu armario",
+    "es-MX": "Arma looks y compra virtual",
+    "fi": "Luo asuja ja täytä vaatekaappi",
+    "fr-CA": "Créez des looks et magasinez",
+    "fr-FR": "Créez vos looks et shoppez",
+    "gu-IN": "લુક બનાવો, વર્ચ્યુઅલ શોપિંગ",
+    "he": "יוצרים לוקים וממלאים ארון",
+    "hi": "लुक बनाएं, वर्चुअल शॉपिंग करें",
+    "hr": "Složi outfite, kupuj virtualno",
+    "hu": "Állíts össze divatos szetteket",
+    "id": "Buat outfit, belanja virtual",
+    "it": "Crea look e riempi l'armadio",
+    "ja": "コーデを作って着せ替えショッピングゲームを楽しもう",
+    "kn-IN": "ಲುಕ್ ಮಾಡಿ ವರ್ಚುವಲ್ ಶಾಪಿಂಗ್",
+    "ko": "나만의 코디를 만들고 패션 쇼핑 게임 즐기기",
+    "ml-IN": "ലുക്ക് സൃഷ്ടിച്ച് ഷോപ്പിംഗ്",
+    "mr-IN": "लूक तयार करा, वर्च्युअल शॉपिंग",
+    "ms": "Cipta gaya, beli-belah maya",
+    "nl-NL": "Style outfits, shop virtueel",
+    "no": "Lag antrekk og fyll garderoben",
+    "or-IN": "ଲୁକ୍ ତିଆରି, ଭର୍ଚୁଆଲ୍ ଶପିଂ ଗେମ୍",
+    "pa-IN": "ਲੁੱਕ ਬਣਾਓ, ਵਰਚੁਅਲ ਖਰੀਦਦਾਰੀ",
+    "pl": "Twórz stylizacje, zbieraj modę",
+    "pt-BR": "Crie looks, compras de moda",
+    "pt-PT": "Cria looks e enche o armário",
+    "ro": "Creează ținute, cumpără online",
+    "ru": "Создавай образы и свой стиль",
+    "sk": "Tvor outfity a plň si šatník",
+    "sl-SI": "Ustvari videze in polni omaro",
+    "sv": "Skapa outfits och shoppa loss",
+    "ta-IN": "லுக் உருவாக்கி ஷாப்பிங் கேம்",
+    "te-IN": "లుక్ తయారు వర్చువల్ షాపింగ్",
+    "th": "แต่งลุคและช้อปปิ้งเสมือนจริง",
+    "tr": "Kombin yap, sanal alışveriş",
+    "uk": "Створюй образи та свій стиль",
+    "ur-PK": "لُک بنائیں، ورچوئل فیشن شاپنگ",
+    "vi": "Phối đồ và mua sắm thời trang",
+    "zh-Hans": "制作造型并体验虚拟时尚购物与穿搭收集换装游戏乐趣",
+    "zh-Hant": "製作造型並體驗虛擬時尚購物與穿搭收藏換裝遊戲樂趣",
+}
+
 KEYWORD_OVERRIDES = {
     "en-AU": "fashion,retail,therapy,stylist,planner,creator,clothes,closet,app,wardrobe,shopaholic,simulator,glam",
     "en-CA": "fashion,retail,therapy,stylist,planner,creator,clothes,closet,app,wardrobe,shopaholic,simulator,glam",
@@ -174,17 +233,30 @@ def keyword_string(terms: list[str], locale: str) -> str:
 
 
 def payload(locale: str) -> dict:
-    name, subtitle, terms = PACKS[locale]
+    name, _, terms = PACKS[locale]
     if locale in FIELD_OVERRIDES:
-        name, subtitle = FIELD_OVERRIDES[locale]
+        name, _ = FIELD_OVERRIDES[locale]
     copy = LOCALIZED_COPY[locale]
     return {
         "name": name,
-        "subtitle": subtitle,
+        "subtitle": SUBTITLES[locale],
         "keywords": KEYWORD_OVERRIDES.get(locale, keyword_string(terms, locale)),
         "promotionalText": copy["promotionalText"],
         "description": copy["description"],
     }
+
+
+# "Free"/"discount" in every locale DreamCart ships, plus the phrasings that
+# say the same thing without the word ("sin gastar", "без трат").
+PRICE_WORDS = (
+    "free", "gratis", "gratuit", "grátis", "gratuït", "gratuita", "gratuite",
+    "kostenlos", "zdarma", "zadarmo", "ingyen", "ilmais", "percuma", "darmow",
+    "besplat", "brezplač", "бесплат", "безкоштов", "без трат", "sin gastar",
+    "无料", "無料", "免费", "免費", "무료", "מגן", "בחינם", "مجان", "مفت",
+    "ฟรี", "miễn phí", "मुफ़्त", "मुफ्त", "मोफत", "विनामूल्य", "মুক্ত", "বিনামূল্যে",
+    "મફત", "ಉಚಿತ", "ഫ്രീ", "സൗജന്യ", "ମାଗଣା", "ਮੁਫ਼ਤ", "ਮੁਫਤ", "இலவச", "ఉచిత",
+    "δωρεάν", "ücretsiz", "discount", "sale", "% off",
+)
 
 
 def validate(data: dict[str, dict]) -> None:
@@ -198,9 +270,16 @@ def validate(data: dict[str, dict]) -> None:
             length = len(fields[field])
             if length < minimum:
                 errors.append(f"{locale}/{field}={length}<{minimum}")
+        # Guideline 2.3.7: the name and subtitle may not reference price, and
+        # "free"/"discounted" counts as a price reference. This is what got
+        # 1.0 rejected, so it fails the build rather than reaching review.
+        for field in ("name", "subtitle"):
+            hit = next((w for w in PRICE_WORDS if w in fields[field].lower()), None)
+            if hit:
+                errors.append(f"{locale}/{field} price reference {hit!r}")
     if errors:
-        raise SystemExit("metadata length errors: " + ", ".join(errors))
-    print(f"validated {len(data)} locales at 24/24/94+ within Apple limits")
+        raise SystemExit("metadata errors: " + ", ".join(errors))
+    print(f"validated {len(data)} locales at 24/24/94+ within Apple limits, no price references")
 
 
 def main() -> None:

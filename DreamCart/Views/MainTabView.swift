@@ -154,22 +154,32 @@ extension View {
 
 struct WalletToolbar: ViewModifier {
     @Environment(ShopStore.self) private var shop
+    @Environment(AuthController.self) private var auth
     @Binding var showCoinShop: Bool
 
     func body(content: Content) -> some View {
         content.toolbar {
             if #available(iOS 26.0, *) {
-                ToolbarItem(placement: .topBarTrailing) {
-                    WalletPill(coins: shop.coins) { showCoinShop = true }
-                }
-                .sharedBackgroundVisibility(.hidden)
+                ToolbarItem(placement: .topBarTrailing) { walletItem }
+                    .sharedBackgroundVisibility(.hidden)
             } else {
-                ToolbarItem(placement: .topBarTrailing) {
-                    WalletPill(coins: shop.coins) { showCoinShop = true }
-                }
+                ToolbarItem(placement: .topBarTrailing) { walletItem }
             }
         }
         .sheet(isPresented: $showCoinShop) { CoinShopView() }
+    }
+
+    // A guest has no wallet, so the pill becomes the way into signing up
+    // rather than a coin balance that would always read zero.
+    @ViewBuilder
+    private var walletItem: some View {
+        if auth.isGuest {
+            Button("Sign in") { auth.requireAccount("wallet") }
+                .font(.dcLabel)
+                .foregroundStyle(Theme.violet)
+        } else {
+            WalletPill(coins: shop.coins) { showCoinShop = true }
+        }
     }
 }
 

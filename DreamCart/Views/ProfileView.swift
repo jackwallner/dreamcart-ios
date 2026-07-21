@@ -21,12 +21,19 @@ struct ProfileView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    header
-                    statsGrid
-                    appearanceCard
-                    notificationCard
-                    actions
-                    dangerZone
+                    if auth.isGuest {
+                        guestHeader
+                        appearanceCard
+                        notificationCard
+                        guestActions
+                    } else {
+                        header
+                        statsGrid
+                        appearanceCard
+                        notificationCard
+                        actions
+                        dangerZone
+                    }
                     Text("DreamCart is a virtual shopping game. Everything here, including coins, items, and delivery, is imaginary and has no cash value.")
                         .font(.dcCaption)
                         .foregroundStyle(Theme.subtle(scheme))
@@ -100,6 +107,60 @@ struct ProfileView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
         .cardStyle(scheme)
+    }
+
+    // MARK: guest
+
+    private var guestHeader: some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle().fill(Theme.candy).frame(width: 84, height: 84)
+                Image(systemName: "person.fill")
+                    .font(.dcIconL)
+                    .foregroundStyle(.white)
+            }
+            Text("Browsing as guest")
+                .font(.dcTitle)
+                .foregroundStyle(Theme.ink(scheme))
+            Text("Sign in to earn coins and keep a closet.")
+                .font(.dcLabel)
+                .foregroundStyle(Theme.subtle(scheme))
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .cardStyle(scheme)
+    }
+
+    private var guestActions: some View {
+        VStack(spacing: 0) {
+            row("Sign in", "person.crop.circle.badge.plus", Theme.violet) {
+                auth.requireAccount("profile")
+            }
+            Divider().padding(.leading, 50)
+            linkRow("Privacy Policy", "hand.raised.fill",
+                    URL(string: "https://jackwallner.github.io/dreamcart/privacy-policy.html")!)
+            Divider().padding(.leading, 50)
+            linkRow("Terms of Use", "doc.text.fill",
+                    URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+        }
+        .cardStyle(scheme)
+    }
+
+    private func linkRow(_ title: String, _ icon: String, _ url: URL) -> some View {
+        Link(destination: url) {
+            HStack(spacing: 14) {
+                Image(systemName: icon).font(.dcIconM)
+                    .foregroundStyle(Theme.subtle(scheme)).frame(width: 24)
+                Text(title).font(.dcBody)
+                    .foregroundStyle(Theme.ink(scheme))
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.dcIconS)
+                    .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
+            }
+            .padding(.horizontal, 14).padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
     }
 
     private var displayName: String {
