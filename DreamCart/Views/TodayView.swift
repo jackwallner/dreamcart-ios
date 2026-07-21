@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TodayView: View {
+    @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
     @Environment(LocalNotificationCoordinator.self) private var notifications
@@ -87,13 +88,47 @@ struct TodayView: View {
     @ViewBuilder
     private var dailyCard: some View {
         let can = shop.me?.canClaimDaily ?? false
-        if can {
+        if auth.isGuest {
+            guestCoinsCard
+        } else if can {
             claimableDailyCard
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
         } else {
             claimedDailyChip
                 .transition(.move(edge: .top).combined(with: .opacity))
         }
+    }
+
+    /// Guests browse the whole catalog, but coins belong to an account, so the
+    /// daily drop and the wheel collapse into one invitation to sign in.
+    private var guestCoinsCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            dailyDropLabel
+            Text("Coins, cart and closet")
+                .font(.dcTitle)
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Browse as long as you like. Sign in when you want to claim daily coins, spin the wheel and keep what you buy.")
+                .font(.dcBodyText)
+                .foregroundStyle(.white.opacity(0.85))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button {
+                auth.requireAccount("daily_drop")
+            } label: {
+                Text("Sign in")
+                    .font(.dcButton)
+                    .foregroundStyle(Theme.violet)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.white, in: Capsule())
+            }
+            .buttonStyle(PressableStyle())
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity)
+        .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
+        .shadow(color: Theme.pink.opacity(0.3), radius: 16, y: 8)
     }
 
     private var claimableDailyCard: some View {
@@ -197,7 +232,10 @@ struct TodayView: View {
 
     @ViewBuilder
     private var spinCard: some View {
-        if shop.me?.canSpin ?? false {
+        if auth.isGuest {
+            // Folded into guestCoinsCard above.
+            EmptyView()
+        } else if shop.me?.canSpin ?? false {
             spinCardReady
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
         } else {

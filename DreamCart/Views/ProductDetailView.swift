@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProductDetailView: View {
     let product: ProductWithBrand
+    @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
@@ -133,6 +134,7 @@ struct ProductDetailView: View {
     }
 
     private func updateFavorite() async {
+        guard auth.requireAccount("favorite") else { return }
         guard !updatingFavorite else { return }
         updatingFavorite = true
         defer { updatingFavorite = false }
@@ -237,6 +239,9 @@ struct ProductDetailView: View {
                 .background(Color.green.gradient, in: Capsule())
         } else {
             Button {
+                // Cart and checkout are account-based, so a guest gets the
+                // sign-in sheet here instead of a cart that can't be paid for.
+                guard auth.requireAccount("add_to_cart") else { return }
                 if inCart {
                     showCheckout = true
                 } else {

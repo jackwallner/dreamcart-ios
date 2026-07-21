@@ -78,6 +78,43 @@ final class ShopStore {
         }
     }
 
+    /// Catalog-only load for guest browsing. `brands` and `products` are
+    /// world-readable (see the RLS policies in the initial migration), so they
+    /// come back on the anon key; everything else in `refreshAll` — the `me`
+    /// RPC, closet, favorites, recommendation feedback — needs a session and
+    /// is skipped rather than failing the whole load.
+    func refreshCatalogForGuest() async {
+        catalogGeneration += 1
+        let generation = catalogGeneration
+        isLoading = true
+        loadError = nil
+        catalogLoadError = nil
+        defer {
+            isLoading = false
+            hasLoadedOnce = true
+        }
+        me = nil
+        closet = []
+        closetAcquiredAt = [:]
+        ownedIds = []
+        favoriteIds = []
+        outfits = []
+        ledger = []
+        do {
+            async let b: [Brand] = sb.select("brands?select=*&order=sort.asc", authed: false)
+            async let p: [ProductWithBrand] =
+                sb.select("products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc,id.asc&limit=200",
+                          authed: false)
+            brands = try await b
+            products = try await p
+            let gridWarm = Array(products.prefix(12).map(\.imageUrl))
+            Task { await ImagePrefetcher.warmGrid(urls: gridWarm) }
+            Task { await loadRemainingCatalog(generation: generation) }
+        } catch {
+            loadError = (error as? SBError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
     private func loadRemainingCatalog(generation: Int) async {
         // Bigger pages, buffered locally, then a SINGLE append. Draining the
         // rest of the catalog used to append per 200-row page (~8 mutations),

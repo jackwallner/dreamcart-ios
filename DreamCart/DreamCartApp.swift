@@ -47,8 +47,10 @@ struct DreamCartApp: App {
                         store.configure(userId: await SupabaseClient.shared.currentUserId)
                         await shop.refreshAll()
                         await shop.reconcilePurchases()
+                    } else if auth.state == .guest {
+                        await shop.refreshCatalogForGuest()
                     }
-                    router.setReadiness(signedIn: auth.state == .signedIn,
+                    router.setReadiness(signedIn: auth.state == .signedIn || auth.state == .guest,
                                         catalogReady: !shop.products.isEmpty)
                     _ = router.consumePendingRoute()
                 }

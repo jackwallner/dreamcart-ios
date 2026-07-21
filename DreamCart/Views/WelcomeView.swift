@@ -1,4 +1,3 @@
-import AuthenticationServices
 import SwiftUI
 
 struct WelcomeView: View {
@@ -71,63 +70,12 @@ struct WelcomeView: View {
 
     private var authenticationView: some View {
         ScrollView {
-            VStack(spacing: 18) {
-                ZStack {
-                    Circle().fill(slides[2].tint.opacity(0.15)).frame(width: 150, height: 150)
-                    Image(systemName: slides[2].icon)
-                        .font(.dcIconHero)
-                        .foregroundStyle(slides[2].tint)
-                }
-                VStack(spacing: 10) {
-                    Text(slides[2].title)
-                        .font(.dcHero)
-                        .foregroundStyle(Theme.ink(scheme))
-                        .multilineTextAlignment(.center)
-                    Text(slides[2].body)
-                        .font(.dcBodyText)
-                        .foregroundStyle(Theme.subtle(scheme))
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 28)
-                VStack(spacing: 12) {
-                    SignInWithAppleButton(.continue) { request in
-                        auth.prepareRequest(request)
-                    } onCompletion: { result in
-                        auth.handle(result)
-                    }
-                    .signInWithAppleButtonStyle(scheme == .dark ? .white : .black)
-                    .frame(height: 54)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
-                    Text("We use Sign in with Apple to save your closet and coins. Nothing is shared.")
-                        .font(.dcCaption)
-                        .foregroundStyle(Theme.subtle(scheme))
-                        .multilineTextAlignment(.center)
-
-                    ViewThatFits(in: .horizontal) {
-                        HStack(spacing: 18) { legalLinks }
-                        VStack(spacing: 10) { legalLinks }
-                    }
-                    .font(.dcLabel)
-                    .foregroundStyle(Theme.violet)
-
-                    #if DEBUG
-                    Button("Continue as tester") { Task { await auth.devSignIn() } }
-                        .font(.dcLabel)
-                        .foregroundStyle(Theme.violet)
-                        .fixedSize(horizontal: false, vertical: true)
-                    #endif
-                }
-                .padding(.horizontal, 28)
-                .padding(.bottom, 28)
-            }
-            .padding(.top, 36)
+            SignInPanel(headline: slides[2].title,
+                        message: slides[2].body,
+                        icon: slides[2].icon,
+                        tint: slides[2].tint,
+                        guestAction: { auth.continueAsGuest() })
         }
-    }
-
-    @ViewBuilder
-    private var legalLinks: some View {
-        Link("Privacy Policy", destination: URL(string: "https://jackwallner.github.io/dreamcart/privacy-policy.html")!)
-        Link("Terms", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
     }
 
     private func slideView(_ s: (icon: String, title: String, body: String, tint: Color)) -> some View {

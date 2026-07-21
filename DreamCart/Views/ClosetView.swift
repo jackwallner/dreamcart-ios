@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ClosetView: View {
+    @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
@@ -20,26 +21,33 @@ struct ClosetView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        collectionHeader
-
-                        if shop.isLoading && shop.closet.isEmpty {
-                            ProgressView("Loading your closet…")
-                                .font(.dcBody)
-                                .frame(maxWidth: .infinity)
-                                .padding(.top, 60)
-                        } else if shop.closet.isEmpty {
-                            EmptyState(
-                                icon: "hanger",
-                                title: "Your closet is empty",
-                                message: "Pieces you buy stay here so you can revisit your collection anytime."
-                            )
-                            .padding(.top, 40)
+                        if auth.isGuest {
+                            GuestGateState(icon: "hanger",
+                                           title: "Your closet lives in your account",
+                                           message: "Sign in so everything you buy is saved and ready to style into outfits.",
+                                           feature: "closet_tab")
                         } else {
-                            controls
-                            if !highlightedProducts.isEmpty {
-                                newHaulSection.id("new-haul")
+                            collectionHeader
+
+                            if shop.isLoading && shop.closet.isEmpty {
+                                ProgressView("Loading your closet…")
+                                    .font(.dcBody)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 60)
+                            } else if shop.closet.isEmpty {
+                                EmptyState(
+                                    icon: "hanger",
+                                    title: "Your closet is empty",
+                                    message: "Pieces you buy stay here so you can revisit your collection anytime."
+                                )
+                                .padding(.top, 40)
+                            } else {
+                                controls
+                                if !highlightedProducts.isEmpty {
+                                    newHaulSection.id("new-haul")
+                                }
+                                collectionSection
                             }
-                            collectionSection
                         }
                     }
                     .padding(16)

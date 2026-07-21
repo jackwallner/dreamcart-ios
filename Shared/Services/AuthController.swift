@@ -7,10 +7,24 @@ import SwiftUI
 @MainActor
 @Observable
 final class AuthController {
-    enum State: Equatable { case unknown, signedOut, signedIn }
+    enum State: Equatable { case unknown, signedOut, guest, signedIn }
     var state: State = .unknown
     var errorMessage: String?
     var isWorking = false
+
+    /// True while the user is browsing the catalog without an account. Only
+    /// account-based features (cart, checkout, closet, coins, favorites) ask
+    /// them to sign in — App Review 5.1.1(v) requires everything else to be
+    /// reachable without registering.
+    var isGuest: Bool { state == .guest }
+
+    /// Raised by `requireAccount()` when a guest taps an account-based action;
+    /// `RootView` presents the sign-in sheet on it.
+    var promptSignIn = false
+
+    /// Remembers a guest across launches so they land back in the catalog
+    /// instead of the sign-in screen.
+    private static let guestKey = "dreamcart.browsingAsGuest"
 
     /// Set by `WelcomeView` the moment a brand-new user finishes the
     /// onboarding slides (before they sign in). `RootView` checks this once
@@ -25,7 +39,33 @@ final class AuthController {
     func bootstrap() async {
         await SupabaseClient.shared.restore()
         let signed = await SupabaseClient.shared.isSignedIn
-        state = signed ? .signedIn : .signedOut
+        if signed {
+            state = .signedIn
+        } else {
+            state = UserDefaults.standard.bool(forKey: Self.guestKey) ? .guest : .signedOut
+        }
+    }
+
+    // MARK: guest browsing
+
+    func continueAsGuest() {
+        UserDefaults.standard.set(true, forKey: Self.guestKey)
+        errorMessage = nil
+        promptSignIn = false
+        state = .guest
+        Analytics.track("guest_browsing_started")
+    }
+
+    /// Gate for account-based actions. Returns true when the caller may
+    /// proceed; for a guest it opens the sign-in sheet and returns false, so
+    /// call sites read as a plain guard.
+    @discardableResult
+    func requireAccount(_ feature: String) -> Bool {
+        guard state == .guest else { return true }
+        errorMessage = nil
+        promptSignIn = true
+        Analytics.track("signin_prompted", ["feature": feature])
+        return false
     }
 
     // MARK: Apple request
@@ -64,7 +104,7 @@ final class AuthController {
         do {
             try await SupabaseClient.shared.signInWithApple(idToken: idToken, nonce: nonce, fullName: name)
             Haptics.success()
-            state = .signedIn
+            finishSignIn()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -78,21 +118,33 @@ final class AuthController {
             try await SupabaseClient.shared.signInWithPassword(
                 email: "tester@dreamcart.dev", password: "dreamcart-test-1")
             Haptics.success()
-            state = .signedIn
+            finishSignIn()
         } catch {
             errorMessage = error.localizedDescription
         }
     }
     #endif
 
+    /// Leaving guest mode is permanent for this install: clearing the flag
+    /// means a later sign-out lands on the welcome screen, not back in a
+    /// half-guest state.
+    private func finishSignIn() {
+        UserDefaults.standard.removeObject(forKey: Self.guestKey)
+        promptSignIn = false
+        errorMessage = nil
+        state = .signedIn
+    }
+
     func signOut() async {
         await SupabaseClient.shared.signOutLocal()
+        UserDefaults.standard.removeObject(forKey: Self.guestKey)
         state = .signedOut
     }
 
     func deleteAccount() async throws {
         let _: [String: Bool] = try await SupabaseClient.shared.callFunction("delete-account")
         await SupabaseClient.shared.signOutLocal()
+        UserDefaults.standard.removeObject(forKey: Self.guestKey)
         state = .signedOut
     }
 

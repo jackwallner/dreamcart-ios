@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct CartView: View {
+    @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
@@ -13,7 +14,14 @@ struct CartView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if shop.cartProducts.isEmpty {
+                if auth.isGuest {
+                    ScrollView {
+                        GuestGateState(icon: "cart",
+                                       title: "The cart needs an account",
+                                       message: "Sign in to fill a cart, check out with coins and keep what you buy.",
+                                       feature: "cart_tab")
+                    }
+                } else if shop.cartProducts.isEmpty {
                     ScrollView {
                         VStack(spacing: 24) {
                             EmptyState(icon: "cart", title: "Your cart is empty",
