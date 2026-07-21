@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Compose DreamCart App Store 6.5" screenshots from raw simulator captures.
+"""Compose DreamCart App Store 6.9" screenshots from raw simulator captures.
 
 Usage: python3 scripts/build-screenshots.py <raw-shots-dir>
-Output: fastlane/screenshots/en-US/ at 1284x2778
+Output: fastlane/screenshots/en-US/ at 1320x2868 (the size the APP_IPHONE_67
+bucket accepts -- see asc-upload-screenshots.py)
 """
 import sys
 from pathlib import Path
@@ -11,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "fastlane" / "screenshots" / "en-US"
-W, H = 1284, 2778
+W, H = 1320, 2868
 
 BG = (251, 248, 244)
 INK = (23, 20, 26)
@@ -23,7 +24,7 @@ GRAY = (107, 101, 112)
 # references, and "free" counts as one. Keep this copy about the fantasy, not
 # about what it costs.
 PLAN = [
-    ("shop.png", "appstore_01_shop.png", "Shop without", "the guilt.", "Original fashion, dream looks.\nFill your cart with everything you'd never actually buy."),
+    ("shop.png", "appstore_01_shop.png", "Shop without", "the guilt.", "Original fashion, dream looks.\nFill your cart with everything\nyou'd never actually buy."),
     ("today.png", "appstore_02_coins.png", "Claim coins", "every day.", "Claim your drop, spin the wheel,\nkeep your streak alive."),
     ("cart.png", "appstore_03_checkout.png", "Checkout hits", "different.", "Add to cart, unbox, repeat.\nAll virtual, no buyer's remorse."),
     ("closet.png", "appstore_04_closet.png", "Build your", "dream closet.", "Own the pieces, mix brands,\nstyle full outfits your way."),
