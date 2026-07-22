@@ -14,7 +14,6 @@ final class StoreController {
     var prices: [String: String] = [:]     // productId -> localized price
     var isReady = false
     var isPurchasing = false
-    var isRestoring = false
     var lastError: String?
 
     #if HAS_REVENUECAT
@@ -104,22 +103,11 @@ final class StoreController {
     }
     #endif
 
-    func restore() async {
-        #if HAS_REVENUECAT
-        #if targetEnvironment(simulator)
-        lastError = "Restore Purchases is available on a device or TestFlight build."
-        return
-        #else
-        guard !isRestoring else { return }
-        isRestoring = true
-        lastError = nil
-        defer { isRestoring = false }
-        do {
-            _ = try await Purchases.shared.restorePurchases()
-        } catch {
-            lastError = error.localizedDescription
-        }
-        #endif
-        #endif
-    }
 }
+
+// Deliberately no StoreKit restore path. Every product here is a consumable
+// coin pack, which StoreKit cannot restore, and offering an Apple Account
+// restore for one is an App Review 3.1.1 rejection. DreamCart's own restore
+// is server-side: `ShopStore.reconcilePurchases()` calls the `redeem` edge
+// function, which reads this account's RevenueCat transactions and grants any
+// coins not yet granted. See `CoinShopView.syncCoins`.
