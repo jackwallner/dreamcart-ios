@@ -13,9 +13,14 @@ PLIST="$ROOT/AppStoreUploadOptions.plist"
 [[ -f "$PLIST" ]] || { echo "error: missing $PLIST" >&2; exit 1; }
 
 OLD=$(grep 'CURRENT_PROJECT_VERSION:' "$PROJECT_YML" | head -1 | awk '{print $2}' | tr -d '"')
-NEW=$((OLD + 1))
-echo "Bumping build: $OLD → $NEW"
-sed -i '' "s/CURRENT_PROJECT_VERSION: \"$OLD\"/CURRENT_PROJECT_VERSION: \"$NEW\"/" "$PROJECT_YML"
+if [[ "${NO_BUILD_BUMP:-0}" == "1" ]]; then
+  NEW="$OLD"
+  echo "Using existing build: $NEW"
+else
+  NEW=$((OLD + 1))
+  echo "Bumping build: $OLD → $NEW"
+  sed -i '' "s/CURRENT_PROJECT_VERSION: \"$OLD\"/CURRENT_PROJECT_VERSION: \"$NEW\"/" "$PROJECT_YML"
+fi
 
 echo "Generating xcodeproj..."
 xcodegen generate
