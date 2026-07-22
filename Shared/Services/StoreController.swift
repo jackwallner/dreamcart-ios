@@ -106,6 +106,6 @@ final class StoreController {
 }
 
 // Deliberately no StoreKit restore path. Every product here is a consumable
-// coin pack, which StoreKit cannot restore. `ShopStore.reconcilePurchases()`
-// automatically asks the server to credit completed transactions at launch and
-// after purchase, keyed idempotently by store transaction id.
+// coin pack. The current unspent balance belongs to the signed-in DreamCart
+// account, while `ShopStore.reconcilePurchases()` retries any incomplete
+// delivery idempotently by store transaction id.

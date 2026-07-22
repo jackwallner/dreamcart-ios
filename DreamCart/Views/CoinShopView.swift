@@ -140,10 +140,6 @@ struct CoinShopView: View {
                 .font(.dcCaption)
                 .foregroundStyle(Theme.subtle(scheme))
                 .multilineTextAlignment(.center)
-            Text("Completed coin purchases are credited automatically to your DreamCart account.")
-                .font(.dcCaption)
-                .foregroundStyle(Theme.subtle(scheme))
-                .multilineTextAlignment(.center)
         }
         .padding(.top, 6)
     }
