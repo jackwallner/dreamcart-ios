@@ -106,8 +106,6 @@ final class StoreController {
 }
 
 // Deliberately no StoreKit restore path. Every product here is a consumable
-// coin pack, which StoreKit cannot restore, and offering an Apple Account
-// restore for one is an App Review 3.1.1 rejection. DreamCart's own restore
-// is server-side: `ShopStore.reconcilePurchases()` calls the `redeem` edge
-// function, which reads this account's RevenueCat transactions and grants any
-// coins not yet granted. See `CoinShopView.syncCoins`.
+// coin pack, which StoreKit cannot restore. `ShopStore.reconcilePurchases()`
+// automatically asks the server to credit completed transactions at launch and
+// after purchase, keyed idempotently by store transaction id.

@@ -11,8 +11,6 @@ struct CoinShopView: View {
     @State private var reward: Int? = nil
     @State private var buyTask: Task<Void, Never>? = nil
     @State private var staleCheck: Task<Void, Never>? = nil
-    @State private var syncing = false
-    @State private var syncMessage: String? = nil
 
     /// How long a purchase gets to finish on its own after we come back to the
     /// foreground before we treat its spinner as stale.
@@ -142,47 +140,12 @@ struct CoinShopView: View {
                 .font(.dcCaption)
                 .foregroundStyle(Theme.subtle(scheme))
                 .multilineTextAlignment(.center)
-            Button {
-                Task { await syncCoins() }
-            } label: {
-                HStack(spacing: 6) {
-                    if syncing { ProgressView().controlSize(.small) }
-                    Text(syncing ? "Checking…" : "Restore my coins")
-                }
-                .font(.dcLabel)
-                .foregroundStyle(Theme.violet)
-            }
-            .disabled(syncing || buying != nil)
-            if let syncMessage {
-                Text(syncMessage)
-                    .font(.dcCaption)
-                    .foregroundStyle(Theme.subtle(scheme))
-                    .multilineTextAlignment(.center)
-            }
+            Text("Completed coin purchases are credited automatically to your DreamCart account.")
+                .font(.dcCaption)
+                .foregroundStyle(Theme.subtle(scheme))
+                .multilineTextAlignment(.center)
         }
         .padding(.top, 6)
-    }
-
-    /// DreamCart's own restore path. Coin packs are consumables, so StoreKit
-    /// cannot restore them and prompting for the Apple Account is not allowed
-    /// (App Review 3.1.1). Instead the server asks RevenueCat for this
-    /// account's coin-pack transactions and grants any it has not granted yet,
-    /// keyed to the signed-in DreamCart account and idempotent on the store
-    /// transaction id. It runs automatically at launch and after each purchase;
-    /// this button is the manual trigger. No Apple Account sign-in involved.
-    private func syncCoins() async {
-        guard !syncing else { return }
-        syncing = true
-        syncMessage = nil
-        store.lastError = nil
-        defer { syncing = false }
-        Analytics.track("coin_sync_requested")
-        let before = shop.coins
-        await shop.reconcilePurchases()
-        let gained = shop.coins - before
-        syncMessage = gained > 0
-            ? "Added \(Format.coins(gained)) coins to your balance."
-            : "Your coin purchases are already up to date."
     }
 
     private func coinIcon(_ pack: CoinPack) -> String {
