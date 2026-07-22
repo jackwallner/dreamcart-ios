@@ -20,6 +20,7 @@ Reviewer access:
 - Flow: complete onboarding → Sign in with Apple → claim the free daily coin drop → use the free daily spin → browse Shop/For You → add an item → check out with coins → open Closet.
 - The daily wheel is free, cannot be purchased, awards only no-cash-value virtual coins, and has no real-world prize.
 - Five optional consumable coin packs ($1.99–$49.99 in the US, localized by Apple) are available through the wallet plus button and coin shop. Apple processes payment and RevenueCat validates the transaction. The first-launch offer is optional and has an always-available Not now button.
+- These products are consumables, so the app does not call Apple's Restore Purchases flow. The user's current unspent coin balance is stored on DreamCart's Supabase backend and syncs after signing in to the same DreamCart account. Undelivered completed transactions are reconciled automatically and idempotently by store transaction ID; previously spent coins are never re-granted.
 - Product imagery is AI-generated fashion photography loaded on demand. Prompts contain no personal data.
 - The optional checkout address is fictional flavor, stored only on device, and is not required. Nothing ships.
 - Account deletion is available under You → Delete account and permanently removes the server-side profile and game data.
