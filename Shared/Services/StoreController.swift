@@ -19,6 +19,7 @@ final class StoreController {
     #if HAS_REVENUECAT
     private var storeProducts: [String: StoreProduct] = [:]
     #endif
+    private var paywallImpressionsThisSession: Set<String> = []
 
     func configure(userId: String?) {
         #if HAS_REVENUECAT
@@ -47,6 +48,22 @@ final class StoreController {
             prices[p.productIdentifier] = p.localizedPriceString
         }
         isReady = !products.isEmpty
+        #endif
+    }
+
+    /// Feeds RevenueCat's `paywall_encounter_v3`. Every coin surface here is a
+    /// custom one, so without this call nothing in this app is visible between
+    /// "installed" and "paid", and the shop's real problem stays unknowable.
+    func trackPaywallImpression(id: String, oncePerSession: Bool = false) {
+        #if HAS_REVENUECAT
+        guard Purchases.isConfigured else { return }
+        if oncePerSession {
+            guard !paywallImpressionsThisSession.contains(id) else { return }
+            paywallImpressionsThisSession.insert(id)
+        }
+        Purchases.shared.trackCustomPaywallImpression(
+            CustomPaywallImpressionParams(paywallId: id)
+        )
         #endif
     }
 

@@ -39,7 +39,10 @@ struct CoinShopView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }
-        .onAppear { Analytics.track("coin_shop_viewed") }
+        .onAppear {
+            Analytics.track("coin_shop_viewed")
+            store.trackPaywallImpression(id: "dreamcart_coin_shop")
+        }
         .overlay {
             if let r = reward {
                 RewardOverlay(title: "Coins added", amount: r,
