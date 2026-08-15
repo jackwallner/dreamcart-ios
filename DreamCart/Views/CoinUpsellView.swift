@@ -74,6 +74,7 @@ struct CoinUpsellView: View {
         .onAppear {
             store.lastError = nil
             Analytics.track("upsell_shown", ["trigger": trigger.rawValue, "product_id": pack.productId])
+            store.trackPaywallImpression(id: "dreamcart_upsell_\(trigger.rawValue)")
         }
         .onDisappear {
             staleCheck?.cancel()

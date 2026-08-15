@@ -86,6 +86,7 @@ struct OnboardingCoinOfferView: View {
         .background(Theme.bg(scheme))
         .onAppear {
             Analytics.track("onboarding_pack_shown", ["product_id": pack.productId])
+            store.trackPaywallImpression(id: "dreamcart_onboarding_offer", oncePerSession: true)
         }
         .onDisappear { buyTask?.cancel() }
         .overlay {
