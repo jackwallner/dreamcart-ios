@@ -27,7 +27,11 @@ XcodeGen project/scheme: `DreamCart`, bundle `com.jackwallner.shop`.
 
 Read these before assuming fleet defaults (global CLAUDE.md + `ios-dev` skill):
 - **Not a local-only app** — it has a Supabase backend. Backend/schema changes need a Supabase migration + push, not just SwiftData.
-- **Does NOT use the shared `agent-sim` / `agent-<app>` headless device.** DreamCart has its own simulator workflow; the last full audit + methodology is in `sim76.md` (standard Xcode simulator, `DreamCart.storekit` attached). The never-open-Simulator.app / never-shared-destination rules still apply.
+- Uses the shared headless agent-sim pool. Checkout a phone slot before
+  building or capturing, use the returned UDID, and check it in afterward.
+  `sim76.md` is a historical audit and StoreKit reference, not a separate
+  simulator fleet. The never-open-Simulator.app and never-shared-destination
+  rules still apply.
 - Product images come from Pollinations at runtime — grids show shimmer/retry while loading, and uncached requests can 429 under burst load.
 
 ## Backend (Supabase)

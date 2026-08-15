@@ -6,7 +6,10 @@ cd "$ROOT"
 RAW="$ROOT/fastlane/screenshots/raw"
 mkdir -p "$RAW"
 
-UDID=$(agent-sim boot shop 2>/dev/null || agent-sim udid shop)
+OWNER=shop
+UDID=$(agent-sim checkout "$OWNER")
+trap 'agent-sim checkin "$OWNER"' EXIT
+agent-sim boot "$OWNER" >/dev/null
 echo "UDID=$UDID"
 
 xcodegen generate >/dev/null
@@ -20,27 +23,27 @@ xcrun simctl install "$UDID" "$APP"
 xcrun simctl launch "$UDID" "$BID" >/dev/null
 sleep 3
 
-shot() { agent-sim screenshot shop "$RAW/$1" >/dev/null; echo "captured $1"; }
+shot() { agent-sim screenshot "$OWNER" "$RAW/$1" >/dev/null; echo "captured $1"; }
 
 # Welcome → tester sign-in (DEBUG build)
-agent-sim tap shop 200 780 >/dev/null 2>&1 || true
+axe tap -x 200 -y 780 --udid "$UDID" >/dev/null 2>&1 || true
 sleep 2
-agent-sim tap shop 200 720 >/dev/null 2>&1 || true
+axe tap -x 200 -y 720 --udid "$UDID" >/dev/null 2>&1 || true
 sleep 4
 
 shot today.png
-agent-sim tap shop 160 820 >/dev/null 2>&1 || true
+axe tap -x 160 -y 820 --udid "$UDID" >/dev/null 2>&1 || true
 sleep 2
 shot shop.png
-agent-sim tap shop 320 820 >/dev/null 2>&1 || true
+axe tap -x 320 -y 820 --udid "$UDID" >/dev/null 2>&1 || true
 sleep 2
 shot cart.png
-agent-sim tap shop 480 820 >/dev/null 2>&1 || true
+axe tap -x 480 -y 820 --udid "$UDID" >/dev/null 2>&1 || true
 sleep 2
 shot closet.png
-agent-sim tap shop 640 820 >/dev/null 2>&1 || true
+axe tap -x 640 -y 820 --udid "$UDID" >/dev/null 2>&1 || true
 sleep 1
-agent-sim tap shop 200 180 >/dev/null 2>&1 || true
+axe tap -x 200 -y 180 --udid "$UDID" >/dev/null 2>&1 || true
 sleep 2
 shot spin.png
 

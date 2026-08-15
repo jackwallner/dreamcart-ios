@@ -1,4 +1,5 @@
 import Foundation
+import StoreKit
 import SwiftUI
 #if HAS_REVENUECAT
 import RevenueCat
@@ -41,13 +42,22 @@ final class StoreController {
 
     func loadProducts() async {
         #if HAS_REVENUECAT
-        let ids = CoinPack.all.map(\.productId)
+        // `Purchases.shared` traps when the SDK was never configured, which is
+        // every simulator run (configure() returns early there) and any device
+        // where the key is a placeholder. This used to be called only from
+        // configure(), so the trap was unreachable; it is a public entry point
+        // now, so it has to be safe on its own.
+        guard Purchases.isConfigured else {
+            await loadPlusPriceFromStoreKit()
+            return
+        }
+        let ids = CoinPack.all.map(\.productId) + [PlusPlan.productId]
         let products = await Purchases.shared.products(ids)
         for p in products {
             storeProducts[p.productIdentifier] = p
             prices[p.productIdentifier] = p.localizedPriceString
         }
-        isReady = !products.isEmpty
+        isReady = products.contains { $0.productIdentifier != PlusPlan.productId }
         #endif
     }
 
@@ -81,6 +91,90 @@ final class StoreController {
         }
     }
 
+    // MARK: - DreamCart+
+
+    /// Reads the membership price straight from StoreKit when RevenueCat is not
+    /// configured. That is every simulator run, which is also the only place the
+    /// App Review screenshot can be captured, and a paywall screenshot without a
+    /// price is one App Review rejects. Under a StoreKit Testing configuration
+    /// this returns the real $0.99 and the real 3-day introductory offer; with no
+    /// configuration it finds nothing and the fallback copy stands.
+    private func loadPlusPriceFromStoreKit() async {
+        // `Product` on its own resolves to DreamCart's own catalog model, so
+        // this has to name StoreKit's explicitly.
+        guard let product = try? await StoreKit.Product.products(for: [PlusPlan.productId]).first else {
+            return
+        }
+        prices[PlusPlan.productId] = product.displayPrice
+        if let intro = product.subscription?.introductoryOffer,
+           intro.paymentMode == StoreKit.Product.SubscriptionOffer.PaymentMode.freeTrial {
+            plusTrialEligible = true
+        }
+    }
+
+    /// The billed weekly amount, localized. Nil until StoreKit answers — a
+    /// price we did not get from the store is worse than no price at all, so
+    /// callers show the loading state rather than inventing one.
+    var plusPrice: String? { prices[PlusPlan.productId] }
+
+    /// True only when this Apple Account can still take the introductory free
+    /// trial. A returning subscriber must never be promised a free trial they
+    /// have already consumed (App Review 3.1.2).
+    private(set) var plusTrialEligible = false
+
+    func refreshPlusTrialEligibility() async {
+        #if HAS_REVENUECAT
+        guard Purchases.isConfigured else { return }  // StoreKit path already answered
+        guard
+              let product = storeProducts[PlusPlan.productId],
+              product.introductoryDiscount != nil else {
+            plusTrialEligible = false
+            return
+        }
+        let result = await Purchases.shared.checkTrialOrIntroDiscountEligibility(
+            productIdentifiers: [PlusPlan.productId]
+        )
+        plusTrialEligible = result[PlusPlan.productId]?.status == .eligible
+        #endif
+    }
+
+    /// Buys the weekly membership. `is_plus` is set server-side by the
+    /// RevenueCat webhook, so the caller refreshes the profile afterwards
+    /// rather than trusting anything decided on the device.
+    func purchasePlus() async -> Bool {
+        #if HAS_REVENUECAT
+        guard let product = storeProducts[PlusPlan.productId] else {
+            await loadProducts()
+            guard let retry = storeProducts[PlusPlan.productId] else {
+                lastError = "\(PlusPlan.name) isn't available right now."
+                return false
+            }
+            return await run(retry)
+        }
+        return await run(product)
+        #else
+        return false
+        #endif
+    }
+
+    /// Subscriptions, unlike the coin packs, need a restore path (App Review
+    /// 3.1.1): a member reinstalling must be able to get their membership back
+    /// without paying again.
+    func restorePlus() async -> Bool {
+        #if HAS_REVENUECAT
+        guard Purchases.isConfigured else { return false }
+        do {
+            let info = try await Purchases.shared.restorePurchases()
+            return info.activeSubscriptions.contains(PlusPlan.productId)
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
+        #else
+        return false
+        #endif
+    }
+
     /// Returns true if the purchase completed (coins credited by the caller's
     /// reconcile step).
     func purchase(_ pack: CoinPack) async -> Bool {
@@ -106,6 +200,10 @@ final class StoreController {
 
     #if HAS_REVENUECAT
     private func run(_ product: StoreProduct) async -> Bool {
+        guard Purchases.isConfigured else {
+            lastError = "Purchases aren't available in this build."
+            return false
+        }
         isPurchasing = true
         defer { isPurchasing = false }
         do {
