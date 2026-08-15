@@ -25,7 +25,13 @@ struct RootView: View {
                         // One-time final onboarding step for brand-new users only
                         // (see AuthController.justCompletedOnboarding); clearing
                         // the flag here means it can never show again this run.
-                        OnboardingCoinOfferView { auth.justCompletedOnboarding = false }
+                        //
+                        // This is the DreamCart+ trial, not the old coin-pack
+                        // offer. Asking someone who has not played yet to buy
+                        // currency converted nobody; the membership is a smaller
+                        // ask and it improves the loop itself. Coin packs are
+                        // still one tap away from the wallet pill.
+                        OnboardingPlusOfferView { auth.justCompletedOnboarding = false }
                             .transition(.opacity)
                     } else {
                         MainTabView().transition(.opacity)

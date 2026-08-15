@@ -20,6 +20,7 @@ const PACK_COINS: Record<string, number> = {
 };
 
 const PLUS_PRODUCTS = new Set([
+  "com.jackwallner.shop.plus.weekly",
   "com.jackwallner.shop.plus.monthly",
   "com.jackwallner.shop.plus.yearly",
 ]);

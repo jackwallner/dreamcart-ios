@@ -25,6 +25,34 @@ struct DreamCartApp: App {
 
     var body: some Scene {
         WindowGroup {
+            #if DEBUG
+            // App Review needs a screenshot of the DreamCart+ purchase screen,
+            // and reaching it normally means a fresh account plus the whole
+            // onboarding run. This renders the real view directly, under a
+            // StoreKit Testing configuration so the price on it is a real one.
+            if ProcessInfo.processInfo.environment["DREAMCART_PLUS_SHOT"] == "1" {
+                plusShotHarness
+            } else {
+                root
+            }
+            #else
+            root
+            #endif
+        }
+    }
+
+    #if DEBUG
+    private var plusShotHarness: some View {
+        OnboardingPlusOfferView {}
+            .environment(shop)
+            .environment(store)
+            .tint(Theme.violet)
+            .preferredColorScheme(.light)
+            .task { store.configure(userId: nil) }
+    }
+    #endif
+
+    private var root: some View {
             RootView()
                 .environment(auth)
                 .environment(shop)
@@ -59,6 +87,5 @@ struct DreamCartApp: App {
                     Analytics.track("session_end")
                     Task { await Analytics.flushNow() }
                 }
-        }
     }
 }

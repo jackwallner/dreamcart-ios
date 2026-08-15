@@ -62,7 +62,9 @@ struct ConfettiBurst: View {
 // Full-screen reward moment: staged title, coin count, and completion action.
 struct RewardOverlay: View {
     let title: String
-    let amount: Int
+    /// Coins gained. Nil for a reward that is not a coin amount (the
+    /// DreamCart+ unlock), which shows the crown in the coin's place.
+    let amount: Int?
     let subtitle: String
     var coinsOnly = true
     var showConfetti = true
@@ -71,6 +73,11 @@ struct RewardOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var stage = 0
     @State private var glow = false
+
+    private var accessibilitySummary: String {
+        guard let amount else { return "\(title). \(subtitle)" }
+        return "\(title), \(Format.coins(amount)) coins. \(subtitle)"
+    }
 
     var body: some View {
         ZStack {
@@ -95,13 +102,19 @@ struct RewardOverlay: View {
                         .frame(width: 156, height: 156)
                         .blur(radius: 18)
                     HStack(spacing: 8) {
-                        CoinIcon(size: 44)
-                        Text("+\(Format.coins(amount))")
-                            .font(.dcJumbo)
-                            .foregroundStyle(Theme.ink(scheme))
-                            .monospacedDigit()
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
+                        if let amount {
+                            CoinIcon(size: 44)
+                            Text("+\(Format.coins(amount))")
+                                .font(.dcJumbo)
+                                .foregroundStyle(Theme.ink(scheme))
+                                .monospacedDigit()
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.5)
+                        } else {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 62, weight: .bold))
+                                .foregroundStyle(Theme.goldGradient)
+                        }
                     }
                 }
                 .scaleEffect(stage >= 2 ? 1 : 0.72)
@@ -128,7 +141,7 @@ struct RewardOverlay: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
-        .accessibilityLabel("\(title), \(Format.coins(amount)) coins. \(subtitle)")
+        .accessibilityLabel(accessibilitySummary)
         .onAppear {
             guard !reduceMotion else {
                 stage = 3

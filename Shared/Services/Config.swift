@@ -12,6 +12,22 @@ enum Config {
     static var functionsURL: URL { supabaseURL.appendingPathComponent("functions/v1") }
 }
 
+// DreamCart+ — the weekly membership. The server already knows what it grants:
+// `claim_daily` doubles the grant and `spin` drops its once-a-day limit when
+// `profiles.is_plus` is set, and the RevenueCat webhook flips that flag. What
+// was missing was a product to sell, which is what this is.
+//
+// Weekly at $0.99 on purpose. This is an app for people who like buying things
+// without spending money; a yearly commitment is the wrong ask, and a three-day
+// trial gets the coin economy doubled while the novelty is still fresh.
+enum PlusPlan {
+    static let productId = "com.jackwallner.shop.plus.weekly"
+    static let name = "DreamCart+"
+    static let trialDays = 3
+    /// Shown only until StoreKit answers. Never used in a purchase.
+    static let fallbackPrice = "$0.99"
+}
+
 // The coin-pack catalog. Product ids match ASC / RevenueCat / the webhook map.
 struct CoinPack: Identifiable, Hashable, Sendable {
     let productId: String
