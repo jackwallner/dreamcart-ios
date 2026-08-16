@@ -43,7 +43,7 @@ struct DreamCartApp: App {
 
     #if DEBUG
     private var plusShotHarness: some View {
-        OnboardingPlusOfferView {}
+        PlusOfferView(presentation: .onboarding) {}
             .environment(shop)
             .environment(store)
             .tint(Theme.violet)

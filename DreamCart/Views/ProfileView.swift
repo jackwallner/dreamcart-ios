@@ -6,7 +6,9 @@ struct ProfileView: View {
     @Environment(LocalNotificationCoordinator.self) private var notifications
     @Environment(ShippingAddressStore.self) private var shipping
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.openURL) private var openURL
     @State private var showCoinShop = false
+    @State private var showPlusOffer = false
     @State private var showNotificationPrimer = false
     @State private var showLedger = false
     @State private var showShipping = false
@@ -46,6 +48,9 @@ struct ProfileView: View {
             .background(Theme.bg(scheme))
             .navigationTitle("You")
             .walletToolbar($showCoinShop)
+            .sheet(isPresented: $showPlusOffer) {
+                PlusOfferView(presentation: .sheet) { showPlusOffer = false }
+            }
             .sheet(isPresented: $showLedger) { LedgerView() }
             .sheet(isPresented: $showShipping) { ShippingAddressView() }
             .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
@@ -279,6 +284,8 @@ struct ProfileView: View {
 
     private var actions: some View {
         VStack(spacing: 0) {
+            plusRow
+            Divider().padding(.leading, 50)
             row("Get more coins", "plus.circle.fill", Theme.violet) { showCoinShop = true }
             Divider().padding(.leading, 50)
             subtitledRow("Shipping address", shippingSubtitle, "shippingbox.fill", Theme.coral) { showShipping = true }
@@ -308,6 +315,25 @@ struct ProfileView: View {
             }
         }
         .cardStyle(scheme)
+    }
+
+    /// The only entry point to DreamCart+ outside onboarding, which runs once
+    /// and never again. Without it nobody already using the app could subscribe,
+    /// and a reinstalled member had nowhere to restore from (App Review 3.1.1).
+    /// Members get Apple's own management screen instead (3.1.2).
+    @ViewBuilder
+    private var plusRow: some View {
+        if shop.me?.isPlus == true {
+            subtitledRow(PlusPlan.name, "Active · manage or cancel in the App Store",
+                         "crown.fill", Theme.gold) {
+                openURL(PlusLinks.manage)
+            }
+        } else {
+            subtitledRow(PlusPlan.name, "Double daily coins, unlimited spins",
+                         "crown.fill", Theme.gold) {
+                showPlusOffer = true
+            }
+        }
     }
 
     private func row(_ title: String, _ icon: String, _ tint: Color, action: @escaping () -> Void) -> some View {

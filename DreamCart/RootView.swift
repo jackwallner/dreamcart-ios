@@ -30,8 +30,11 @@ struct RootView: View {
                         // offer. Asking someone who has not played yet to buy
                         // currency converted nobody; the membership is a smaller
                         // ask and it improves the loop itself. Coin packs are
-                        // still one tap away from the wallet pill.
-                        OnboardingPlusOfferView { auth.justCompletedOnboarding = false }
+                        // still one tap away from the wallet pill, and the same
+                        // offer stays reachable from the You tab afterwards.
+                        PlusOfferView(presentation: .onboarding) {
+                            auth.justCompletedOnboarding = false
+                        }
                             .transition(.opacity)
                     } else {
                         MainTabView().transition(.opacity)

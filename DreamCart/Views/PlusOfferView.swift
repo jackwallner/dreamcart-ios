@@ -1,23 +1,39 @@
 import SwiftUI
 
-/// The final onboarding step for a brand-new user: the DreamCart+ trial.
+/// Where this offer is being shown from. The pitch is identical either way;
+/// only the exit affordance and the analytics/paywall id differ.
+enum PlusOfferPresentation {
+    /// The final onboarding step for a brand-new user. Full screen, soft exit
+    /// reading "Not now", and `onDone` advances RootView to the tab bar.
+    case onboarding
+    /// A sheet raised from the You tab. Soft exit reads "Maybe later" and
+    /// `onDone` dismisses.
+    case sheet
+}
+
+/// The DreamCart+ trial pitch.
 ///
-/// This replaced the one-shot coin-pack offer that used to sit here. The pack
-/// asked someone who has just met the app to buy currency for a game they have
-/// not played yet, and it converted nobody. The membership asks a smaller
-/// question at a better moment, and it is the one purchase that makes the
-/// dopamine loop itself better: `claim_daily` doubles its grant for members and
-/// `spin` drops its once-a-day limit, both server-side off `profiles.is_plus`.
+/// This replaced the one-shot coin-pack offer in onboarding. The pack asked
+/// someone who has just met the app to buy currency for a game they have not
+/// played yet, and it converted nobody. The membership asks a smaller question
+/// at a better moment, and it is the one purchase that makes the dopamine loop
+/// itself better: `claim_daily` doubles its grant for members and `spin` drops
+/// its once-a-day limit, both server-side off `profiles.is_plus`.
+///
+/// It is reachable from two places on purpose. Onboarding only ever runs once,
+/// so a version that offered DreamCart+ there and nowhere else could not sell to
+/// a single person already using the app, and left no restore path for anyone
+/// who reinstalled (App Review 3.1.1).
 ///
 /// Zero-shift rule: the primary button occupies exactly the same slot and
 /// geometry as `WelcomeView`'s Next / Get started, so the thumb that swiped
 /// through onboarding lands on it without the layout moving. The soft exit
 /// below it is always enabled, even mid-purchase, so a stuck StoreKit sheet can
 /// never trap anyone inside onboarding (App Review 3.1.1).
-struct OnboardingPlusOfferView: View {
-    /// Called once the user is done here, bought or not, so `RootView` can move
-    /// on to the tab bar.
-    let onContinue: () -> Void
+struct PlusOfferView: View {
+    var presentation: PlusOfferPresentation = .onboarding
+    /// Called once the user is done here, bought or not.
+    let onDone: () -> Void
 
     @Environment(ShopStore.self) private var shop
     @Environment(StoreController.self) private var store
@@ -34,6 +50,18 @@ struct OnboardingPlusOfferView: View {
         #else
         false
         #endif
+    }
+
+    private var source: String {
+        presentation == .onboarding ? "onboarding" : "profile"
+    }
+
+    private var paywallId: String {
+        presentation == .onboarding ? "dreamcart_onboarding_plus" : "dreamcart_profile_plus"
+    }
+
+    private var exitTitle: String {
+        presentation == .onboarding ? "Not now" : "Maybe later"
     }
 
     /// Height the scroll content should at least fill so the pitch centres.
@@ -84,9 +112,9 @@ struct OnboardingPlusOfferView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 18) {
-                    Button("Not now") {
-                        Analytics.track("onboarding_plus_skipped")
-                        onContinue()
+                    Button(exitTitle) {
+                        Analytics.track("plus_offer_skipped", ["source": source])
+                        onDone()
                     }
                     Button(restoring ? "Restoring…" : "Restore") { restore() }
                         .disabled(restoring)
@@ -111,8 +139,9 @@ struct OnboardingPlusOfferView: View {
             await store.refreshPlusTrialEligibility()
         }
         .onAppear {
-            Analytics.track("onboarding_plus_shown", ["product_id": PlusPlan.productId])
-            store.trackPaywallImpression(id: "dreamcart_onboarding_plus", oncePerSession: true)
+            Analytics.track("plus_offer_shown",
+                            ["product_id": PlusPlan.productId, "source": source])
+            store.trackPaywallImpression(id: paywallId, oncePerSession: true)
         }
         .onDisappear { buyTask?.cancel() }
         .overlay {
@@ -120,7 +149,7 @@ struct OnboardingPlusOfferView: View {
                 RewardOverlay(title: "\(PlusPlan.name) unlocked",
                               amount: nil,
                               subtitle: "Your daily coins just doubled.") {
-                    onContinue()
+                    onDone()
                 }
             }
         }
@@ -198,13 +227,13 @@ struct OnboardingPlusOfferView: View {
 
     private func subscribe() async {
         guard revenueCatEnabled else {
-            onContinue()
+            onDone()
             return
         }
         buying = true
         store.lastError = nil
         Analytics.track("plus_purchase_started",
-                        ["product_id": PlusPlan.productId, "source": "onboarding"])
+                        ["product_id": PlusPlan.productId, "source": source])
         defer {
             buying = false
             buyTask = nil
@@ -214,7 +243,7 @@ struct OnboardingPlusOfferView: View {
         // `is_plus` is set by the RevenueCat webhook, so the profile is the
         // source of truth, not anything the device decided.
         await shop.refreshMe()
-        Analytics.track("plus_purchased", ["product_id": PlusPlan.productId, "source": "onboarding"])
+        Analytics.track("plus_purchased", ["product_id": PlusPlan.productId, "source": source])
         withAnimation { didSubscribe = true }
     }
 
@@ -236,4 +265,7 @@ struct OnboardingPlusOfferView: View {
 enum PlusLinks {
     static let terms = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
     static let privacy = URL(string: "https://jackwallner.github.io/dreamcart/privacy-policy.html")!
+    /// Apple's own subscription management screen, which 3.1.2 wants a member
+    /// to be able to reach from inside the app.
+    static let manage = URL(string: "https://apps.apple.com/account/subscriptions")!
 }
