@@ -3,9 +3,9 @@
 **Date:** 2026-07-06  
 **Build:** Debug `DreamCart` on iOS Simulator (Xcode, `DreamCart.storekit` attached)  
 **Tester account:** `tester@dreamcart.dev` (DEBUG “Continue as tester”)  
-**Screenshots:** `sim76/screenshots/` (103 captures on iPhone 17 Pro; additional passes on iPhone 17 Pro Max and iPhone 16e)
+**Screenshots:** `../sim76/screenshots/` (103 captures on iPhone 17 Pro; additional passes on iPhone 17 Pro Max and iPhone 16e)
 
-> **Historical status (2026-07-14):** This report captures the 2026-07-06 build and is not a current defect list. The product-detail checkout destination, checkout/catalog error presentation, empty-cart CTA, display-name fallback, title truncation, category icons, delisted closet navigation, reset-time copy, and several accessibility labels were fixed after this audit. The generated screenshots and AX logs are intentionally excluded from git; rerun `sim76/run-audit.sh` to regenerate evidence.
+> **Historical status (2026-07-14):** This report captures the 2026-07-06 build and is not a current defect list. The product-detail checkout destination, checkout/catalog error presentation, empty-cart CTA, display-name fallback, title truncation, category icons, delisted closet navigation, reset-time copy, and several accessibility labels were fixed after this audit. The generated screenshots and AX logs are intentionally excluded from git; rerun `../sim76/run-audit.sh` to regenerate evidence.
 
 ---
 
@@ -33,7 +33,7 @@ None of these are cosmetic-only. The product-detail → cart sheet bug alone bre
 | **Modes** | Signed-in tester; attempted signed-out onboarding; in-app Light appearance; system Dark via `simctl ui appearance dark` |
 | **Paid** | Coin shop sheet, Pocket pack purchase attempt (StoreKit + RevenueCat), Restore Purchases link |
 | **Unpaid** | Daily claim, spin wheel, browse/search/filter, cart, checkout (when cart populated), closet, outfit builder, profile/ledger |
-| **Automation** | Headless sim (`agent-sim boot shop`), `axe` tap/screenshot, accessibility trees dumped to `sim76/logs/` |
+| **Automation** | Headless sim (`agent-sim boot shop`), `axe` tap/screenshot, accessibility trees dumped to `../sim76/logs/` |
 
 **Caveat:** Automated taps frequently missed tab-bar targets when the app backgrounded (often after StoreKit system sheets). Manual label-based navigation (`axe tap --label "Closet"`) was more reliable. Findings below combine screenshot review, AX trees, and source inspection.
 
@@ -60,7 +60,7 @@ None of these are cosmetic-only. The product-detail → cart sheet bug alone bre
 | `iphone17pro/iphone17promax/today.png` | Welcome onboarding on Max width |
 | `iphone17pro/iphone16e/today.png` | Welcome on smaller phone (system notification visible) |
 
-Full set: `sim76/screenshots/iphone17pro/` (103 PNGs).
+Full set: `../sim76/screenshots/iphone17pro/` (103 PNGs).
 
 ---
 
@@ -418,7 +418,7 @@ Full set: `sim76/screenshots/iphone17pro/` (103 PNGs).
 
 ## Recommended next QA pass
 
-1. Fix P0 items, then re-run `sim76/run-audit.sh` (update swipe commands — already patched).
+1. Fix P0 items, then re-run `../sim76/run-audit.sh` (update swipe commands — already patched).
 2. Sign in to **StoreKit sandbox** in Simulator Settings → App Store to complete IAP screenshots.
 3. Add one UI test: add → checkout → unboxing path.
 4. Test **Release** build (no tester button) for onboarding-only path.
