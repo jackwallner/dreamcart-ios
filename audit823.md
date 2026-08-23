@@ -1017,3 +1017,44 @@ structured trial and fulfillment signals, and install a release watchdog
 before optimizing copy or price. The local metadata and core visual assets
 are already strong enough to support controlled growth experiments once those
 trust and reliability gaps are closed.
+
+## Activity and success context, 2026-08-23
+
+Classification: **traffic without monetization**. Confidence: **high**. Trend: **no ASC comparison displayed**.
+
+ASC release state: `iOS 1.0.1 Waiting for Review`. ASC evidence: [Analytics Overview](https://appstoreconnect.apple.com/apps/6787820106/analytics/overview?dateSpec=d90), selected range `dateSpec=d90`.
+RevenueCat evidence: [Project Overview](https://app.revenuecat.com/projects/2a25c871/overview), production mode, selected range `Last 28 days, 2026-07-27 through 2026-08-23`.
+
+### Observed activity
+
+| Source | Metric | Value | Window or comparison |
+| --- | --- | ---: | --- |
+| ASC | first-time downloads | 81 | 90-day Analytics Overview |
+| ASC | redownloads | 9 | 90-day Analytics Overview |
+| ASC | conversion rate | 0.9% | comparison not displayed |
+| ASC | proceeds | not available | 90-day Analytics Overview |
+| ASC | in-app purchases | not available | 90-day Analytics Overview |
+| RevenueCat | new customers | 36 | last 28 days |
+| RevenueCat | active customers | 37 | last 28 days |
+| RevenueCat | active trials | 0 | current total |
+| RevenueCat | active subscriptions | 0 | current total |
+| RevenueCat | MRR | $0 | current total |
+| RevenueCat | revenue | $0 | last 28 days |
+
+A missing value above means the source did not expose that metric in this read-only snapshot. It is not a zero.
+
+### Interpretation and implementation focus
+
+DreamCart has 81 ASC first-time downloads and 36 RevenueCat new customers, but a 0.9% ASC conversion rate and no current paid signal. The version is Waiting for Review, so release state and product-page traffic are still confounded. Fix trust, fulfillment, and first-reward observability first, then test the free-to-Plus route with trial starts and completed value as the primary funnel.
+
+The deterministic classifier recommends: Treat this as an activation and offer problem until a mature paid cohort appears. Verify the free-to-trial path and product loading.
+
+- Join ASC first-time download, first launch, first value, paywall shown, offer loaded, trial started, trial canceled, trial converted, entitlement active, restore, and purchase failure events with the app version and build.
+- Keep ASC's 90-day acquisition and proceeds window separate from RevenueCat's 28-day customer and revenue window. Do not calculate a conversion rate by dividing values from different windows.
+- Use a mature trial cohort and a minimum sample before choosing a native paywall or onboarding A/B winner. Record the offering identifier, package, placement, experiment variant, and build.
+- Put the app's classification and the next baseline date in the release handoff so Cursor, Claude, and Codex do not optimize from an old qualitative audit.
+
+### Boundary on success or death
+
+This snapshot supports the label **traffic without monetization**, not a lifetime verdict. The app has downloads or new customers, but no current paid signal was supplied. A later decision should include a clean 28-day RevenueCat trend, ASC acquisition and conversion trend, ratings and review count, crash and hang evidence, and a release-specific cohort.
+This dated section supersedes earlier statements in this file that per-app ASC or RevenueCat activity was unavailable as of 2026-08-23. Earlier statements remain historical evidence boundaries for their original audit pass.
