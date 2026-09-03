@@ -25,6 +25,20 @@ final class StoreController {
     func configure(userId: String?) {
         #if HAS_REVENUECAT
         #if targetEnvironment(simulator)
+        #if DEBUG
+        // The one simulator path allowed to configure RevenueCat, and only ever
+        // with the Test Store key: a separate RevenueCat app inside the same
+        // project, so a probe run cannot touch App Store customers, revenue or
+        // charts. See RevenueCatProbe.
+        if RevenueCatProbe.isEnabled, !Purchases.isConfigured {
+            Purchases.logLevel = .debug
+            Purchases.configure(
+                with: Configuration.Builder(withAPIKey: RevenueCatProbe.testStoreKey)
+                    .with(appUserID: RevenueCatProbe.appUserID)
+                    .build()
+            )
+        }
+        #endif
         return
         #else
         Purchases.logLevel = .error
@@ -71,9 +85,33 @@ final class StoreController {
             guard !paywallImpressionsThisSession.contains(id) else { return }
             paywallImpressionsThisSession.insert(id)
         }
+        ConversionDiagnostics.recordPitchView(impressionID: id)
+        syncConversionAttributes()
         Purchases.shared.trackCustomPaywallImpression(
             CustomPaywallImpressionParams(paywallId: id)
         )
+        #endif
+    }
+
+    /// Mirrors the on-device paywall record onto the RevenueCat customer.
+    ///
+    /// Attributes rather than extra impressions: RevenueCat treats every
+    /// impression id as a paywall encounter, so funnel steps sent that way would
+    /// drive the encounter rate to 100% and destroy the one server-side number
+    /// that currently works.
+    ///
+    /// `Purchases.isConfigured` is the load-bearing guard: `Purchases.shared`
+    /// traps when RevenueCat was never configured, which is every simulator run.
+    ///
+    /// `setAttributes` only queues. RevenueCat uploads when the app backgrounds
+    /// or folds the queue into the POST that creates a customer, so a probe run
+    /// has to background the app before reading anything back.
+    func syncConversionAttributes() {
+        #if HAS_REVENUECAT
+        guard Purchases.isConfigured else { return }
+        let attributes = ConversionDiagnostics.subscriberAttributes
+        guard !attributes.isEmpty else { return }
+        Purchases.shared.attribution.setAttributes(attributes)
         #endif
     }
 
@@ -210,6 +248,14 @@ final class StoreController {
             let result = try await Purchases.shared.purchase(product: product)
             if result.userCancelled { return false }
             Haptics.celebrate()
+            // Consumables, so `startedTrial` is always false and the plan is the
+            // pack. The interesting number here is which upsell surface and how
+            // many pitches preceded the first pack.
+            ConversionDiagnostics.recordConversion(
+                plan: product.productIdentifier,
+                startedTrial: false
+            )
+            syncConversionAttributes()
             return true
         } catch {
             lastError = error.localizedDescription
@@ -224,3 +270,31 @@ final class StoreController {
 // coin pack. The current unspent balance belongs to the signed-in DreamCart
 // account, while `ShopStore.reconcilePurchases()` retries any incomplete
 // delivery idempotently by store transaction id.
+
+#if DEBUG && HAS_REVENUECAT
+/// Simulator-only proof path for the fleet-wide funnel attributes.
+///
+/// Under the normal rules the attributes cannot be verified on a simulator: the
+/// production key must never be configured there, so RevenueCat is never
+/// configured, so nothing is ever sent, so a physical device is the only
+/// witness. The Test Store key is a different RevenueCat app inside the same
+/// project, so a probe run cannot touch App Store customers, revenue or charts.
+///
+/// DEBUG only, and only with the launch argument, so it cannot reach a Release
+/// build or an ordinary simulator run.
+enum RevenueCatProbe {
+    static var isEnabled: Bool {
+        ProcessInfo.processInfo.arguments.contains("-rcfunnelprobe")
+    }
+
+    static let testStoreKey = "test_BmLNoyJlrWglnftuCwMqGjsqsez"
+
+    static var appUserID: String {
+        ProcessInfo.processInfo.environment["RC_PROBE_USER"] ?? "funnel-probe-dreamcart"
+    }
+
+    static var impressionID: String {
+        ProcessInfo.processInfo.environment["RC_PROBE_SURFACE"] ?? "dreamcart_onboarding_offer"
+    }
+}
+#endif

@@ -66,6 +66,17 @@ struct DreamCartApp: App {
                 .onOpenURL { router.receive(url: $0) }
                 .task {
                     Analytics.track("session_start")
+                    ConversionDiagnostics.recordAppOpen()
+                    #if DEBUG && HAS_REVENUECAT
+                    if RevenueCatProbe.isEnabled {
+                        // The real path only configures RevenueCat once someone
+                        // is signed in, which a fresh simulator never is. The
+                        // probe configures directly and fires the same impression
+                        // entry point the real upsell screens call.
+                        store.configure(userId: nil)
+                        store.trackPaywallImpression(id: RevenueCatProbe.impressionID)
+                    }
+                    #endif
                     AppDelegate.onNotificationRoute = { userInfo in
                         router.receive(notificationUserInfo: userInfo)
                     }
