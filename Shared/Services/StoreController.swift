@@ -181,15 +181,19 @@ final class StoreController {
     /// rather than trusting anything decided on the device.
     func purchasePlus() async -> Bool {
         #if HAS_REVENUECAT
+        // Read eligibility before the purchase: StoreKit consumes the
+        // introductory offer as part of it, so asking afterwards would record
+        // every trial start as a plain paid conversion.
+        let withTrial = plusTrialEligible
         guard let product = storeProducts[PlusPlan.productId] else {
             await loadProducts()
             guard let retry = storeProducts[PlusPlan.productId] else {
                 lastError = "\(PlusPlan.name) isn't available right now."
                 return false
             }
-            return await run(retry)
+            return await run(retry, plan: PlusPlan.conversionPlan, startedTrial: withTrial)
         }
-        return await run(product)
+        return await run(product, plan: PlusPlan.conversionPlan, startedTrial: withTrial)
         #else
         return false
         #endif
@@ -257,7 +261,18 @@ final class StoreController {
         NSLog("RCPROBE purchase ok=%@", String(describing: ok))
     }
 
-    private func run(_ product: StoreProduct) async -> Bool {
+    /// - Parameters:
+    ///   - plan: the fleet-wide plan name for the conversion record. Coin packs
+    ///     pass nothing and are recorded under their own product id, because a
+    ///     consumable has no period to name. DreamCart+ passes `weekly`, which is
+    ///     the vocabulary every other app in the fleet uses.
+    ///   - startedTrial: whether this purchase opened the introductory free
+    ///     trial rather than charging immediately. Always false for a consumable.
+    private func run(
+        _ product: StoreProduct,
+        plan: String? = nil,
+        startedTrial: Bool = false
+    ) async -> Bool {
         guard Purchases.isConfigured else {
             lastError = "Purchases aren't available in this build."
             return false
@@ -268,12 +283,9 @@ final class StoreController {
             let result = try await Purchases.shared.purchase(product: product)
             if result.userCancelled { return false }
             Haptics.celebrate()
-            // Consumables, so `startedTrial` is always false and the plan is the
-            // pack. The interesting number here is which upsell surface and how
-            // many pitches preceded the first pack.
             ConversionDiagnostics.recordConversion(
-                plan: product.productIdentifier,
-                startedTrial: false
+                plan: plan ?? product.productIdentifier,
+                startedTrial: startedTrial
             )
             syncConversionAttributes()
             return true
