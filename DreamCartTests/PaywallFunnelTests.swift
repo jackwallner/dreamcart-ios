@@ -102,6 +102,16 @@ final class PaywallFunnelTests: XCTestCase {
         XCTAssertEqual(attributes["converted_with_trial"], "true")
     }
 
+    /// The conversion record is read across the whole fleet with one query, so
+    /// the plan has to be a bare period name. Recording the product id instead
+    /// (which `run` does by default, correctly, for consumables) would put
+    /// DreamCart+ in a bucket of its own that no portfolio query would find.
+    func testTheMembershipIsRecordedUnderAFleetWidePeriodName() {
+        XCTAssertEqual(PlusPlan.conversionPlan, "weekly")
+        XCTAssertFalse(PlusPlan.conversionPlan.contains("."),
+                       "A product id, not a period name.")
+    }
+
     func testAttributeKeysStayInsideRevenueCatsLimit() {
         // RevenueCat drops a key over 40 characters, silently.
         let long = String(repeating: "a", count: 80)

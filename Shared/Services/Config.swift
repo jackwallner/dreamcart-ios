@@ -26,6 +26,10 @@ enum PlusPlan {
     static let trialDays = 3
     /// Shown only until StoreKit answers. Never used in a purchase.
     static let fallbackPrice = "$0.99"
+    /// Period name for the fleet-wide conversion record. Every app writes its
+    /// plan as a bare period (weekly, monthly, yearly, lifetime), never as a
+    /// product id, so one query reads the whole portfolio.
+    static let conversionPlan = "weekly"
 }
 
 // The coin-pack catalog. Product ids match ASC / RevenueCat / the webhook map.
