@@ -170,7 +170,11 @@ struct PlusOfferView: View {
         VStack(alignment: .leading, spacing: 14) {
             perk("bolt.fill", "Double coins every single day")
             perk("arrow.triangle.2.circlepath", "Spin the wheel as often as you like")
-            perk("bag.fill", "Check out faster, and more often")
+            // Only claim what `profiles.is_plus` actually grants. Nothing in the
+            // backend makes checkout faster; the double grant and the unlimited
+            // spin are the whole membership, and a closet filling twice as fast
+            // is what they add up to.
+            perk("bag.fill", "Fill your closet twice as fast")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
