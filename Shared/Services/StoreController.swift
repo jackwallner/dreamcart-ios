@@ -237,6 +237,26 @@ final class StoreController {
     }
 
     #if HAS_REVENUECAT
+    /// The probe's Test Store purchase.
+    ///
+    /// It cannot go through `purchasePlus()` or `purchase(_ pack:)`: both look
+    /// products up by this app's own identifiers, and the Test Store mirrors
+    /// carry generic ones (`monthly`, `yearly`, `lifetime`), so the lookup finds
+    /// nothing. Taking the first package off the offering instead exercises the
+    /// same `run` path a real purchase does, which is the part being verified.
+    func runProbePurchase() async {
+        guard Purchases.isConfigured else {
+            NSLog("RCPROBE not configured")
+            return
+        }
+        let offerings = try? await Purchases.shared.offerings()
+        let packages = offerings?.current?.availablePackages ?? []
+        NSLog("RCPROBE packages=%d", packages.count)
+        guard let package = packages.first else { return }
+        let ok = await run(package.storeProduct)
+        NSLog("RCPROBE purchase ok=%@", String(describing: ok))
+    }
+
     private func run(_ product: StoreProduct) async -> Bool {
         guard Purchases.isConfigured else {
             lastError = "Purchases aren't available in this build."
@@ -295,6 +315,12 @@ enum RevenueCatProbe {
 
     static var impressionID: String {
         ProcessInfo.processInfo.environment["RC_PROBE_SURFACE"] ?? "dreamcart_onboarding_offer"
+    }
+
+    /// Drives a Test Store purchase after the impression, so the `converted_*`
+    /// half of the funnel record is exercised and not just the impression half.
+    static var wantsPurchase: Bool {
+        ProcessInfo.processInfo.arguments.contains("-rcfunnelprobepurchase")
     }
 }
 #endif
