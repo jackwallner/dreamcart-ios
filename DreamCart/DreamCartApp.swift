@@ -75,6 +75,9 @@ struct DreamCartApp: App {
                         // entry point the real upsell screens call.
                         store.configure(userId: nil)
                         store.trackPaywallImpression(id: RevenueCatProbe.impressionID)
+                        if RevenueCatProbe.wantsPurchase {
+                            await store.runProbePurchase()
+                        }
                     }
                     #endif
                     AppDelegate.onNotificationRoute = { userInfo in
