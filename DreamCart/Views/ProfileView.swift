@@ -284,7 +284,9 @@ struct ProfileView: View {
 
     private var actions: some View {
         VStack(spacing: 0) {
-            plusRow
+            if !isScreenshotMode {
+                plusRow
+            }
             Divider().padding(.leading, 50)
             row("Get more coins", "plus.circle.fill", Theme.violet) { showCoinShop = true }
             Divider().padding(.leading, 50)
@@ -315,6 +317,14 @@ struct ProfileView: View {
             }
         }
         .cardStyle(scheme)
+    }
+
+    private var isScreenshotMode: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-DreamCartScreenshot")
+        #else
+        return false
+        #endif
     }
 
     /// The only entry point to DreamCart+ outside onboarding, which runs once
