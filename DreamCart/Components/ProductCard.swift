@@ -21,7 +21,9 @@ struct RemoteImage: View {
         ZStack {
             LinearGradient(colors: [rarity.color.opacity(0.16), rarity.color.opacity(0.04)],
                            startPoint: .top, endPoint: .bottom)
-            if let image {
+            if isScreenshotMode {
+                screenshotArtwork
+            } else if let image {
                 Image(uiImage: image).resizable().scaledToFill()
                     .transition(.opacity)
             } else if failed {
@@ -39,6 +41,48 @@ struct RemoteImage: View {
             }
         }
         .task(id: "\(url)#\(attempt)") { await load() }
+    }
+
+    #if DEBUG
+    private var isScreenshotMode: Bool {
+        ProcessInfo.processInfo.arguments.contains("-DreamCartScreenshot")
+    }
+    #else
+    private var isScreenshotMode: Bool { false }
+    #endif
+
+    private var screenshotArtwork: some View {
+        let style = Self.screenshotStyle(for: url)
+        return ZStack {
+            LinearGradient(colors: [style.background, style.foreground],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+            Circle()
+                .fill(.white.opacity(0.14))
+                .frame(width: 220, height: 220)
+                .offset(x: 70, y: -90)
+            Circle()
+                .stroke(.white.opacity(0.24), lineWidth: 2)
+                .frame(width: 170, height: 170)
+                .offset(x: -76, y: 105)
+            Image(systemName: style.icon)
+                .font(.system(size: 88, weight: .medium))
+                .foregroundStyle(.white.opacity(0.92))
+                .shadow(color: .black.opacity(0.16), radius: 12, y: 8)
+        }
+    }
+
+    private static func screenshotStyle(for value: String) -> (background: Color, foreground: Color, icon: String) {
+        let seed = value.unicodeScalars.reduce(0) { ($0 &* 31 &+ Int($1.value)) & 0x7fffffff }
+        let styles: [(Color, Color, String)] = [
+            (.purple, .pink, "hanger"),
+            (.blue, .indigo, "tshirt.fill"),
+            (.orange, .pink, "bag.fill"),
+            (.teal, .blue, "shoeprints.fill"),
+            (.indigo, .purple, "crown.fill"),
+            (.pink, .orange, "sparkles"),
+        ]
+        let selected = styles[seed % styles.count]
+        return (selected.0, selected.1, selected.2)
     }
 
     private func load() async {
