@@ -45,7 +45,7 @@ struct CartView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                if !shop.cartProducts.isEmpty { checkoutBar }
+                if !isScreenshotMode && !shop.cartProducts.isEmpty { checkoutBar }
             }
             // After (outside) the checkout bar's inset, so the bar's slot is
             // reserved below it — checkout stacks above the floating tab bar.
@@ -78,6 +78,14 @@ struct CartView: View {
         .onChange(of: unboxing == nil) { _, dismissed in
             router.setOverlayVisible(!dismissed)
         }
+    }
+
+    private var isScreenshotMode: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-DreamCartScreenshot")
+        #else
+        return false
+        #endif
     }
 
     private var checkoutBar: some View {

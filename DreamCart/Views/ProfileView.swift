@@ -33,7 +33,9 @@ struct ProfileView: View {
                         statsGrid
                         appearanceCard
                         notificationCard
-                        actions
+                        if !isScreenshotMode {
+                            actions
+                        }
                         dangerZone
                     }
                     Text("DreamCart is a virtual shopping game. Everything here, including coins, items, and delivery, is imaginary and has no cash value.")
