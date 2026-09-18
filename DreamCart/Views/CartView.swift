@@ -25,7 +25,9 @@ struct CartView: View {
                     ScrollView {
                         VStack(spacing: 24) {
                             EmptyState(icon: "cart", title: "Your cart is empty",
-                                       message: "Add pieces you love. Checkout is free with coins.")
+                                       message: isScreenshotMode
+                                           ? "Save pieces here while you browse."
+                                           : "Add pieces you love. Checkout is free with coins.")
                             CandyButton(title: "Browse shop", systemImage: "bag.fill") {
                                 router.receive(.shop)
                             }
