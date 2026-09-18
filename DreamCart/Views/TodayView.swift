@@ -25,8 +25,8 @@ struct TodayView: View {
                     if shop.isLoading && shop.products.isEmpty {
                         TodayLoadingView()
                     } else {
-                        dailyCard
-                        spinCard
+                        if !isScreenshotMode { dailyCard }
+                        if !isScreenshotMode { spinCard }
                         if !shop.newDrops.isEmpty { newDropsSection }
                         brandShelves
                     }
@@ -81,6 +81,14 @@ struct TodayView: View {
         case 17..<22: return "Good evening"
         default: return "Late-night haul"
         }
+    }
+
+    private var isScreenshotMode: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-DreamCartScreenshot")
+        #else
+        return false
+        #endif
     }
 
     // MARK: daily reward
@@ -302,7 +310,7 @@ struct TodayView: View {
     private var newDropsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Just dropped", subtitle: "Fresh today",
-                          actionTitle: "Shop all") { router.receive(.shop) }
+                          actionTitle: isScreenshotMode ? nil : "Shop all") { router.receive(.shop) }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(shop.newDrops) { p in
