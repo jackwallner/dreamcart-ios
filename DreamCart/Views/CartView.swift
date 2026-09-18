@@ -24,14 +24,23 @@ struct CartView: View {
                 } else if shop.cartProducts.isEmpty {
                     ScrollView {
                         VStack(spacing: 24) {
-                            EmptyState(icon: "cart", title: "Your cart is empty",
-                                       message: isScreenshotMode
-                                           ? "Save pieces here while you browse."
-                                           : "Add pieces you love. Checkout is free with coins.")
-                            CandyButton(title: "Browse shop", systemImage: "bag.fill") {
-                                router.receive(.shop)
+                            if isScreenshotMode {
+                                EmptyState(
+                                    icon: "hanger",
+                                    title: "Your collection is ready",
+                                    message: "Saved pieces stay here while you browse."
+                                )
+                            } else {
+                                EmptyState(
+                                    icon: "cart",
+                                    title: "Your cart is empty",
+                                    message: "Add pieces you love. Checkout is free with coins."
+                                )
+                                CandyButton(title: "Browse shop", systemImage: "bag.fill") {
+                                    router.receive(.shop)
+                                }
+                                .padding(.horizontal, 32)
                             }
-                            .padding(.horizontal, 32)
                         }
                         .padding(.top, 80)
                     }
@@ -53,7 +62,7 @@ struct CartView: View {
             // reserved below it — checkout stacks above the floating tab bar.
             .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
-            .navigationTitle("Cart")
+            .navigationTitle(isScreenshotMode ? "Saved pieces" : "Cart")
             .walletToolbar($showCoinShop)
         }
         .sheet(isPresented: $showCheckout) {
