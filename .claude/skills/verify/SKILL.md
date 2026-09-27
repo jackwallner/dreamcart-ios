@@ -1,17 +1,20 @@
 ---
 name: verify
-summary: Record and inspect DreamCart flows on its dedicated headless simulator.
+description: Record and inspect DreamCart flows on a leased device from the shared headless agent-sim pool.
 ---
 
 # DreamCart runtime verification
 
-Use DreamCart's dedicated `shop` simulator. Never open Simulator.app.
+Lease a device from the shared pool under owner `shop`. Never open Simulator.app.
 
 ```bash
 xcodegen generate
-UDID=$(agent-sim boot shop)
-xcodebuild -project DreamCart.xcodeproj -scheme DreamCart -destination "id=$UDID" -derivedDataPath /tmp/dreamcart-dd build
-xcrun simctl install "$UDID" /tmp/dreamcart-dd/Build/Products/Debug-iphonesimulator/DreamCart.app
+agent-sim checkout shop
+UDID=$(agent-sim udid shop)
+agent-sim boot shop
+xcodebuild -project DreamCart.xcodeproj -scheme DreamCart -destination "id=$UDID" build
+APP=$(find ~/Library/Developer/Xcode/DerivedData/DreamCart-*/Build/Products -maxdepth 2 -name DreamCart.app -path "*iphonesimulator*" | head -1)
+xcrun simctl install "$UDID" "$APP"
 xcrun simctl launch "$UDID" com.jackwallner.shop
 ```
 
@@ -34,3 +37,5 @@ Core regression flows:
 6. Switch tabs and push/pop product detail while recording. Check tab-bar transparency and wallet stability.
 
 Save evidence under a dated `/tmp/dreamcart-qa-YYYYMMDD/` directory. Inspect screenshots and extracted video frames before reporting PASS.
+
+Run `agent-sim checkin shop` when the last capture is done.
