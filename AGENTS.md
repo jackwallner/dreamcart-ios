@@ -1,4 +1,4 @@
-# DreamCart — Project Guide
+# DreamCart Project Guide
 
 Dopamine-shopping game (iOS). Standalone repo `dreamcart-ios` (dir `~/shop`).
 Core fantasy loop: daily coins + spin wheel → browse → cart → **fake checkout with
@@ -18,14 +18,14 @@ XcodeGen project/scheme: `DreamCart`, bundle `com.jackwallner.shop`.
 
 ## Architecture
 
-- `DreamCart/` — app target: `DreamCartApp.swift` (entry), `RootView.swift`, `Views/`, `Components/`, `Assets.xcassets`, `Info.plist`, `DreamCart.entitlements`
-- `Shared/` — `Models/`, `Services/`, `Utilities/` (business logic; also compiled into the test target)
-- `supabase/` — DB migrations for the coins/catalog backend
-- `scripts/` — full ASC automation suite (`asc-setup-iap.py`, `asc-setup-metadata.py`, `asc-setup-release.py`, `asc-submit-for-review.py`, `asc-upload-*`, `build-screenshots.py`, `capture-screenshots.sh`, `generate-icon.py`) + `testflight.sh`
+- `DreamCart/`: app target: `DreamCartApp.swift` (entry), `RootView.swift`, `Views/`, `Components/`, `Assets.xcassets`, `Info.plist`, `DreamCart.entitlements`
+- `Shared/`: `Models/`, `Services/`, `Utilities/` (business logic; also compiled into the test target)
+- `supabase/`: DB migrations for the coins/catalog backend
+- `scripts/`: full ASC automation suite (`asc-setup-iap.py`, `asc-setup-metadata.py`, `asc-setup-release.py`, `asc-submit-for-review.py`, `asc-upload-*`, `build-screenshots.py`, `capture-screenshots.sh`, `generate-icon.py`) + `testflight.sh`
 
 ## Deviations from the shared iOS conventions
 
-Read these before assuming fleet defaults (global CLAUDE.md + `ios-dev` skill):
+Read these before assuming fleet defaults (global agent rules + `ios-dev` skill):
 - **Not a local-only app** — it has a Supabase backend. Backend/schema changes need a Supabase migration + push, not just SwiftData.
 - Uses the shared headless agent-sim pool. Checkout a phone slot before
   building or capturing, use the returned UDID, and check it in afterward.
@@ -41,4 +41,4 @@ Read these before assuming fleet defaults (global CLAUDE.md + `ios-dev` skill):
 
 ---
 Shared iOS conventions (build, release/TestFlight, ASC key + metadata scripts, signing, RevenueCat, review funnel, gotchas):
-always-loaded global CLAUDE.md + the `ios-dev` skill. To bootstrap a new app like this one, see the `ios-new-project` skill.
+the global agent rules + the `ios-dev` skill. To bootstrap a new app like this one, see the `ios-new-project` skill.
