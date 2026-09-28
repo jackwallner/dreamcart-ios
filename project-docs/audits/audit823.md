@@ -88,7 +88,7 @@ Severity meanings:
 | F-11 | P1 | Price and availability states can show a generic or hardcoded US price | S | High | StoreController.swift:80-91 uses hardcoded dollar fallbacks; PlusOfferView.swift:215-223 can render a weekly charge with no price while the CTA remains active. |
 | F-12 | P1 | Support and legal pages omit the current subscription path and one landing-page claim conflicts with local storage | M | High | support.html:29-65 covers only coin packs; docs/index.html:588 says no shipping address is ever collected while CheckoutView.swift:68-109 and ShippingAddressStore.swift persist a fictional address locally. |
 | F-13 | P2 | Swift 6 and iOS 27 warnings can become release regressions | S | High | ios27DreamCart.md:1-26 records main-actor warnings in Haptics.swift:5-45 and an unused mutable declaration in SupabaseClient.swift:123. No current build was run during this audit. |
-| F-14 | P2 | Agents can act on stale product truth or nonexistent paths | S | High | Completed root handoffs remain beside active instructions, OnboardingCoinOfferView.swift is an orphaned legacy surface, and HANDOFF-UX.md:71-77 and HANDOFF-DESIGN.md:28 reference CompositeAvatarView.swift and OutfitBuilderView.swift that are not present in the current file list. |
+| F-14 | P2 | Agents can act on stale product truth or nonexistent paths | S | High | Completed root handoffs remain beside active instructions, OnboardingCoinOfferView.swift is an orphaned legacy surface, and ../handoffs/HANDOFF-UX.md:71-77 and ../handoffs/HANDOFF-DESIGN.md:28 reference CompositeAvatarView.swift and OutfitBuilderView.swift that are not present in the current file list. |
 | F-15 | P2 | Accessibility and localization can break the densest paywall controls | S | Medium | PlusOfferView.swift:104-126 uses a fixed four-control HStack without a ViewThatFits or explicit accessibility identifiers. The paywall has not been validated at XXL Dynamic Type or RTL in this pass. |
 | F-16 | P2 | Product ID drift can create dormant products and mismatched lifecycle handling | M | High | rc-webhook/index.ts:22-26 lists weekly, monthly, and yearly Plus IDs, while the app and StoreKit file define weekly only. |
 
@@ -850,9 +850,9 @@ fix. It should never silently turn unavailable live data into zero.
 | README.md | Missing | Add a short repository entry point with product truth, setup, test, ASC read-only audit, and document map. |
 | AGENTS.md | Missing in repo | Add one canonical repository agent guide, or explicitly state that the global guide is authoritative. Do not create conflicting copies. |
 | .cursor rules | Missing | Add only Cursor-specific adapter rules after the canonical guide exists. Do not duplicate product facts. |
-| HANDOFF-P0.md | Completed handoff at root | Move to docs/archive with date and status. Its historical test destination and six-test claim must not be read as current release proof. |
-| HANDOFF-UX.md | Completed handoff at root | Move to docs/archive. Update or remove references to files no longer present. |
-| HANDOFF-DESIGN.md | Completed handoff at root | Move to docs/archive or docs/design/archive. Keep screenshots as historical evidence, not active instructions. |
+| ../handoffs/HANDOFF-P0.md | Completed handoff at root | Move to docs/archive with date and status. Its historical test destination and six-test claim must not be read as current release proof. |
+| ../handoffs/HANDOFF-UX.md | Completed handoff at root | Move to docs/archive. Update or remove references to files no longer present. |
+| ../handoffs/HANDOFF-DESIGN.md | Completed handoff at root | Move to docs/archive or docs/design/archive. Keep screenshots as historical evidence, not active instructions. |
 | ios27DreamCart.md | Dated compatibility audit | Keep the warning as historical evidence, then move to docs/archive after a current Swift 6/Xcode recheck. |
 | archive/README.md | Archive index | Keep and expand with dates, current status, and links to active docs. |
 | archive/sim76.md | Historical simulator audit | Keep archived. It is useful evidence, not a current app contract. |
@@ -872,10 +872,10 @@ fix. It should never silently turn unavailable live data into zero.
   stale comment should be corrected.
 - supabase/functions/redeem/index.ts:115 says Plus may be added in the future,
   even though it is active.
-- HANDOFF-P0.md and HANDOFF-UX.md say six tests passed and describe earlier
+- ../handoffs/HANDOFF-P0.md and ../handoffs/HANDOFF-UX.md say six tests passed and describe earlier
   simulator runs. They do not establish the current build or current
   subscription behavior.
-- HANDOFF-DESIGN.md references CompositeAvatarView.swift and
+- ../handoffs/HANDOFF-DESIGN.md references CompositeAvatarView.swift and
   OutfitBuilderView.swift. Those paths were not present in the current
   repository file list, so an agent may waste time editing nonexistent files.
 - docs/analytics-privacy.md says pre-auth events are not later linked, but
