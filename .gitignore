@@ -24,6 +24,4 @@ node_modules/
 # scratch / tooling scratch output
 .cmd_outputs/
 
-# generated App Store screenshots (rebuilt by scripts/build-screenshots.py)
-fastlane/screenshots/
 fastlane/report.xml
