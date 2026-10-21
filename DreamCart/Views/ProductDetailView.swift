@@ -76,7 +76,7 @@ struct ProductDetailView: View {
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) { buyBar }
         .sheet(isPresented: $showCoinShop) { CoinShopView() }
-        .sheet(isPresented: $showCheckout) {
+        .paneSheet(isPresented: $showCheckout) {
             CheckoutView { bought in
                 showCheckout = false
                 if reduceMotion { unboxing = bought }

@@ -80,6 +80,10 @@ actor Analytics {
 
     private func flush() async {
         guard !buffer.isEmpty else { return }
+        #if DEBUG
+        // Duo capture runs (DuoScreenshotMode) keep their events off the server.
+        if ProcessInfo.processInfo.arguments.contains("-DuoSeed") { buffer.removeAll(); return }
+        #endif
         var batch = buffer
         buffer.removeAll()
         // Backfill user ids captured before auth resolved. The insert goes out

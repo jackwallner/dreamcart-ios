@@ -65,7 +65,7 @@ struct CartView: View {
             .navigationTitle(isScreenshotMode ? "Saved pieces" : "Cart")
             .walletToolbar($showCoinShop)
         }
-        .sheet(isPresented: $showCheckout) {
+        .paneSheet(isPresented: $showCheckout) {
             CheckoutView { bought in
                 showCheckout = false
                 if reduceMotion {
@@ -76,6 +76,9 @@ struct CartView: View {
             }
         }
         .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
+        #if DEBUG
+        .onChange(of: DuoTour.shared.checkout, initial: true) { _, open in showCheckout = open }
+        #endif
         .overlay {
             if let items = unboxing {
                 UnboxingView(items: items) {

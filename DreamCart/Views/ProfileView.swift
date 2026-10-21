@@ -54,11 +54,12 @@ struct ProfileView: View {
                 PlusOfferView(presentation: .sheet) { showPlusOffer = false }
             }
             .sheet(isPresented: $showLedger) { LedgerView() }
-            .sheet(isPresented: $showShipping) { ShippingAddressView() }
             .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
             .task { await notifications.refreshStatus() }
             .disabled(working)
         }
+        // Outside the stack, so unfolded it covers the whole You pane.
+        .paneSheet(isPresented: $showShipping) { ShippingAddressView() }
         .overlay {
             if working {
                 ZStack {

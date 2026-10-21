@@ -3,7 +3,7 @@ import SwiftUI
 struct CoinShopView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(StoreController.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    @PaneAwareDismiss private var dismiss
     @Environment(\.colorScheme) private var scheme
     @Environment(\.scenePhase) private var scenePhase
 
