@@ -12,7 +12,7 @@ struct CheckoutView: View {
 
     @Environment(ShopStore.self) private var shop
     @Environment(ShippingAddressStore.self) private var shipping
-    @Environment(\.dismiss) private var dismiss
+    @PaneAwareDismiss private var dismiss
     @Environment(\.colorScheme) private var scheme
 
     @State private var placing = false
@@ -51,7 +51,7 @@ struct CheckoutView: View {
             }
             .safeAreaInset(edge: .bottom) { placeBar }
         }
-        .sheet(isPresented: $showEditAddress) { ShippingAddressView() }
+        .paneSheet(isPresented: $showEditAddress) { ShippingAddressView() }
         .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
         .alert("Order didn't go through", isPresented: Binding(
             get: { errorMessage != nil },

@@ -43,6 +43,11 @@ struct TodayView: View {
             .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
             .navigationDestination(for: Brand.self) { BrandView(brand: $0) }
             .navigationDestination(isPresented: $showShop) { ShopView() }
+            #if DEBUG
+            .navigationDestination(item: Bindable(DuoTour.shared).product) { ProductDetailView(product: $0) }
+            .onChange(of: DuoTour.shared.showShop) { _, open in showShop = open }
+            .onChange(of: DuoTour.shared.coins) { _, open in showCoinShop = open }
+            #endif
             .refreshable { await shop.refreshAll() }
             .onChange(of: router.presentedRoute) { _, route in
                 guard route == .shop else { return }
@@ -54,7 +59,6 @@ struct TodayView: View {
                 showShop = true
                 _ = router.consumePresentedRoute()
             }
-            .sheet(isPresented: $showSpin) { SpinView() }
             .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
             .task {
                 while !Task.isCancelled {
@@ -63,6 +67,11 @@ struct TodayView: View {
                 }
             }
         }
+        // Outside the stack, so unfolded it covers the whole Today pane.
+        .paneSheet(isPresented: $showSpin) { SpinView() }
+        #if DEBUG
+        .onChange(of: DuoTour.shared.spin) { _, open in showSpin = open }
+        #endif
         .overlay {
             if let r = reward {
                 RewardOverlay(title: r.title, amount: r.amount, subtitle: r.subtitle) {
