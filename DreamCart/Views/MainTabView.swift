@@ -1,3 +1,5 @@
+import SwiftUI
+
 struct MainTabView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
