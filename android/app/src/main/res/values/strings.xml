@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DreamCart</string>
+    <string name="reminder_channel">New drop reminders</string>
+</resources>
