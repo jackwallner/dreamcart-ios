@@ -39,13 +39,12 @@ Supabase project, RPCs and RLS; same RevenueCat project (`proj2a25c871`).
 - Debug builds send no analytics rows; release sends the iOS events to
   `analytics_events` with `props.platform = "android"`.
 
-## Build and test on a Pro (never on the Air)
+## Build and test (fm-gradle, never on the Air)
 
 ```sh
-export JAVA_HOME=~/jdks/temurin-17/Contents/Home ANDROID_HOME=~/Library/Android/sdk
 cd android
-./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug -Pkotlin.compiler.execution.strategy=in-process
-ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest -Pkotlin.compiler.execution.strategy=in-process
+fm-gradle :app:testDebugUnitTest :app:assembleDebug :app:lintDebug -Pkotlin.compiler.execution.strategy=in-process
+ANDROID_SERIAL=emulator-5554 fm-gradle :app:connectedDebugAndroidTest -Pkotlin.compiler.execution.strategy=in-process
 ```
 
 - `local.properties` (ignored): `sdk.dir`, `REVENUECAT_TEST_KEY` (the Test Store
