@@ -3,6 +3,13 @@
 Status on 2026-10-20 (run shift-android-shop-1-1792547202, jmbp2). Engineering
 port done and verified on the emulator. Not on Play yet.
 
+Update 2026-10-21 (package run shift-android-package-shop-1-1792574995, Air):
+signed packaging is blocked because there is no upload keystore, no
+`local.properties` and no RevenueCat Play app. No APK or AAB was built. The
+Supabase Google provider is now enabled; the Web client id still has to reach
+the Air's `local.properties`. Details are in `.claude/rules/android.md`
+under "Release packaging and Play state".
+
 ## Decisions Jack needs to make
 
 1. **Android sign-in provider.** iOS uses Sign in with Apple only. Android code is
