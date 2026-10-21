@@ -237,6 +237,12 @@ class CatalogLogic(
     }
 
     companion object {
+        /** `appendCatalogPage`: append a page, dropping ids already loaded or repeated. */
+        fun appendPage(existing: List<Product>, page: List<Product>): List<Product> {
+            val seen = existing.map { it.id }.toMutableSet()
+            return existing + page.filter { seen.add(it.id) }
+        }
+
         /** Today in UTC as "YYYY-MM-DD", matching the database's `current_date`. */
         fun todayUTC(nowMillis: Long = System.currentTimeMillis()): String {
             val c = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = nowMillis }
