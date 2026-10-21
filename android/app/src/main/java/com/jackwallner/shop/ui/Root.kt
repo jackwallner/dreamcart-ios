@@ -220,8 +220,7 @@ private fun stage(a: AuthState, loaded: Boolean) = "$a-$loaded"
 
 @Composable
 fun Splash() {
-    val t = rememberInfiniteTransition(label = "splash")
-    val pulse by t.animateFloat(0.94f, 1.06f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "pulse")
+    val pulse = if (com.jackwallner.shop.ui.components.reduceMotion()) 1f else com.jackwallner.shop.ui.components.pulse(0.94f, 1.06f)
     Box(Modifier.fillMaxSize().background(Palette.candy), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             BagMark(92f * pulse)

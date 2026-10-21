@@ -43,7 +43,9 @@ Deno.serve(async (req) => {
   if (!ev) return new Response("no event", { status: 200 });
 
   const userId: string = ev.app_user_id ?? "";
-  const product: string = ev.product_id ?? "";
+  // Google Play subscriptions arrive as `<subscriptionId>:<basePlanId>`
+  // (com.jackwallner.shop.plus.weekly:weekly); App Store ids have no colon.
+  const product: string = String(ev.product_id ?? "").split(":")[0];
   const txn: string = ev.transaction_id ?? ev.id ?? crypto.randomUUID();
   const type: string = ev.type ?? "";
 

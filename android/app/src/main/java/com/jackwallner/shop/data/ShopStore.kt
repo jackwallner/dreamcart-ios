@@ -77,6 +77,9 @@ class ShopStore(
         private set
     var loadError by mutableStateOf<String?>(null)
         private set
+    var isLoadingMoreProducts by mutableStateOf(false)
+        private set
+    private var catalogGeneration = 0
     var shipping by mutableStateOf(loadAddress())
         private set
 
@@ -183,6 +186,7 @@ class ShopStore(
     // MARK: loading
 
     suspend fun refreshAll() {
+        android.util.Log.i("DreamCart", "refreshAll start")
         isLoading = true
         loadError = null
         try {
@@ -194,12 +198,15 @@ class ShopStore(
                 brands = b.await()
                 products = p.await()
             }
+            loadRemainingCatalog(authed = true)
             loadCloset()
             loadFavorites()
             loadRecommendationFeedback()
+            android.util.Log.i("DreamCart", "refreshAll done: ${products.size} products, ${closet.size} owned")
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
+            android.util.Log.w("DreamCart", "refreshAll failed", e)
             loadError = e.message ?: "Couldn't load DreamCart."
             if (e is SupabaseError.NotAuthenticated) signOut()
         } finally {
@@ -220,13 +227,45 @@ class ShopStore(
                 brands = b.await()
                 products = p.await()
             }
+            loadRemainingCatalog(authed = false)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
+            android.util.Log.w("DreamCart", "guest catalog failed", e)
             loadError = e.message ?: "Couldn't load the catalog."
         } finally {
             isLoading = false
             hasLoadedOnce = true
+        }
+    }
+
+    /**
+     * Drains the rest of the catalog in 1000-row pages, buffered and appended
+     * once, so the grids re-render a single time (`loadRemainingCatalog`).
+     */
+    private fun loadRemainingCatalog(authed: Boolean) {
+        val generation = ++catalogGeneration
+        scope.launch {
+            isLoadingMoreProducts = true
+            val collected = mutableListOf<Product>()
+            var offset = products.size
+            try {
+                while (generation == catalogGeneration) {
+                    val page = JSONArray(sb.select("$PRODUCT_QUERY&offset=$offset&limit=$PAGE_SIZE", authed)).objects().map(Product::from)
+                    collected += page
+                    if (page.size < PAGE_SIZE) break
+                    offset += PAGE_SIZE
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Throwable) {
+                // Keep whatever arrived; the first page is already on screen.
+            } finally {
+                if (generation == catalogGeneration) {
+                    if (collected.isNotEmpty()) products = CatalogLogic.appendPage(products, collected)
+                    isLoadingMoreProducts = false
+                }
+            }
         }
     }
 
@@ -406,6 +445,10 @@ class ShopStore(
         private const val GUEST_KEY = "dreamcart.browsingAsGuest"
         private const val ADDRESS_KEY = "dreamcart.shippingAddress"
         const val BRANDS = "brands?select=*&order=sort.asc"
-        const val PRODUCTS = "products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc,id.asc&limit=1000"
+        private const val PRODUCT_QUERY = "products?select=*,brands(*)&is_active=eq.true&order=drop_date.desc,created_at.desc,id.asc"
+        /** The first page, small so the tabs appear fast; the rest load behind it. */
+        const val PRODUCTS = "$PRODUCT_QUERY&limit=200"
+        /** PostgREST caps a response at 1000 rows. */
+        private const val PAGE_SIZE = 1000
     }
 }
