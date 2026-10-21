@@ -51,6 +51,7 @@ struct ShopView: View {
         .background(Theme.bg(scheme))
         .navigationTitle("Shop")
         .searchable(text: $query, prompt: "Search brands, colors, styles")
+        .modifier(MinimizedSearch())
         .walletToolbar($showCoinShop)
     }
 
@@ -155,5 +156,18 @@ struct BrandView: View {
         .background(Theme.bg(scheme))
         .navigationTitle(brand.name)
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+/// Keeps search a button beside the floating tab bar. In a wider pane (the
+/// unfolded iPhone Duo) iOS would otherwise lay a full search field along
+/// the bottom edge, underneath the bar.
+private struct MinimizedSearch: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.searchToolbarBehavior(.minimize)
+        } else {
+            content
+        }
     }
 }
