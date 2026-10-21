@@ -34,6 +34,11 @@ Read these before assuming fleet defaults (global agent rules + `ios-dev` skill)
   rules still apply.
 - Product images come from Pollinations at runtime — grids show shimmer/retry while loading, and uncached requests can 429 under burst load.
 
+## iPhone Duo
+
+Two-pane unfolded layout (tabs beside the Cart), pane covers and capture
+mode: `.claude/rules/iphone-duo.md`.
+
 ## Android
 
 Native Kotlin/Compose port in `android/`. Rules, commands and open decisions:
