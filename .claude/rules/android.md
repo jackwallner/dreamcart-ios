@@ -26,10 +26,11 @@ Supabase project, RPCs and RLS; same RevenueCat project (`proj2a25c871`).
   with Google through Credential Manager (`data/GoogleSignIn.kt`, Supabase
   `grant_type=id_token`, provider `google`, hashed nonce). It needs
   `GOOGLE_WEB_CLIENT_ID` in `local.properties`, and the Supabase Google provider
-  enabled with that client id. Neither exists yet (Supabase `/auth/v1/settings`
-  showed `google: false` on 2026-10-20). Until then the button is hidden, guests
-  can browse, and release builds fail `validateReleaseConfiguration`. This is
-  Jack's decision; do not invent another provider.
+  enabled with that client id. Supabase `/auth/v1/settings` showed `google: true`
+  on 2026-10-21 (it was `false` on 2026-10-20), but no `GOOGLE_WEB_CLIENT_ID` is
+  on the Air yet. Until it is, the button is hidden, guests can browse, and
+  release builds fail `validateReleaseConfiguration`. This is Jack's decision;
+  do not invent another provider.
 - Spin card: a DreamCart+ member keeps "Spin the wheel" after spinning (the
   server allows unlimited member spins). iOS hides it after one spin.
 - Reminders: one inexact daily alarm at 9:00 AM (no time picker yet), no
@@ -81,7 +82,29 @@ tester signed in was followed by `profiles.is_plus = true` on that tester. The
 repo's `rc-webhook` ignores `monthly`, so the deployed webhook or another
 integration differs. Check the deployed function before Play launch.
 
-## Play state
+## Release packaging and Play state (2026-10-21)
 
-No Play app record yet (2026-10-20). Steps are in
-`project-docs/android/play-release-prep.md`.
+Package run `shift-android-package-shop-1-1792574995` (Air) is blocked, and no
+signed APK or AAB exists. Source checked: android tree `f4ca1ee`, the same on
+this branch (`e9816d4`) and `origin/main`. Evidence is in
+`~/fleet-evidence/shift-android-package-shop-1-1792574995/`.
+
+- `shop-release-preflight.sh` exits 1: there is no upload keystore
+  (`~/.android/keystores/shop-upload.p12`, and no backup under any shop or
+  dreamcart name), no `android/local.properties` in `~/shop` or the worktree,
+  and RevenueCat `proj2a25c871` has only `app_store` and `test_store` apps (no
+  `play_store` app, so no `goog_` key). The Supabase Google provider passes.
+- `./gradlew --no-daemon assembleRelease bundleRelease` (Air, allowed by the
+  guard) fails at `:app:validateReleaseConfiguration` with "Set
+  REVENUECAT_PLAY_KEY". The gate works as designed.
+- Not done on purpose: no upload key created (only an existing key may sign),
+  no Play Console or RevenueCat app created, and no products or prices touched.
+- Play: no app record, no track, nothing staged or in review.
+
+To unblock, in order: Jack creates the upload key at
+`~/.android/keystores/shop-upload.p12` with an encrypted backup (or
+authorizes an agent to create it), and the Google Cloud Web and Android OAuth
+clients. Then the Play app record and the six products, then the RevenueCat
+Play app with its `goog_` key. Put `REVENUECAT_PLAY_KEY`, `GOOGLE_WEB_CLIENT_ID`
+and `PLAY_UPLOAD_*` in the Air's `~/shop/android/local.properties` and rerun
+the package task. Steps are in `project-docs/android/play-release-prep.md`.
