@@ -277,7 +277,7 @@ class ShopStore(
 
     suspend fun loadCloset() {
         runCatching {
-            val rows = JSONArray(sb.select("closet_items?select=acquired_at,products(*)&order=acquired_at.desc")).objects()
+            val rows = JSONArray(sb.select("closet_items?select=acquired_at,products(*,brands(*))&order=acquired_at.desc")).objects()
             val owned = rows.mapNotNull { r -> r.optJSONObject("products")?.let { Product.from(it) to r.optString("acquired_at") } }
             closet = owned.map { it.first }
             closetAcquiredAt = owned.associate { it.first.id to it.second }

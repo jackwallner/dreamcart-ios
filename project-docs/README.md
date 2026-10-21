@@ -13,3 +13,7 @@ Developer notes and historical audits for this repository. The published site re
 - [HANDOFF-DESIGN.md](handoffs/HANDOFF-DESIGN.md): DreamCart Design Language Handoff
 - [HANDOFF-P0.md](handoffs/HANDOFF-P0.md): P0 Ship Blockers - Handoff
 - [HANDOFF-UX.md](handoffs/HANDOFF-UX.md): DreamCart UX Backlog Handoff
+
+## Android
+
+- [play-release-prep.md](android/play-release-prep.md): DreamCart Android Play release prep
