@@ -154,7 +154,7 @@ fun ProfileScreen() {
                 }
                 Rows {
                     if (!graph.screenshotMode) {
-                        if (me?.isPlus == true) Row(PlusPlan.NAME, Icons.Filled.WorkspacePremium, Palette.gold, "Active · manage or cancel in Google Play") { context.openUrl(PlusPlan.MANAGE_URL) }
+                        if (me?.isPlus == true) Row(PlusPlan.NAME, Icons.Filled.WorkspacePremium, Palette.gold, "Active · manage or cancel in Google Play", tag = "profilePlusActive") { context.openUrl(PlusPlan.MANAGE_URL) }
                         else Row(PlusPlan.NAME, Icons.Filled.WorkspacePremium, Palette.gold, "Double daily coins, unlimited spins", tag = "profilePlus") { nav.present(Sheet.PLUS) }
                         Row("Get more coins", Icons.Filled.AddCircle, Palette.violet, tag = "profileCoins") { nav.present(Sheet.COIN_SHOP) }
                     }
@@ -414,7 +414,9 @@ private fun WheelFace(rotationDeg: Float, modifier: Modifier) {
                 val lr = r * 0.66f
                 val x = center.x + (lr * sin(a)).toFloat()
                 val y = center.y - (lr * cos(a)).toFloat()
-                rotate(i * per, Offset(x, y)) {
+                // Labels on the lower half flip so they never read upside down.
+                val labelAngle = i * per + if (i * per > 90f && i * per < 270f) 180f else 0f
+                rotate(labelAngle, Offset(x, y)) {
                     drawContext.canvas.nativeCanvas.drawText(Format.coinsShort(Wheel.PRIZES[i]), x, y + labelPaint.textSize / 3, labelPaint)
                 }
             }
