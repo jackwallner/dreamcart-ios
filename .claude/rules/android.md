@@ -80,6 +80,13 @@ tester signed in was followed by `profiles.is_plus = true` on that tester. The
 repo's `rc-webhook` ignores `monthly`, so the deployed webhook or another
 integration differs. Check the deployed function before Play launch.
 
+## Play store assets
+
+`android/play-assets/` holds the listing in `play_stage.py` layout; its README
+records how each asset was made. On agent-emu-1 at `wm size 1080x2160` the
+app drew black until force-stopped and relaunched. Don't use `--ez screenshot
+true` for store captures: it replaces product art with placeholder gradients.
+
 ## Play state
 
 No Play app record yet (2026-10-20). Steps are in
