@@ -87,18 +87,34 @@ class DreamCartFlowTests {
         compose.onNodeWithText("Coins are for use inside DreamCart only and have no cash value. All items and delivery are virtual.").assertExists()
     }
 
-    @Test fun plusOfferStatesRenewalAndCancellationAndCanBeDismissed() {
-        launch("onboarded", "tester")
-        compose.waitUntilExactlyOneExists(hasTestTag("walletPill"), slow)
-        compose.onNodeWithTag("tab-PROFILE").performClick()
-        compose.waitUntilExactlyOneExists(hasTestTag("profilePlus"), slow)
-        compose.onNodeWithTag("profilePlus").performClick()
+    @Test fun onboardingThenSignInShowsThePlusOfferWithRenewalTermsAndItCanBeSkipped() {
+        launch()
+        repeat(3) {
+            compose.waitUntilExactlyOneExists(hasTestTag("onboardingNext"), slow)
+            compose.onNodeWithTag("onboardingNext").performClick()
+        }
+        compose.waitUntilExactlyOneExists(hasTestTag("testerSignIn"), slow)
+        compose.onNodeWithTag("testerSignIn").performClick()
         compose.waitUntilExactlyOneExists(hasTestTag("plusOffer"), slow)
         compose.waitUntilExactlyOneExists(hasText("Auto-renews until canceled", substring = true), slow)
         compose.onNodeWithText("Double coins every single day").assertExists()
         compose.onNodeWithTag("plusRestore").assertExists()
         compose.onNodeWithTag("plusSkip").performClick()
-        compose.waitUntilDoesNotExist(hasTestTag("plusOffer"), slow)
+        compose.waitUntilExactlyOneExists(hasTestTag("tabBar"), slow)
+    }
+
+    @Test fun profileShowsTheOfferToFreeUsersAndManageToMembers() {
+        launch("onboarded", "tester")
+        compose.waitUntilExactlyOneExists(hasTestTag("walletPill"), slow)
+        compose.onNodeWithTag("tab-PROFILE").performClick()
+        compose.waitUntilExactlyOneExists(hasTestTag("profilePlus") or hasTestTag("profilePlusActive"), slow)
+        val member = compose.onAllNodes(hasTestTag("profilePlusActive")).fetchSemanticsNodes().isNotEmpty()
+        if (member) {
+            compose.onNodeWithText("Active · manage or cancel in Google Play").assertExists()
+        } else {
+            compose.onNodeWithTag("profilePlus").performClick()
+            compose.waitUntilExactlyOneExists(hasTestTag("plusOffer"), slow)
+        }
     }
 
     @Test fun checkoutWaitsForAnAddressOrSkip() {

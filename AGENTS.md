@@ -34,6 +34,11 @@ Read these before assuming fleet defaults (global agent rules + `ios-dev` skill)
   rules still apply.
 - Product images come from Pollinations at runtime — grids show shimmer/retry while loading, and uncached requests can 429 under burst load.
 
+## Android
+
+Native Kotlin/Compose port in `android/`. Rules, commands and open decisions:
+`.claude/rules/android.md` (paths `android/**`).
+
 ## Backend (Supabase)
 
 - Account `jtest0979`; project creds + service role key in `.env.shop` (never commit).
