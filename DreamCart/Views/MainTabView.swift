@@ -49,6 +49,9 @@ struct MainTabView: View {
                 }
             }
         }
+        // Measured at the window's width, never the panes': the ZStack would
+        // otherwise shrink to the leading pane and undo the split it measured.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .overlay(alignment: .bottomLeading) {
             if !router.isTabBarHidden {
                 FloatingTabBar(selection: $router.selectedTab, cartCount: shop.cartIds.count,
