@@ -72,6 +72,26 @@ import com.jackwallner.shop.ui.theme.Palette
 import com.jackwallner.shop.ui.theme.Radii
 import com.jackwallner.shop.ui.theme.Type
 
+/**
+ * `accessibilityReduceMotion`: Android's "Remove animations" sets the animator
+ * scale to 0. Decorative loops (splash pulse, shimmer, reward glow) stop then.
+ */
+@Composable
+fun reduceMotion(): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return remember {
+        android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }
+}
+
+/** A slow decorative breathe between [from] and [to]; only call when motion is allowed. */
+@Composable
+fun pulse(from: Float, to: Float): Float {
+    val t = rememberInfiniteTransition(label = "pulse")
+    val v by t.animateFloat(from, to, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "pulse")
+    return v
+}
+
 /** `cardStyle(_:)`: surface, hairline, and a soft drop shadow drawn behind (no elevation boxes). */
 fun Modifier.card(dark: Boolean, surface: Color, hairline: Color, corner: Dp = Radii.card): Modifier = this
     .drawBehind {
@@ -204,6 +224,10 @@ fun WalletPill(coins: Int, onClick: () -> Unit) {
 
 @Composable
 fun Shimmer(modifier: Modifier = Modifier) {
+    if (reduceMotion()) {
+        Box(modifier.background(if (LocalDC.current.dark) Color(0xFF26262B) else Color(0xFFEDEAE6)))
+        return
+    }
     val t = rememberInfiniteTransition(label = "shimmer")
     val x by t.animateFloat(-1f, 2f, infiniteRepeatable(tween(1300, easing = LinearEasing), RepeatMode.Restart), label = "x")
     val base = if (LocalDC.current.dark) Color(0xFF26262B) else Color(0xFFEDEAE6)
@@ -360,8 +384,7 @@ fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
 @Composable
 fun RewardOverlay(title: String, amount: Int?, subtitle: String, onDone: () -> Unit) {
     val c = LocalDC.current
-    val t = rememberInfiniteTransition(label = "reward")
-    val glow by t.animateFloat(0.85f, 1.08f, infiniteRepeatable(tween(900), RepeatMode.Reverse), label = "glow")
+    val glow = if (reduceMotion()) 1f else pulse(0.85f, 1.08f)
     Box(
         Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).clickable(onClick = onDone).testTag("rewardOverlay"),
         contentAlignment = Alignment.Center,
