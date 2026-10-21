@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Supabase session must not follow a backup to another device; the
+     account signs in again there. Preferences (appearance, address) may. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="dreamcart_session.xml" />
+        <exclude domain="file" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="dreamcart_session.xml" />
+        <exclude domain="file" path="." />
+    </device-transfer>
+</data-extraction-rules>
