@@ -49,6 +49,7 @@ struct ShopView: View {
                 }
             }
         }
+        .reservesFloatingTabBar()
         .background(Theme.bg(scheme))
         .navigationTitle("Shop")
         // In an unfolded Duo pane iOS lays search along the bottom edge, under
@@ -157,6 +158,7 @@ struct BrandView: View {
                 .padding(16)
             }
         }
+        .reservesFloatingTabBar()
         .background(Theme.bg(scheme))
         .navigationTitle(brand.name)
         .navigationBarTitleDisplayMode(.large)

@@ -41,6 +41,7 @@ struct MainTabView: View {
                         .environment(\.horizontalSizeClass, split == nil ? horizontalSizeClass : .compact)
                         // The Cart pane has no tab bar beneath it to make room for.
                         .environment(\.floatingTabBarHeight, isPane ? 0 : barHeight)
+                        .environment(\.docksFloatingTabBar, split != nil)
                         .frame(maxWidth: paneWidth(tab), maxHeight: .infinity)
                         .padding(.leading, isPane ? split?.secondaryX ?? 0 : 0)
                         .opacity(isVisible(tab) ? 1 : 0)
@@ -184,6 +185,9 @@ private struct FloatingTabBar: View {
 extension EnvironmentValues {
     /// Measured height of the floating tab bar (0 while it's hidden).
     @Entry var floatingTabBarHeight: CGFloat = 0
+    /// True in an unfolded Duo pane, where the pane is too short for scroll
+    /// content to rest under the bar, so the bar gets a band of its own.
+    @Entry var docksFloatingTabBar: Bool = false
 }
 
 /// Reserve the floating tab bar's slot at the bottom of a tab root's content.
@@ -192,11 +196,29 @@ extension EnvironmentValues {
 /// their SwiftUI ancestor.
 struct FloatingTabBarReservation: ViewModifier {
     @Environment(\.floatingTabBarHeight) private var barHeight
+    @Environment(\.docksFloatingTabBar) private var docked
+    @Environment(\.colorScheme) private var scheme
 
     func body(content: Content) -> some View {
         content.safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear.frame(height: barHeight)
+            Color.clear
+                .frame(height: barHeight)
+                .background { if docked && barHeight > 0 { dock } }
         }
+    }
+
+    /// Scroll content ends above the bar instead of passing under it, fading
+    /// out like the Cart pane's checkout bar beside it.
+    private var dock: some View {
+        Theme.bg(scheme)
+            .overlay(alignment: .top) {
+                LinearGradient(colors: [Theme.bg(scheme).opacity(0), Theme.bg(scheme)],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: 20)
+                    .offset(y: -20)
+                    .allowsHitTesting(false)
+            }
+            .ignoresSafeArea(edges: .bottom)
     }
 }
 

@@ -85,14 +85,12 @@ struct ForYouView: View {
     /// Up to three cards mounted at once: the draggable front card plus two
     /// peeking behind it. Slot 0 is the front; higher slots sit further back.
     private func deck(size: CGSize) -> some View {
-        let visible = Array(products.prefix(3).enumerated())
-        // Pin the card to the catalog art's own aspect (686x858 ≈ 0.8 w/h) so
-        // scaledToFill never crops the garment off the left/right edges. Fit
-        // the largest such rect into the available space: width-bound on tall
-        // screens, height-bound (narrower card) on short ones.
-        let artAspect: CGFloat = 0.8
-        let cardHeight = min(size.height, size.width / artAspect)
-        let cardWidth = min(size.width, cardHeight * artAspect)
+        let visible = Array(products.prefix(DeckLayout.depth).enumerated())
+        // Pinned to the catalog art's own aspect so scaledToFill never crops
+        // the garment off the edges, and sized below a strip the cards behind
+        // peek into, so on a short screen they never rise into the header.
+        let card = DeckLayout.cardSize(in: size)
+        let cardWidth = card.width, cardHeight = card.height
         return ZStack {
             ForEach(visible.reversed(), id: \.element.id) { slot, product in
                 cardView(product, slot: slot, size: CGSize(width: cardWidth, height: cardHeight))
@@ -114,6 +112,7 @@ struct ForYouView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, DeckLayout.rise)
         .onAppear { maybeHintSwipe() }
     }
 
@@ -163,6 +162,8 @@ struct ForYouView: View {
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.leading)
                 .lineLimit(2)
+                // A long name on a narrow card shrinks to fit rather than trail off.
+                .minimumScaleFactor(0.6)
             Text(product.styleTags.prefix(3).map { "#\($0)" }.joined(separator: "  "))
                 .font(.dcLabel)
                 .foregroundStyle(.white.opacity(0.82))
@@ -244,7 +245,7 @@ struct ForYouView: View {
     // Negative: cards behind recede *upward*, so the front card's bottom edge
     // (where the copy lives) stays flush and the controls below never collide
     // with a peeking card poking out underneath.
-    private func restingY(_ slot: Int) -> CGFloat { CGFloat(slot) * -18 }
+    private func restingY(_ slot: Int) -> CGFloat { CGFloat(slot) * -DeckLayout.step }
 
     /// 0 at rest, 1 once the front card has traveled a full swipe. Drives the
     /// cards behind it rising into place as it's dragged (and, later, flung) away.
