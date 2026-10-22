@@ -221,19 +221,26 @@ final class AccessibilityAuditUITests: XCTestCase {
     /// Runs the system accessibility audit and attaches what it finds without
     /// failing the test.
     private func audit(_ app: XCUIApplication, _ name: String) {
-        var lines: [String] = []
+        let log = AuditLog()
         do {
             try app.performAccessibilityAudit { issue in
-                lines.append("\(issue.auditType.rawValue) | \(issue.compactDescription) | \(issue.element?.debugDescription.prefix(160) ?? "no element")")
+                log.add("\(issue.auditType.rawValue) | \(issue.compactDescription) | \(issue.element?.debugDescription.prefix(160) ?? "no element")")
                 return true
             }
         } catch {
-            lines.append("audit error: \(error)")
+            log.add("audit error: \(error)")
         }
+        var lines = log.snapshot()
         if lines.isEmpty { lines.append("no issues") }
         let attachment = XCTAttachment(string: lines.joined(separator: "\n"))
         attachment.name = "audit_\(name)"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
+}
+
+private final class AuditLog: @unchecked Sendable {
+    private var lines: [String] = []
+    func add(_ line: String) { lines.append(line) }
+    func snapshot() -> [String] { lines }
 }
