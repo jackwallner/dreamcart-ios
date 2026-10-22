@@ -3,6 +3,7 @@ import SwiftUI
 struct ShopView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.paneCovers) private var paneCovers
     @State private var showCoinShop = false
     @State private var query = ""
     @State private var category: String? = nil
@@ -50,8 +51,11 @@ struct ShopView: View {
         }
         .background(Theme.bg(scheme))
         .navigationTitle("Shop")
-        .searchable(text: $query, prompt: "Search brands, colors, styles")
-        .modifier(MinimizedSearch())
+        // In an unfolded Duo pane iOS lays search along the bottom edge, under
+        // the floating tab bar, so there it sits under the title instead.
+        .searchable(text: $query,
+                    placement: paneCovers == nil ? .automatic : .navigationBarDrawer(displayMode: .always),
+                    prompt: "Search brands, colors, styles")
         .walletToolbar($showCoinShop)
     }
 
@@ -156,18 +160,5 @@ struct BrandView: View {
         .background(Theme.bg(scheme))
         .navigationTitle(brand.name)
         .navigationBarTitleDisplayMode(.large)
-    }
-}
-
-/// Keeps search a button beside the floating tab bar. In a wider pane (the
-/// unfolded iPhone Duo) iOS would otherwise lay a full search field along
-/// the bottom edge, underneath the bar.
-private struct MinimizedSearch: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.searchToolbarBehavior(.minimize)
-        } else {
-            content
-        }
     }
 }
