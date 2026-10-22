@@ -39,6 +39,9 @@ paths:
 - Still system sheets, so centred across the fold: the coin upsell, the
   DreamCart+ offer from You, the ledger, notification primer and sign-in
   prompt.
+- On the older iOS 27.1 simulator build (24A94232) the leading pane also took
+  the window's far-edge status-bar inset (a 100 pt gutter beside the fold,
+  inline titles). Build 24A94425 lays it out edge to edge; judge captures on it.
 - Captures: DEBUG `-DuoSeed -DuoTour` (`DuoScreenshotMode.swift`) seeds a
   local shopper (real public catalog, no session, no RevenueCat, analytics
   kept off the server) and walks `-DuoRoutes` on a timer. Recipe and timing
