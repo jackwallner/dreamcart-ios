@@ -22,6 +22,12 @@ paths:
 - Both panes get `horizontalSizeClass = .compact`, so each lays out as on a
   phone. Folding only moves frames: tabs stay mounted and keep their stacks.
   Do not wrap a pane in an `if`.
+- The tab ZStack is framed to fill before `onGeometryChange` measures it.
+  Without that it shrank to the leading pane the moment the split framed it
+  (the Cart pane mounts a tick later) and the split undid itself.
+- Shop's search goes in the navigation bar drawer inside a pane (in the
+  leading pane iOS laid it along the bottom edge, under the tab bar); folded
+  keeps the automatic placement.
 - `paneSheet` replaces `.sheet` for checkout (Cart and product detail), the
   coin shop (wallet pill), the spin wheel and the shipping form: unfolded,
   the content covers only its own pane via that pane's `PaneCoverHost`,
