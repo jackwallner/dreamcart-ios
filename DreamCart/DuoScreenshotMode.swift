@@ -45,6 +45,19 @@ enum DuoScreenshotMode {
         let products = shop.products
         let ids = Set(products.map(\.id))
 
+        // `-DuoFresh`: a shopper on their first minute, with the welcome grant,
+        // an empty cart and closet, and the daily drop and wheel both ready.
+        if arguments.contains("-DuoFresh") {
+            shop.me = MeSnapshot(
+                id: "fresh-shopper", displayName: "Shopper", coins: 3_000, streak: 0, bestStreak: 0,
+                isPlus: false, lifetimeSpent: 0, itemsOwned: 0,
+                canClaimDaily: true, canSpin: true,
+                lastDailyClaim: nil, lastSpinDate: nil
+            )
+            auth.state = .signedIn
+            return
+        }
+
         let cart = cartPicks.filter(ids.contains)
         shop.cartIds = cart.count == cartPicks.count ? cart : Array(products.prefix(3).map(\.id))
 
