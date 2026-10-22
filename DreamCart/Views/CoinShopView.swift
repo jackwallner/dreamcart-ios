@@ -104,7 +104,6 @@ struct CoinShopView: View {
                             Text(badge)
                                 .font(.dcBadge)
                                 .foregroundStyle(.white)
-                                .fixedSize()
                                 .padding(.horizontal, 6).padding(.vertical, 2)
                                 .background(Theme.pink, in: Capsule())
                         }
@@ -114,7 +113,6 @@ struct CoinShopView: View {
                         Text("\(Format.coins(pack.coins)) coins")
                             .font(.dcBody)
                             .foregroundStyle(Theme.ink(scheme))
-                            .fixedSize()
                     }
                     Text(pack.blurb)
                         .font(.dcSub)
