@@ -9,8 +9,8 @@ import XCTest
 /// on findings, so the run always produces a full report.
 final class AccessibilityAuditUITests: XCTestCase {
 
-    private static let ax3 = "UICTContentSizeCategoryAccessibilityExtraLarge"
-    private static let ax5 = "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge"
+    private static let ax3 = "UICTContentSizeCategoryAccessibilityXL"
+    private static let ax5 = "UICTContentSizeCategoryAccessibilityXXXL"
 
     override func setUp() {
         continueAfterFailure = true
@@ -180,6 +180,7 @@ final class AccessibilityAuditUITests: XCTestCase {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", size]
         }
         app.launch()
+        record("launched with content size: \(size ?? "default")")
         return app
     }
 
