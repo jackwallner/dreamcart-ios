@@ -3,6 +3,11 @@
 Status on 2026-10-20 (run shift-android-shop-1-1792547202, jmbp2). Engineering
 port done and verified on the emulator. Not on Play yet.
 
+Update 2026-10-23 (package run shift-android-package-shop-2-1792784441, Air):
+signed release APK and AAB for 1.0.0 (versionCode 1) are built and verified with
+the existing upload key. Paths, certificate and Play state are in
+`.claude/rules/android.md` under "Play state". Nothing uploaded yet.
+
 ## Decisions Jack needs to make
 
 1. **Android sign-in provider.** iOS uses Sign in with Apple only. Android code is
