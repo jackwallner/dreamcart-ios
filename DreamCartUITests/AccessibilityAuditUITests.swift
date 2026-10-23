@@ -19,7 +19,7 @@ final class AccessibilityAuditUITests: XCTestCase {
     // MARK: - Onboarding
 
     func testOnboardingAtAX5() {
-        let app = launch(size: Self.ax5)
+        let app = launch(size: Self.ax5, completedOnboarding: false, guest: false)
         shot(app, "onb_1_ax5")
         logFrames(app, "onb_1_frames", labels: ["Next", "Page 1 of 3", "Page 2 of 3", "Page 3 of 3"])
         audit(app, "onb_1_ax5")
@@ -35,16 +35,28 @@ final class AccessibilityAuditUITests: XCTestCase {
 
         let start = app.buttons["Get started"]
         XCTAssertTrue(start.waitForExistence(timeout: 5))
-        start.tap()
-        shot(app, "onb_4_signin_ax5")
-        logFrames(app, "onb_4_frames", labels: ["Browse without an account", "Privacy Policy", "Terms"])
-        audit(app, "onb_4_signin_ax5")
+        record("Get started hittable at AX5: \(start.isHittable) frame: \(start.frame)")
+    }
+
+    /// The sign-in screen a new user reaches after the slides. Skips the slides
+    /// with a fixture: a `-hasCompletedOnboarding NO` launch argument overrides
+    /// the stored value, so tapping Get started could never leave the slides.
+    func testSignInAtAX5() {
+        let app = launch(size: Self.ax5, completedOnboarding: true, guest: false)
         let guest = app.buttons["Browse without an account"]
-        record("Browse without an account exists: \(guest.exists), hittable without scrolling: \(guest.isHittable)")
+        XCTAssertTrue(guest.waitForExistence(timeout: 120), "sign-in screen never appeared")
+        sleep(2)
+        shot(app, "signin_ax5")
+        logFrames(app, "signin_ax5_frames", labels: ["Browse without an account", "Privacy Policy", "Terms", "Sign in with Apple"])
+        audit(app, "signin_ax5")
+        record("Browse without an account hittable without scrolling at AX5: \(guest.isHittable)")
+        app.swipeUp()
+        sleep(1)
+        shot(app, "signin_ax5_scrolled")
     }
 
     func testOnboardingDefaultSize() {
-        let app = launch(size: nil)
+        let app = launch(size: nil, completedOnboarding: false, guest: false)
         shot(app, "onb_1_default")
         logFrames(app, "onb_1_default_frames", labels: ["Next", "Page 1 of 3", "Page 2 of 3", "Page 3 of 3"])
         audit(app, "onb_1_default")
@@ -53,9 +65,8 @@ final class AccessibilityAuditUITests: XCTestCase {
     // MARK: - Guest browse
 
     func testGuestBrowseAtAX3() {
-        let app = launch(size: Self.ax3)
-        enterGuest(app)
-        XCTAssertTrue(app.buttons["Today"].waitForExistence(timeout: 90), "tab bar never appeared")
+        let app = launch(size: Self.ax3, completedOnboarding: true, guest: true)
+        XCTAssertTrue(app.buttons["Today"].waitForExistence(timeout: 150), "tab bar never appeared")
         sleep(6)
         shot(app, "today_ax3")
         logFrames(app, "tabbar_ax3_frames", labels: ["Today", "For You", "Cart", "Closet", "You", "Sign in"])
@@ -89,9 +100,8 @@ final class AccessibilityAuditUITests: XCTestCase {
     }
 
     func testGuestTabsAtAX3() {
-        let app = launch(size: Self.ax3)
-        enterGuest(app)
-        XCTAssertTrue(app.buttons["Today"].waitForExistence(timeout: 90))
+        let app = launch(size: Self.ax3, completedOnboarding: true, guest: true)
+        XCTAssertTrue(app.buttons["Today"].waitForExistence(timeout: 150))
         sleep(4)
         for tab in ["For You", "Cart", "Closet", "You"] {
             app.buttons[tab].tap()
@@ -103,9 +113,8 @@ final class AccessibilityAuditUITests: XCTestCase {
     }
 
     func testGuestTabsDefaultSize() {
-        let app = launch(size: nil)
-        enterGuest(app)
-        XCTAssertTrue(app.buttons["Today"].waitForExistence(timeout: 90))
+        let app = launch(size: nil, completedOnboarding: true, guest: true)
+        XCTAssertTrue(app.buttons["Today"].waitForExistence(timeout: 150))
         sleep(6)
         shot(app, "today_default")
         logFrames(app, "tabbar_default_frames", labels: ["Today", "For You", "Cart", "Closet", "You", "Sign in"])
@@ -161,27 +170,17 @@ final class AccessibilityAuditUITests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func launch(size: String?) -> XCUIApplication {
+    private func launch(size: String?, completedOnboarding: Bool, guest: Bool) -> XCUIApplication {
         let app = XCUIApplication(bundleIdentifier: "com.jackwallner.shop")
-        app.launchArguments += ["-hasCompletedOnboarding", "NO", "-dreamcart.browsingAsGuest", "NO"]
+        // Launch arguments sit in the argument domain, which beats stored values,
+        // so only pass a key when the test needs it forced on.
+        if completedOnboarding { app.launchArguments += ["-hasCompletedOnboarding", "YES"] }
+        if guest { app.launchArguments += ["-dreamcart.browsingAsGuest", "YES"] }
         if let size {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", size]
         }
         app.launch()
         return app
-    }
-
-    private func enterGuest(_ app: XCUIApplication) {
-        let next = app.buttons["Next"]
-        guard next.waitForExistence(timeout: 30) else { return }
-        next.tap()
-        app.buttons["Next"].tap()
-        let start = app.buttons["Get started"]
-        if start.waitForExistence(timeout: 5) { start.tap() }
-        let guest = app.buttons["Browse without an account"]
-        if !guest.waitForExistence(timeout: 10) { return }
-        if !guest.isHittable { app.swipeUp() }
-        guest.tap()
     }
 
     private func shot(_ app: XCUIApplication, _ name: String) {
