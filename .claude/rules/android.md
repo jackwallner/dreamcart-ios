@@ -26,9 +26,10 @@ Supabase project, RPCs and RLS; same RevenueCat project (`proj2a25c871`).
   with Google through Credential Manager (`data/GoogleSignIn.kt`, Supabase
   `grant_type=id_token`, provider `google`, hashed nonce). It needs
   `GOOGLE_WEB_CLIENT_ID` in `local.properties`, and the Supabase Google provider
-  enabled with that client id. Neither exists yet (Supabase `/auth/v1/settings`
-  showed `google: false` on 2026-10-20). Until then the button is hidden, guests
-  can browse, and release builds fail `validateReleaseConfiguration`. This is
+  enabled with that client id. Supabase showed `google: true` on 2026-10-21 and
+  the Air's `~/shop/android/local.properties` has the client id (2026-10-23).
+  Debug builds without it hide the button and let guests browse; release builds
+  fail `validateReleaseConfiguration` without it. This is
   Jack's decision; do not invent another provider.
 - Spin card: a DreamCart+ member keeps "Spin the wheel" after spinning (the
   server allows unlimited member spins). iOS hides it after one spin.
@@ -87,7 +88,32 @@ records how each asset was made. On agent-emu-1 at `wm size 1080x2160` the
 app drew black until force-stopped and relaunched. Don't use `--ez screenshot
 true` for store captures: it replaces product art with placeholder gradients.
 
-## Play state
+## Release packaging (signed builds stay on the Air)
 
-No Play app record yet (2026-10-20). Steps are in
-`project-docs/android/play-release-prep.md`.
+`fm-gradle` strips `local.properties` and keystores, so it cannot sign. The upload
+key `~/.android/keystores/shop-upload.p12` (alias `upload`, backup byte-identical in
+`backups/`) and the production `local.properties` live only on the Air, where the
+Gradle guard allows signed release builds:
+
+```sh
+cp ~/shop/android/local.properties android/   # in a worktree
+cd android && JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home \
+  ANDROID_HOME=~/Library/Android/sdk ./gradlew --no-daemon :app:assembleRelease :app:bundleRelease
+```
+
+Upload cert SHA-256 `b012f32c5d2ab62af0555adac1200407fd0e35f7976b42035e5ad32927d57fab`,
+SHA-1 `7a7d2528eb9a9ab21aec87b0fb27d93395dd712e` (the Android OAuth client for
+internal testing needs this SHA-1; production needs Play's app-signing SHA-1).
+
+## Play state (2026-10-23)
+
+Signed 1.0.0 (versionCode 1) built from android tree `668da02` (`origin/main`
+`8a6a16c`) by package run `shift-android-package-shop-2-1792784441`:
+`~/fleet-artifacts/shift-android-package-shop-2-1792784441/dreamcart-1.0.0-vc1.{apk,aab}`.
+apksigner, jarsigner, zipalign `-P 16`, ELF 16 KB (8 libs) and the release-hook
+scan pass; evidence in `~/fleet-evidence/shift-android-package-shop-2-1792784441/`.
+
+Not uploaded. No Play track for `com.jackwallner.shop` in the fleet track cache;
+Play app record, products and the internal track are still to do (Air release
+worker or Jack). `rc-webhook` with `:basePlan` stripping must be deployed before
+any Play purchase. Steps are in `project-docs/android/play-release-prep.md`.
