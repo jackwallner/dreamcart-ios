@@ -89,6 +89,7 @@ struct PlusOfferView: View {
                             .padding(.horizontal, 30)
                     }
                     perks
+                    PurchaseRecoveryStatus(plus: true)
                     if let error = store.lastError {
                         Text(error)
                             .font(.dcCaption)
@@ -102,9 +103,16 @@ struct PlusOfferView: View {
             }
 
             VStack(spacing: 12) {
-                CandyButton(title: ctaTitle, systemImage: "sparkles", enabled: !buying) {
+                CandyButton(title: ctaTitle, systemImage: "sparkles", enabled: !buying && !restoring && !shop.purchaseRecovery.isRecovering) {
                     buyTask?.cancel()
-                    buyTask = Task { await subscribe() }
+                    buyTask = Task {
+                        if shop.purchaseRecovery.pendingPlus {
+                            await shop.reconcilePurchases()
+                            confirmActivation()
+                        } else {
+                            await subscribe()
+                        }
+                    }
                 }
                 Text(disclosure)
                     .font(.dcCaption)
@@ -117,7 +125,7 @@ struct PlusOfferView: View {
                         onDone()
                     }
                     Button(restoring ? "Restoring…" : "Restore") { restore() }
-                        .disabled(restoring)
+                        .disabled(restoring || buying || shop.purchaseRecovery.isRecovering)
                     Link("Terms", destination: PlusLinks.terms)
                     Link("Privacy", destination: PlusLinks.privacy)
                 }
@@ -144,6 +152,9 @@ struct PlusOfferView: View {
             store.trackPaywallImpression(id: paywallId, oncePerSession: true)
         }
         .onDisappear { buyTask?.cancel() }
+        .onChange(of: shop.purchaseRecovery.confirmedPlus) { _, confirmed in
+            if confirmed { confirmActivation() }
+        }
         .overlay {
             if didSubscribe {
                 RewardOverlay(title: "\(PlusPlan.name) unlocked",
@@ -207,6 +218,9 @@ struct PlusOfferView: View {
 
     private var ctaTitle: String {
         guard revenueCatEnabled else { return "Continue" }
+        if shop.purchaseRecovery.pendingPlus {
+            return shop.purchaseRecovery.isRecovering ? "Activating membership" : "Retry activation"
+        }
         if buying { return "Starting…" }
         return store.plusTrialEligible
             ? "Start \(PlusPlan.trialDays)-day free trial"
@@ -242,25 +256,46 @@ struct PlusOfferView: View {
             buying = false
             buyTask = nil
         }
+        guard let accountId = shop.purchaseRecovery.accountId else { return }
         let ok = await store.purchasePlus()
-        guard !Task.isCancelled, ok else { return }
+        guard ok else { return }
+        shop.purchaseRecovery.beginPlus(accountId: accountId)
         // `is_plus` is set by the RevenueCat webhook, so the profile is the
         // source of truth, not anything the device decided.
-        await shop.refreshMe()
+        await shop.reconcilePurchases()
+        if shop.purchaseRecovery.accountId == accountId { confirmActivation() }
+    }
+
+    private func confirmActivation() {
+        guard !didSubscribe, shop.purchaseRecovery.confirmedPlus, !shop.purchaseRecovery.pendingPlus,
+              shop.purchaseRecovery.accountId == shop.me?.id, shop.me?.isPlus == true else { return }
         Analytics.track("plus_purchased", ["product_id": PlusPlan.productId, "source": source])
         withAnimation { didSubscribe = true }
     }
 
     private func restore() {
+        guard let accountId = shop.purchaseRecovery.accountId else { return }
         restoring = true
         Task {
             defer { restoring = false }
             let ok = await store.restorePlus()
-            await shop.refreshMe()
+            guard store.lastError == nil else { return }
             if ok {
-                withAnimation { didSubscribe = true }
-            } else {
-                store.lastError = "No previous \(PlusPlan.name) membership on this Apple Account."
+                shop.purchaseRecovery.beginPlus(accountId: accountId)
+                await shop.reconcilePurchases()
+                if shop.purchaseRecovery.accountId == accountId { confirmActivation() }
+                return
+            }
+            do {
+                let profile = try await shop.refreshProfile()
+                guard shop.purchaseRecovery.accountId == accountId else { return }
+                if profile.isPlus {
+                    withAnimation { didSubscribe = true }
+                } else {
+                    store.lastError = "No previous \(PlusPlan.name) membership on this Apple Account."
+                }
+            } catch {
+                store.lastError = error.localizedDescription
             }
         }
     }

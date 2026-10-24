@@ -62,6 +62,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.jackwallner.shop.data.PendingCoinDelivery
 import com.jackwallner.shop.data.PurchaseOutcome
 import com.jackwallner.shop.model.CoinPack
 import com.jackwallner.shop.model.Format
@@ -91,6 +92,7 @@ import com.jackwallner.shop.ui.theme.LocalDC
 import com.jackwallner.shop.ui.theme.Palette
 import com.jackwallner.shop.ui.theme.Radii
 import com.jackwallner.shop.ui.theme.Type
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.launch
 
 /** `GuestGateState`: the account ask on an account-only tab. */
@@ -328,6 +330,12 @@ fun CoinShopScreen() {
         store.trackPaywallImpression("dreamcart_coin_shop")
         store.loadProducts()
     }
+    var observedDelivery by remember { mutableStateOf(shop.purchaseRecovery.lastDeliveredCoins) }
+    LaunchedEffect(shop.purchaseRecovery.lastDeliveredCoins) {
+        val delivered = shop.purchaseRecovery.lastDeliveredCoins
+        if (delivered != observedDelivery) delivered?.let { reward = it.coins }
+        observedDelivery = delivered
+    }
     Column(Modifier.fillMaxSize().testTag("coinShop")) {
         SheetHeader("Get Coins", onTrailing = { nav.dismiss(Sheet.COIN_SHOP) })
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).navigationBarsPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -335,26 +343,37 @@ fun CoinShopScreen() {
                 Text("Your balance", style = Type.sub, color = c.subtle)
                 CoinLabel(shop.coins, size = 30)
             }
+            PurchaseRecoveryStatus(plus = false)
             store.lastError?.let { Text(it, style = Type.caption, color = Palette.red, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
             CoinPack.all.forEach { pack ->
                 Row(
                     Modifier.fillMaxWidth().dcCard()
                         .then(if (pack.badge != null) Modifier.border(2.dp, Palette.gold, RoundedCornerShape(Radii.card)) else Modifier)
-                        .clickable(enabled = buying == null, role = Role.Button) {
+                        .clickable(enabled = buying == null && shop.purchaseRecovery.pendingCoins == null, role = Role.Button) {
                             val activity = context.activity() ?: return@clickable
                             scope.launch {
                                 buying = pack.productId
                                 graph.analytics.track("coin_pack_purchase_started", mapOf("product_id" to pack.productId, "coins" to pack.coins))
-                                val before = shop.coins
-                                val outcome = store.purchase(activity, pack)
-                                if (outcome == PurchaseOutcome.PURCHASED) {
-                                    shop.reconcilePurchases()
-                                    val gained = shop.coins - before
-                                    if (gained > 0) reward = gained
-                                } else if (outcome == PurchaseOutcome.PENDING) {
-                                    store.lastError = "Your purchase is pending. Coins arrive as soon as Google Play confirms it."
+                                val accountId = shop.purchaseRecovery.accountId
+                                store.lastError = null
+                                try {
+                                    if (accountId != null) {
+                                        val boundary = shop.prepareCoinPurchase()
+                                        val outcome = store.purchase(activity, pack)
+                                        if (outcome == PurchaseOutcome.PURCHASED) {
+                                            shop.purchaseRecovery.beginCoins(PendingCoinDelivery(pack.productId, pack.coins, boundary), accountId)
+                                            shop.reconcilePurchases()
+                                        } else if (outcome == PurchaseOutcome.PENDING) {
+                                            store.lastError = "Your purchase is pending. Coins arrive as soon as Google Play confirms it."
+                                        }
+                                    }
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    store.lastError = e.message
+                                } finally {
+                                    buying = null
                                 }
-                                buying = null
                             }
                         }
                         .testTag("pack-${pack.title}")
@@ -416,6 +435,9 @@ fun PlusOfferScreen(onboarding: Boolean, onDone: () -> Unit) {
         store.trackPaywallImpression(if (onboarding) "dreamcart_onboarding_plus" else "dreamcart_profile_plus", oncePerSession = true)
         store.loadProducts()
     }
+    LaunchedEffect(shop.purchaseRecovery.confirmedPlus) {
+        if (shop.purchaseRecovery.confirmedPlus && shop.me?.id == shop.purchaseRecovery.accountId) subscribed = true
+    }
     androidx.activity.compose.BackHandler(onBack = onDone)
     val eligible = store.plusTrialEligible
     Column(Modifier.fillMaxSize().background(c.bg).testTag("plusOffer")) {
@@ -437,23 +459,38 @@ fun PlusOfferScreen(onboarding: Boolean, onDone: () -> Unit) {
                 Perk(Icons.Filled.Autorenew, "Spin the wheel as often as you like")
                 Perk(Icons.Filled.ShoppingBag, "Fill your closet twice as fast")
             }
+            PurchaseRecoveryStatus(plus = true)
             store.lastError?.let { Text(it, style = Type.caption, color = Palette.red, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp)) }
             Spacer(Modifier.height(20.dp))
         }
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 24.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            CandyButton(if (buying) "Starting…" else PlusPlan.cta(eligible), Icons.Filled.AutoAwesome, enabled = !buying, tag = "plusSubscribe") {
+            CandyButton(if (shop.purchaseRecovery.pendingPlus) "Retry activation" else if (buying) "Starting…" else PlusPlan.cta(eligible), Icons.Filled.AutoAwesome, enabled = !buying && !restoring && !shop.purchaseRecovery.isRecovering, tag = "plusSubscribe") {
                 val activity = context.activity() ?: return@CandyButton
                 scope.launch {
                     buying = true
-                    graph.analytics.track("plus_purchase_started", mapOf("product_id" to PlusPlan.PRODUCT_ID, "source" to source))
-                    val outcome = store.purchasePlus(activity)
-                    buying = false
-                    if (outcome == PurchaseOutcome.PURCHASED) {
-                        shop.refreshMe()
-                        graph.analytics.track("plus_purchased", mapOf("product_id" to PlusPlan.PRODUCT_ID, "source" to source))
-                        subscribed = true
-                    } else if (outcome == PurchaseOutcome.PENDING) {
-                        store.lastError = "Your purchase is pending. ${PlusPlan.NAME} starts as soon as Google Play confirms it."
+                    try {
+                        if (shop.purchaseRecovery.pendingPlus) {
+                            shop.reconcilePurchases()
+                        } else {
+                            val accountId = shop.purchaseRecovery.accountId ?: return@launch
+                            graph.analytics.track("plus_purchase_started", mapOf("product_id" to PlusPlan.PRODUCT_ID, "source" to source))
+                            val outcome = store.purchasePlus(activity)
+                            if (outcome == PurchaseOutcome.PURCHASED) {
+                                shop.purchaseRecovery.beginPlus(accountId)
+                                shop.reconcilePurchases()
+                            } else {
+                                if (outcome == PurchaseOutcome.PENDING) {
+                                    store.lastError = "Your purchase is pending. ${PlusPlan.NAME} starts as soon as Google Play confirms it."
+                                }
+                                return@launch
+                            }
+                        }
+                        if (shop.purchaseRecovery.confirmedPlus && !shop.purchaseRecovery.pendingPlus && shop.me?.isPlus == true) {
+                            graph.analytics.track("plus_purchased", mapOf("product_id" to PlusPlan.PRODUCT_ID, "source" to source))
+                            subscribed = true
+                        }
+                    } finally {
+                        buying = false
                     }
                 }
             }
@@ -465,11 +502,29 @@ fun PlusOfferScreen(onboarding: Boolean, onDone: () -> Unit) {
                 }
                 TextLink(if (restoring) "Restoring…" else "Restore", color = c.subtle, tag = "plusRestore") {
                     scope.launch {
+                        if (restoring || buying || shop.purchaseRecovery.isRecovering) return@launch
+                        val accountId = shop.purchaseRecovery.accountId ?: return@launch
                         restoring = true
-                        val ok = store.restorePlus()
-                        shop.refreshMe()
-                        restoring = false
-                        if (ok) subscribed = true else if (store.lastError == null) store.lastError = "No previous ${PlusPlan.NAME} membership on this Google account."
+                        try {
+                            val ok = store.restorePlus()
+                            if (store.lastError != null) return@launch
+                            if (ok) {
+                                shop.purchaseRecovery.beginPlus(accountId)
+                                shop.reconcilePurchases()
+                                subscribed = shop.purchaseRecovery.accountId == accountId && !shop.purchaseRecovery.pendingPlus && shop.me?.isPlus == true
+                            } else {
+                                val profile = shop.refreshProfile()
+                                if (shop.purchaseRecovery.accountId != accountId) return@launch
+                                subscribed = profile.isPlus
+                                if (!subscribed) store.lastError = "No previous ${PlusPlan.NAME} membership on this Google account."
+                            }
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            store.lastError = e.message ?: "Couldn't refresh your membership. Try again."
+                        } finally {
+                            restoring = false
+                        }
                     }
                 }
                 TextLink("Terms", color = c.subtle) { context.openUrl(Config.TERMS_URL) }
@@ -486,5 +541,27 @@ private fun Perk(icon: androidx.compose.ui.graphics.vector.ImageVector, text: St
         Icon(icon, contentDescription = null, tint = Palette.gold, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(12.dp))
         Text(text, style = Type.body, color = LocalDC.current.ink)
+    }
+}
+
+@Composable
+fun PurchaseRecoveryStatus(plus: Boolean? = null) {
+    val graph = LocalGraph.current
+    val recovery = graph.shop.purchaseRecovery
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val visible = when (plus) {
+        true -> recovery.pendingPlus
+        false -> recovery.pendingCoins != null
+        null -> recovery.hasPending
+    }
+    if (!visible) return
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (plus != false && recovery.pendingPlus) Text("Activating membership", style = Type.caption)
+        if (plus != true && recovery.pendingCoins != null) Text("Purchase received, adding coins", style = Type.caption)
+        recovery.lastError?.let { Text(it, style = Type.caption, color = Palette.red, textAlign = TextAlign.Center) }
+        if (recovery.isRecovering) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+        else TextLink(if (plus == true) "Retry activation" else "Retry delivery") { scope.launch { graph.shop.reconcilePurchases() } }
+        TextLink("Support") { context.openUrl("https://jackwallner.github.io/dreamcart/support.html") }
     }
 }

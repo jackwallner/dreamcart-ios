@@ -133,6 +133,7 @@ fun ProfileScreen() {
                 }
                 Rows { Row("Sign in", Icons.Filled.PersonAdd, Palette.violet, tag = "profileSignIn") { shop.requireAccount("profile") } }
             } else {
+                PurchaseRecoveryStatus()
                 val me = shop.me
                 val name = me?.displayName?.trim().orEmpty().ifEmpty { "Shopper" }
                 Column(Modifier.fillMaxWidth().dcCard().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {

@@ -55,20 +55,22 @@ struct RootView: View {
             switch new {
             case .signedIn:
                 Task {
-                    store.configure(userId: await SupabaseClient.shared.currentUserId)
+                    shop.purchaseRecovery.selectAccount(await SupabaseClient.shared.currentUserId)
+                    store.configure(userId: shop.purchaseRecovery.accountId)
                     await shop.refreshAll()
                     await shop.reconcilePurchases()
                     router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
                     _ = router.consumePendingRoute()
                 }
             case .guest:
+                shop.purchaseRecovery.selectAccount(nil)
                 Task {
                     await shop.refreshCatalogForGuest()
                     router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
                     _ = router.consumePendingRoute()
                 }
             case .unknown, .signedOut:
-                break
+                shop.purchaseRecovery.selectAccount(nil)
             }
         }
     }

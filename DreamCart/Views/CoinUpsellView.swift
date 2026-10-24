@@ -52,6 +52,7 @@ struct CoinUpsellView: View {
             VStack(spacing: 20) {
                 header
                 packCard
+                PurchaseRecoveryStatus(plus: false)
                 if let error = store.lastError {
                     Text(error)
                         .font(.dcCaption)
@@ -59,7 +60,7 @@ struct CoinUpsellView: View {
                         .multilineTextAlignment(.center)
                 }
                 Spacer(minLength: 0)
-                CandyButton(title: buyTitle, systemImage: "bolt.fill", enabled: !buying) {
+                CandyButton(title: buyTitle, systemImage: "bolt.fill", enabled: !buying && shop.purchaseRecovery.pendingCoins == nil) {
                     buyTask?.cancel()
                     buyTask = Task { await buy() }
                 }
@@ -75,6 +76,13 @@ struct CoinUpsellView: View {
             store.lastError = nil
             Analytics.track("upsell_shown", ["trigger": trigger.rawValue, "product_id": pack.productId])
             store.trackPaywallImpression(id: "dreamcart_upsell_\(trigger.rawValue)")
+        }
+        .onChange(of: shop.purchaseRecovery.lastDeliveredCoins) { _, confirmed in
+            guard let delivery = confirmed else { return }
+            purchaseCompleted = true
+            Analytics.track("upsell_purchase_completed",
+                            ["trigger": trigger.rawValue, "product_id": delivery.productId, "coins_granted": delivery.coins])
+            withAnimation { reward = delivery.coins }
         }
         .onDisappear {
             staleCheck?.cancel()
@@ -185,18 +193,17 @@ struct CoinUpsellView: View {
             buying = false
             buyTask = nil
         }
-        let before = shop.coins
-        let ok = await store.purchase(pack)
-        guard !Task.isCancelled else { return }
-        if ok {
+        guard let accountId = shop.purchaseRecovery.accountId else { return }
+        do {
+            let afterLedgerId = try await shop.prepareCoinPurchase()
+            let ok = await store.purchase(pack)
+            guard ok else { return }
+            shop.purchaseRecovery.beginCoins(
+                PendingCoinDelivery(productId: pack.productId, coins: pack.coins, afterLedgerId: afterLedgerId),
+                accountId: accountId)
             await shop.reconcilePurchases()
-            let gained = shop.coins - before
-            if gained > 0 {
-                purchaseCompleted = true
-                Analytics.track("upsell_purchase_completed",
-                                 ["trigger": trigger.rawValue, "product_id": pack.productId, "coins_granted": gained])
-                withAnimation { reward = gained }
-            }
+        } catch {
+            store.lastError = error.localizedDescription
         }
     }
 
@@ -204,7 +211,7 @@ struct CoinUpsellView: View {
     /// StoreKit sheet can leave the purchase awaiting forever), same fix.
     private func recoverIfStale() async {
         try? await Task.sleep(for: .seconds(graceSeconds))
-        guard !Task.isCancelled, buying else { return }
+        guard !Task.isCancelled, buying, shop.purchaseRecovery.pendingCoins == nil, store.isPurchasing else { return }
 
         buyTask?.cancel()
         buyTask = nil

@@ -25,6 +25,7 @@ final class ShopStore {
     var isLoadingMoreProducts = false
     var loadError: String?
     var catalogLoadError: String?
+    let purchaseRecovery = PurchaseRecovery()
 
     /// True once the first refreshAll() has finished, successfully or not. RootView
     /// holds the splash until then: signing in flips auth to .signedIn immediately,
@@ -160,7 +161,15 @@ final class ShopStore {
     }
 
     func refreshMe() async {
-        if let m: MeSnapshot = try? await sb.rpc("me") { me = m }
+        do { _ = try await refreshProfile() }
+        catch { loadError = error.localizedDescription }
+    }
+
+    @discardableResult
+    func refreshProfile() async throws -> MeSnapshot {
+        let snapshot: MeSnapshot = try await sb.rpc("me")
+        me = snapshot
+        return snapshot
     }
 
     func loadCloset() async {
@@ -426,10 +435,27 @@ final class ShopStore {
 
     /// Ask the server to grant coins for any store purchase not yet credited.
     func reconcilePurchases() async {
-        struct RedeemResult: Decodable { let ok: Bool; let coins: Int?; let granted: Int? }
-        if let r: RedeemResult = try? await sb.callFunction("redeem"), r.ok {
-            await refreshMe()
-        }
+        await purchaseRecovery.reconcile(redeem: {
+            struct RedeemResult: Decodable { let ok: Bool }
+            let result: RedeemResult = try await self.sb.callFunction("redeem")
+            guard result.ok else {
+                throw PurchaseRecoveryError.reconciliationFailed
+            }
+        }, refreshPlus: {
+            try await self.refreshProfile().isPlus
+        }, delivered: { delivery in
+            let rows: [LedgerEntry] = try await self.sb.select(
+                "coin_ledger?select=*&reason=eq.pack&ref=eq.\(delivery.productId)&id=gt.\(delivery.afterLedgerId)&limit=1")
+            return rows.contains { $0.delta >= delivery.coins }
+        })
+    }
+
+    /// Capture the server's grant boundary before opening the store sheet.
+    /// Balance changes from rewards or spending cannot confirm pack delivery.
+    func prepareCoinPurchase() async throws -> Int {
+        let rows: [LedgerEntry] = try await sb.select(
+            "coin_ledger?select=*&reason=eq.pack&order=id.desc&limit=1")
+        return rows.first?.id ?? 0
     }
 
     // MARK: derived catalog

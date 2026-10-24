@@ -30,6 +30,7 @@ struct ProfileView: View {
                         guestActions
                     } else {
                         header
+                        PurchaseRecoveryStatus()
                         statsGrid
                         appearanceCard
                         notificationCard
