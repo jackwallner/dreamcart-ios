@@ -56,6 +56,7 @@ struct OnboardingCoinOfferView: View {
                             .padding(.horizontal, 30)
                     }
                     packCard
+                    PurchaseRecoveryStatus(plus: false)
                     if let error = store.lastError {
                         Text(error)
                             .font(.dcCaption)
@@ -67,7 +68,7 @@ struct OnboardingCoinOfferView: View {
             }
 
             VStack(spacing: 12) {
-                CandyButton(title: buyTitle, systemImage: "bolt.fill", enabled: !buying) {
+                CandyButton(title: buyTitle, systemImage: "bolt.fill", enabled: !buying && shop.purchaseRecovery.pendingCoins == nil) {
                     buyTask?.cancel()
                     buyTask = Task { await buy() }
                 }
@@ -87,6 +88,11 @@ struct OnboardingCoinOfferView: View {
         .onAppear {
             Analytics.track("onboarding_pack_shown", ["product_id": pack.productId])
             store.trackPaywallImpression(id: "dreamcart_onboarding_offer", oncePerSession: true)
+        }
+        .onChange(of: shop.purchaseRecovery.lastDeliveredCoins) { _, confirmed in
+            guard let delivery = confirmed else { return }
+            Analytics.track("onboarding_pack_purchased", ["product_id": delivery.productId, "coins_granted": delivery.coins])
+            withAnimation { reward = delivery.coins }
         }
         .onDisappear { buyTask?.cancel() }
         .overlay {
@@ -146,17 +152,17 @@ struct OnboardingCoinOfferView: View {
             buying = false
             buyTask = nil
         }
-        let before = shop.coins
-        let ok = await store.purchase(pack)
-        guard !Task.isCancelled else { return }
-        if ok {
+        guard let accountId = shop.purchaseRecovery.accountId else { return }
+        do {
+            let afterLedgerId = try await shop.prepareCoinPurchase()
+            let ok = await store.purchase(pack)
+            guard ok else { return }
+            shop.purchaseRecovery.beginCoins(
+                PendingCoinDelivery(productId: pack.productId, coins: pack.coins, afterLedgerId: afterLedgerId),
+                accountId: accountId)
             await shop.reconcilePurchases()
-            let gained = shop.coins - before
-            if gained > 0 {
-                Analytics.track("onboarding_pack_purchased",
-                                 ["product_id": pack.productId, "coins_granted": gained])
-                withAnimation { reward = gained }
-            }
+        } catch {
+            store.lastError = error.localizedDescription
         }
     }
 }

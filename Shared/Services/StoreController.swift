@@ -203,8 +203,12 @@ final class StoreController {
     /// 3.1.1): a member reinstalling must be able to get their membership back
     /// without paying again.
     func restorePlus() async -> Bool {
+        lastError = nil
         #if HAS_REVENUECAT
-        guard Purchases.isConfigured else { return false }
+        guard Purchases.isConfigured else {
+            lastError = "Purchases aren't available in this build."
+            return false
+        }
         do {
             let info = try await Purchases.shared.restorePurchases()
             return info.activeSubscriptions.contains(PlusPlan.productId)
@@ -213,6 +217,7 @@ final class StoreController {
             return false
         }
         #else
+        lastError = "Purchases aren't available in this build."
         return false
         #endif
     }

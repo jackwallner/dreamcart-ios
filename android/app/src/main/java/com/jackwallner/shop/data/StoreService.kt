@@ -144,6 +144,7 @@ class StoreService(private val context: Context, private val diagnostics: Conver
 
     /** Subscriptions need a restore path; coin packs are consumables held by the account. */
     suspend fun restorePlus(): Boolean {
+        lastError = null
         if (!configureIfNeeded()) {
             lastError = "Purchases aren't available in this build."
             return false
@@ -154,7 +155,7 @@ class StoreService(private val context: Context, private val diagnostics: Conver
         } catch (e: CancellationException) {
             throw e
         } catch (e: Throwable) {
-            lastError = e.message
+            lastError = e.message ?: "Couldn't restore your membership. Try again."
             false
         }
     }

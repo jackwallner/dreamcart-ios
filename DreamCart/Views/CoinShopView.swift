@@ -21,6 +21,7 @@ struct CoinShopView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     balanceHeader
+                    PurchaseRecoveryStatus(plus: false)
                     if let error = store.lastError {
                         Text(error)
                             .font(.dcSub)
@@ -50,6 +51,11 @@ struct CoinShopView: View {
                     withAnimation { reward = nil }
                 }
             }
+        }
+        .onChange(of: shop.purchaseRecovery.lastDeliveredCoins) { _, confirmed in
+            guard let delivery = confirmed else { return }
+            Analytics.track("coin_pack_purchase_completed", ["product_id": delivery.productId, "coins_granted": delivery.coins])
+            withAnimation { reward = delivery.coins }
         }
         .onDisappear {
             staleCheck?.cancel()
@@ -134,7 +140,7 @@ struct CoinShopView: View {
             .cardStyle(scheme)
         }
         .buttonStyle(PressableStyle())
-        .disabled(buying != nil)
+        .disabled(buying != nil || shop.purchaseRecovery.pendingCoins != nil)
     }
 
     private var footer: some View {
@@ -165,15 +171,17 @@ struct CoinShopView: View {
             buying = nil
             buyTask = nil
         }
-        let before = shop.coins
-        let ok = await store.purchase(pack)
-        if ok {
+        guard let accountId = shop.purchaseRecovery.accountId else { return }
+        do {
+            let afterLedgerId = try await shop.prepareCoinPurchase()
+            let ok = await store.purchase(pack)
+            guard ok else { return }
+            shop.purchaseRecovery.beginCoins(
+                PendingCoinDelivery(productId: pack.productId, coins: pack.coins, afterLedgerId: afterLedgerId),
+                accountId: accountId)
             await shop.reconcilePurchases()
-            let gained = shop.coins - before
-            if gained > 0 {
-                withAnimation { reward = gained }
-                Analytics.track("coin_pack_purchase_completed", ["product_id": pack.productId, "coins_granted": gained])
-            }
+        } catch {
+            store.lastError = error.localizedDescription
         }
     }
 
@@ -189,7 +197,7 @@ struct CoinShopView: View {
         try? await Task.sleep(for: .seconds(graceSeconds))
         // Cancelled means the phase left .active again; nil `buying` means the
         // purchase finished on its own. Either way there's nothing stale.
-        guard !Task.isCancelled, buying != nil else { return }
+        guard !Task.isCancelled, buying != nil, shop.purchaseRecovery.pendingCoins == nil, store.isPurchasing else { return }
 
         buyTask?.cancel()   // unwinds the await if the SDK honors cancellation
         buyTask = nil

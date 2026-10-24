@@ -86,7 +86,8 @@ struct DreamCartApp: App {
                     await notifications.refreshStatus()
                     await auth.bootstrap()
                     if auth.state == .signedIn {
-                        store.configure(userId: await SupabaseClient.shared.currentUserId)
+                        shop.purchaseRecovery.selectAccount(await SupabaseClient.shared.currentUserId)
+                        store.configure(userId: shop.purchaseRecovery.accountId)
                         await shop.refreshAll()
                         await shop.reconcilePurchases()
                     } else if auth.state == .guest {
@@ -97,6 +98,9 @@ struct DreamCartApp: App {
                     _ = router.consumePendingRoute()
                 }
                 .onChange(of: scenePhase) { _, new in
+                    if new == .active, auth.state == .signedIn {
+                        Task { await shop.reconcilePurchases() }
+                    }
                     guard new == .background else { return }
                     Analytics.track("session_end")
                     Task { await Analytics.flushNow() }

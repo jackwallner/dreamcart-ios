@@ -36,6 +36,11 @@ class ShopStore(
     private val analytics: Analytics,
     private val scope: CoroutineScope,
 ) {
+    val purchaseRecovery = PurchaseRecovery(
+        read = { prefs.getString(it, null) },
+        write = { key, value -> prefs.edit().putString(key, value).apply() },
+    )
+
     // Auth
     var authState by mutableStateOf(AuthState.UNKNOWN)
         private set
@@ -160,6 +165,7 @@ class ShopStore(
     }
 
     private fun clearAccountState() {
+        purchaseRecovery.selectAccount(null)
         me = null
         closet = emptyList()
         closetAcquiredAt = emptyMap()
@@ -174,6 +180,7 @@ class ShopStore(
     private fun onAuthChanged() {
         when (authState) {
             AuthState.SIGNED_IN -> scope.launch {
+                purchaseRecovery.selectAccount(sb.currentUserId)
                 onSignedIn(sb.currentUserId)
                 refreshAll()
                 reconcilePurchases()
@@ -272,7 +279,15 @@ class ShopStore(
     suspend fun refresh() = if (authState == AuthState.SIGNED_IN) refreshAll() else refreshCatalogForGuest()
 
     suspend fun refreshMe() {
-        runCatching { me = MeSnapshot.from(JSONObject(sb.rpc("me"))) }
+        try { refreshProfile() }
+        catch (e: CancellationException) { throw e }
+        catch (e: Exception) { loadError = e.message }
+    }
+
+    suspend fun refreshProfile(): MeSnapshot {
+        val snapshot = MeSnapshot.from(JSONObject(sb.rpc("me")))
+        me = snapshot
+        return snapshot
     }
 
     suspend fun loadCloset() {
@@ -409,8 +424,23 @@ class ShopStore(
 
     /** Ask the server to credit any store purchase not yet granted (idempotent by transaction id). */
     suspend fun reconcilePurchases() {
-        val ok = runCatching { JSONObject(sb.callFunction("redeem")).optBoolean("ok") }.getOrDefault(false)
-        if (ok) refreshMe()
+        purchaseRecovery.selectAccount(sb.currentUserId)
+        purchaseRecovery.reconcile(
+            redeem = {
+                val result = JSONObject(sb.callFunction("redeem"))
+                check(result.optBoolean("ok")) { "Couldn't confirm your purchase. Try again." }
+            },
+            refreshPlus = { refreshProfile().isPlus },
+            delivered = { delivery ->
+                JSONArray(sb.select("coin_ledger?select=*&reason=eq.pack&ref=eq.${delivery.productId}&id=gt.${delivery.afterLedgerId}&limit=1"))
+                    .objects().any { it.getInt("delta") >= delivery.coins }
+            },
+        )
+    }
+
+    suspend fun prepareCoinPurchase(): Long {
+        val rows = JSONArray(sb.select("coin_ledger?select=*&reason=eq.pack&order=id.desc&limit=1")).objects()
+        return rows.firstOrNull()?.getLong("id") ?: 0
     }
 
     // MARK: shipping address (device only)
