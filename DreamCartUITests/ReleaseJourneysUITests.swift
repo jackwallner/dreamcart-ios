@@ -28,18 +28,18 @@ final class ReleaseJourneysUITests: XCTestCase {
             tapTab(tab, in: app)
             QA.checkpoint(app, tab.lowercased().replacingOccurrences(of: " ", with: "-"))
         }
-        // The DreamCart+ row sits below the fold of the You tab.
-        let plus = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "DreamCart+")).firstMatch
+        // The Duo seed is already a DreamCart+ member (its row opens the App
+        // Store), so the purchase screen here is the coin shop, one row below.
+        let coins = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Get more coins")).firstMatch
         var swipes = 0
-        while !(plus.exists && plus.isHittable) && swipes < 8 {
+        while !(coins.exists && coins.isHittable) && swipes < 8 {
             app.swipeUp()
             swipes += 1
         }
-        plus.tap()
-        let priced = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "per week")).firstMatch
-        XCTAssertTrue(priced.waitForExistence(timeout: 25))
-        QA.checkpoint(app, "plus-offer", paywall: true)
-        tap("Maybe later", in: app)
+        coins.tap()
+        XCTAssertTrue(app.staticTexts["Your balance"].waitForExistence(timeout: 25))
+        QA.checkpoint(app, "coin-shop", paywall: true)
+        tap("Done", in: app)
         tapTab("Today", in: app)
         today("today-after-offer", in: app)
         QA.interrupt(app)
