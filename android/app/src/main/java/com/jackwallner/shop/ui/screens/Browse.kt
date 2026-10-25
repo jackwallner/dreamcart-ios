@@ -279,7 +279,7 @@ private fun SpinCard() {
     val graph = LocalGraph.current
     val nav = LocalNav.current
     val c = LocalDC.current
-    if (graph.shop.me?.canSpin == true || graph.shop.me?.isPlus == true) {
+    if (graph.shop.me != null && (graph.shop.me?.canSpin == true || graph.shop.isPlus)) {
         Row(
             Modifier.fillMaxWidth().dcCard().clickable(role = Role.Button) { nav.present(Sheet.SPIN) }.testTag("spinCard").padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,

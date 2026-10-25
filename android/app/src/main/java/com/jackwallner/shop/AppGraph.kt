@@ -10,6 +10,7 @@ import com.jackwallner.shop.data.ConversionDiagnostics
 import com.jackwallner.shop.data.DropReminders
 import com.jackwallner.shop.data.ImageLoader
 import com.jackwallner.shop.data.PrefsStore
+import com.jackwallner.shop.data.ReviewAccess
 import com.jackwallner.shop.data.ShopStore
 import com.jackwallner.shop.data.StoreService
 import com.jackwallner.shop.data.SupabaseClient
@@ -27,7 +28,8 @@ class AppGraph(context: Context) {
     val analytics = Analytics(supabase, scope, "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", enabled = !BuildConfig.DEBUG)
     val diagnostics = ConversionDiagnostics(PrefsStore(prefs))
     val store = StoreService(context.applicationContext, diagnostics)
-    val shop = ShopStore(supabase, prefs, analytics, scope).apply { onSignedIn = { store.configure(it) } }
+    val reviewAccess = ReviewAccess(PrefsStore(prefs), BuildConfig.PLAY_REVIEW_CODE_SHA256)
+    val shop = ShopStore(supabase, prefs, analytics, scope, reviewAccess).apply { onSignedIn = { store.configure(it) } }
     val images = ImageLoader(context)
     val reminders = DropReminders(context.applicationContext, prefs)
 

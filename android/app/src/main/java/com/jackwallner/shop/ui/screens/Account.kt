@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Mail
@@ -48,6 +51,8 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -78,9 +83,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.jackwallner.shop.Appearance
+import com.jackwallner.shop.BuildConfig
 import com.jackwallner.shop.data.Config
 import com.jackwallner.shop.data.DropReminders
 import com.jackwallner.shop.model.Format
@@ -116,6 +124,7 @@ fun ProfileScreen() {
     var confirmDelete by remember { mutableStateOf(false) }
     var deleting by remember { mutableStateOf(false) }
     var deleteError by remember { mutableStateOf<String?>(null) }
+    var reviewerCodeOpen by remember { mutableStateOf(false) }
     val permission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) graph.reminders.enable()
     }
@@ -155,7 +164,7 @@ fun ProfileScreen() {
                 }
                 Rows {
                     if (!graph.screenshotMode) {
-                        if (me?.isPlus == true) Row(PlusPlan.NAME, Icons.Filled.WorkspacePremium, Palette.gold, "Active · manage or cancel in Google Play", tag = "profilePlusActive") { context.openUrl(PlusPlan.MANAGE_URL) }
+                        if (shop.isPlus) Row(PlusPlan.NAME, Icons.Filled.WorkspacePremium, Palette.gold, "Active · manage or cancel in Google Play", tag = "profilePlusActive") { context.openUrl(PlusPlan.MANAGE_URL) }
                         else Row(PlusPlan.NAME, Icons.Filled.WorkspacePremium, Palette.gold, "Double daily coins, unlimited spins", tag = "profilePlus") { nav.present(Sheet.PLUS) }
                         Row("Get more coins", Icons.Filled.AddCircle, Palette.violet, tag = "profileCoins") { nav.present(Sheet.COIN_SHOP) }
                     }
@@ -192,6 +201,7 @@ fun ProfileScreen() {
                 }
                 Row("Privacy Policy", Icons.Filled.PrivacyTip, c.subtle, external = true) { context.openUrl(Config.PRIVACY_URL) }
                 Row("Terms of Use", Icons.Filled.Description, c.subtle, external = true) { context.openUrl(Config.TERMS_URL) }
+                VersionRow { reviewerCodeOpen = true }
             }
             if (!shop.isGuest) {
                 Rows { Row("Sign out", Icons.AutoMirrored.Filled.ExitToApp, c.subtle, tag = "signOut") { shop.signOut() } }
@@ -203,6 +213,7 @@ fun ProfileScreen() {
             )
         }
     }
+    if (reviewerCodeOpen) ReviewerCodeDialog(onUnlock = graph.reviewAccess::activate, onClose = { reviewerCodeOpen = false })
     if (confirmDelete) AlertDialog(
         onDismissRequest = { confirmDelete = false },
         title = { Text("Delete your account?") },
@@ -260,6 +271,51 @@ private fun Row(title: String, icon: ImageVector, tint: Color, subtitle: String?
         }
         Icon(if (external) Icons.AutoMirrored.Filled.OpenInNew else Icons.Filled.ChevronRight, contentDescription = null, tint = c.subtle.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
     }
+}
+
+/** A long press opens the Play reviewer unlock; the row has no other action. */
+@Composable
+private fun VersionRow(onLongPress: () -> Unit) {
+    val c = LocalDC.current
+    androidx.compose.foundation.layout.Row(
+        Modifier.fillMaxWidth().combinedClickable(onClick = {}, onLongClick = onLongPress).testTag("version-row")
+            .heightIn(min = 52.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.Info, contentDescription = null, tint = c.subtle)
+        Spacer(Modifier.width(14.dp))
+        Text("Version", style = Type.body, color = c.ink, modifier = Modifier.weight(1f))
+        Text(BuildConfig.VERSION_NAME, style = Type.body, color = c.subtle)
+    }
+}
+
+@Composable
+private fun ReviewerCodeDialog(onUnlock: (String) -> Boolean, onClose: () -> Unit) {
+    var code by remember { mutableStateOf("") }
+    var failed by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text("Reviewer access") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Enter the code from the Play review instructions.")
+                OutlinedTextField(
+                    value = code,
+                    onValueChange = { code = it; failed = false },
+                    label = { Text("Reviewer code") },
+                    singleLine = true,
+                    isError = failed,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Palette.violet, focusedLabelColor = Palette.violet),
+                    modifier = Modifier.testTag("reviewer-code"),
+                )
+                if (failed) Text("That code isn't valid.", style = Type.caption, color = Palette.red)
+            }
+        },
+        confirmButton = { TextLink("Unlock", tag = "reviewer-unlock") { if (onUnlock(code)) onClose() else failed = true } },
+        dismissButton = { TextLink("Cancel") { onClose() } },
+    )
 }
 
 @Composable
@@ -335,7 +391,7 @@ fun SpinScreen() {
     var spinning by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<Pair<Int, Wheel.Tier>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    val canSpin = shop.me?.canSpin == true || shop.me?.isPlus == true
+    val canSpin = shop.me != null && (shop.me?.canSpin == true || shop.isPlus)
     Column(Modifier.fillMaxSize().testTag("spin")) {
         SheetHeader("", trailing = "Close", onTrailing = { if (!spinning) nav.dismiss(Sheet.SPIN) })
         Column(Modifier.weight(1f).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {

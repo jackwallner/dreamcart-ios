@@ -11,6 +11,7 @@ val localProperties = Properties().apply {
 }
 
 val playKey = localProperties.getProperty("REVENUECAT_PLAY_KEY", "")
+val reviewCodeDigest = localProperties.getProperty("PLAY_REVIEW_CODE_SHA256") ?: providers.gradleProperty("PLAY_REVIEW_CODE_SHA256").getOrElse("")
 val testKey = localProperties.getProperty("REVENUECAT_TEST_KEY", "")
 // Google sign-in needs a Web OAuth client registered with Supabase's Google
 // provider. Until that exists the button stays hidden; see the Android rule.
@@ -26,6 +27,7 @@ val validateReleaseConfiguration = tasks.register("validateReleaseConfiguration"
         check(googleWebClientId.endsWith(".apps.googleusercontent.com")) {
             "Set GOOGLE_WEB_CLIENT_ID in android/local.properties before a release build. Without it Android has no sign-in."
         }
+        check(reviewCodeDigest.matches(Regex("[a-f0-9]{64}"))) { "Set PLAY_REVIEW_CODE_SHA256 (lowercase SHA-256 hex of the reviewer code) in android/local.properties before a release build." }
         check(uploadKeyStore.isNotBlank() && rootProject.file(uploadKeyStore).isFile) {
             "Set PLAY_UPLOAD_KEYSTORE to the external upload keystore before a release build."
         }
@@ -43,13 +45,14 @@ android {
         applicationId = "com.jackwallner.shop"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Every connected test starts from a clean install: no onboarding, no session.
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
         buildConfigField("String", "REVENUECAT_API_KEY", "\"$testKey\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+        buildConfigField("String", "PLAY_REVIEW_CODE_SHA256", "\"$reviewCodeDigest\"")
     }
 
     buildFeatures {

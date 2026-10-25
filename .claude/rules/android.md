@@ -47,9 +47,9 @@ fm-gradle :app:testDebugUnitTest :app:assembleDebug :app:lintDebug -Pkotlin.comp
 ANDROID_SERIAL=emulator-5554 fm-gradle :app:connectedDebugAndroidTest -Pkotlin.compiler.execution.strategy=in-process
 ```
 
-- `local.properties` (ignored): `sdk.dir`, `REVENUECAT_TEST_KEY` (the Test Store
+- `local.properties` (ignored; template `local.properties.example`): `sdk.dir`, `REVENUECAT_TEST_KEY` (the Test Store
   app `appa8bd3dce4f` public key, readable with the shop RC secret),
-  `REVENUECAT_PLAY_KEY`, `GOOGLE_WEB_CLIENT_ID`, `PLAY_UPLOAD_*`.
+  `REVENUECAT_PLAY_KEY`, `GOOGLE_WEB_CLIENT_ID`, `PLAY_REVIEW_CODE_SHA256`, `PLAY_UPLOAD_*`.
 - JVM parity tests read the wheel table from the newest `spin()` migration and
   the pack table from `redeem` and `rc-webhook`, plus iOS `Config.swift` and
   `SpinView.swift`. Change the server and the Android build fails until the
@@ -80,6 +80,29 @@ tester signed in was followed by `profiles.is_plus = true` on that tester. The
 repo's `rc-webhook` ignores `monthly`, so the deployed webhook or another
 integration differs. Check the deployed function before Play launch.
 
+## Play reviewer unlock
+
+Path: **You tab > long-press Version** (the last row of the Rate / feedback /
+legal card; the app has no separate Settings screen, and the row is there for
+guests too). It opens a masked Password-keyboard dialog with an Unlock button.
+The code's SHA-256 is compared with `PLAY_REVIEW_CODE_SHA256` (ignored
+`local.properties` into `BuildConfig`; never the plaintext). A match stores the
+digest as `reviewAccessDigest` and `ShopStore.isPlus` turns true for that install
+(`ReviewAccess`); changing the digest revokes every earlier grant. Nothing is
+written to Supabase or RevenueCat. Client checks it satisfies: the You-tab
+DreamCart+ row (shows Active), and for a signed-in account the Home spin card and the Spin button. The perks
+themselves stay server-side and do not follow: `claim_daily` doubles only when
+`profiles.is_plus`, and `spin()` still answers `spun_today` on a second spin.
+Guests cannot add to cart, check out, claim coins or see a closet (all
+`requireAccount`/`GuestGate`), and sign-in is Google only, so a reviewer
+without a Google account reaches browse and product detail only.
+`validateReleaseConfiguration` fails without a valid digest; generate it with
+`printf '%s' CODE | shasum -a 256`. Tests: `ReviewAccessTests` (JVM) and
+`ReviewerUnlockTest` (device, pass a throwaway code as
+`-Pandroid.testInstrumentationRunnerArguments.reviewCode=...` with its digest in
+`local.properties` or `-PPLAY_REVIEW_CODE_SHA256=...` (the fallback when
+`local.properties` lacks it, as on gh-gradle runners); never a real code).
+
 ## Play store assets
 
 `android/play-assets/` holds the listing in `play_stage.py` layout; its README
@@ -89,5 +112,5 @@ true` for store captures: it replaces product art with placeholder gradients.
 
 ## Play state
 
-No Play app record yet (2026-10-20). Steps are in
-`project-docs/android/play-release-prep.md`.
+versionCode 1 is uploaded to Play (Jack, 2026-10-24); the next upload is vc2.
+Steps are in `project-docs/android/play-release-prep.md`.
