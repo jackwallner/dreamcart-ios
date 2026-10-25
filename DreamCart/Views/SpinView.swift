@@ -202,14 +202,13 @@ struct SpinView: View {
             .frame(width: diameter * 0.45, height: diameter * 1.7)
             .rotationEffect(.degrees(24))
             .offset(x: shimmerT * diameter)
+            .animation(.linear(duration: 2.8).repeatForever(autoreverses: false), value: shimmerT)
             .blendMode(.plusLighter)
             .mask(Circle().frame(width: diameter, height: diameter))
             .allowsHitTesting(false)
             .onAppear {
                 guard !reduceMotion else { return }
-                withAnimation(.linear(duration: 2.8).repeatForever(autoreverses: false)) {
-                    shimmerT = 1.4
-                }
+                shimmerT = 1.4
             }
     }
 

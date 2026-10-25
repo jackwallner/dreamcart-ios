@@ -16,10 +16,13 @@ struct UnfoldedColumn<Content: View>: View {
                                            isRegularWidth: sizeClass == .regular,
                                            fold: proxy.verticalFold())
             ZStack(alignment: .topLeading) {
-                brandPane
-                    .frame(width: split?.primaryWidth ?? 0)
-                    .frame(maxHeight: .infinity)
-                    .opacity(split == nil ? 0 : 1)
+                // Folded, the brand pane is not built: a zero-width copy still
+                // reached accessibility, centred off the leading edge.
+                if let split {
+                    brandPane
+                        .frame(width: split.primaryWidth)
+                        .frame(maxHeight: .infinity)
+                }
                 content
                     .environment(\.horizontalSizeClass, split == nil ? sizeClass : .compact)
                     .frame(maxWidth: split?.secondaryWidth ?? .infinity, maxHeight: .infinity)

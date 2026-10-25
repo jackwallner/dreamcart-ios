@@ -171,11 +171,8 @@ struct ShimmerView: View {
             LinearGradient(colors: [.gray.opacity(0.10), .gray.opacity(0.22), .gray.opacity(0.10)],
                            startPoint: .leading, endPoint: .trailing)
                 .offset(x: phase * geo.size.width)
-                .onAppear {
-                    withAnimation(.linear(duration: 1.1).repeatForever(autoreverses: false)) {
-                        phase = 1.4
-                    }
-                }
+                .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: phase)
+                .onAppear { phase = 1.4 }
         }
     }
 }
