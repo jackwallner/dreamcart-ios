@@ -19,7 +19,8 @@ final class ImageDiskCache: @unchecked Sendable {
     }
 
     private func fileURL(for url: String, maxPixelSize: CGFloat) -> URL {
-        let key = "\(url)@\(Int(maxPixelSize))"
+        // "v2": thumbnails stored before the watermark trim kept the mark.
+        let key = "v2:\(url)@\(Int(maxPixelSize))"
         let digest = SHA256.hash(data: Data(key.utf8))
         let hash = digest.map { String(format: "%02x", $0) }.joined()
         return dir.appendingPathComponent(hash).appendingPathExtension("jpg")

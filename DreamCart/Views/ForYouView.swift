@@ -11,13 +11,13 @@ struct ForYouView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
 
     @State private var drag: CGSize = .zero
     @State private var isFlinging = false
     @State private var crossedThreshold = false
     @State private var acceptedFlash = false
     @State private var showCoinShop = false
-    @State private var deckSize: CGSize = .zero
     @State private var selectedProduct: ProductWithBrand?
     @State private var didHintSwipe = false
     @AppStorage("dreamcart.hasSwipedForYou") private var hasSwipedDeck = false
@@ -33,16 +33,21 @@ struct ForYouView: View {
                     exhausted
                     Spacer(minLength: 0)
                 } else {
-                    // The deck fills whatever space is left between the header
-                    // and the controls, measured live — no hardcoded height,
-                    // so it can never overrun into the header or the buttons.
+                    // The deck fills whatever space is left below the header,
+                    // measured live (no hardcoded height), so it can never
+                    // overrun the header or the buttons. In an unfolded pane
+                    // the buttons flank the card instead of sitting under it.
                     GeometryReader { proxy in
-                        deck(size: proxy.size)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .onAppear { deckSize = proxy.size }
-                            .onChange(of: proxy.size) { _, s in deckSize = s }
+                        let layout = DeckLayout.arrangement(in: proxy.size, allowsFlanking: isUnfoldedPane)
+                        let region = CGSize(width: proxy.size.width, height: layout.deckHeight)
+                        ZStack(alignment: .top) {
+                            controls(spacing: layout.controlSpacing, size: region)
+                                .position(x: proxy.size.width / 2, y: layout.controlsY)
+                            deck(card: layout.card, size: region)
+                                .frame(width: region.width, height: region.height)
+                        }
+                        .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
                     }
-                    controls(size: deckSize)
                 }
             }
             .padding(.horizontal, 16)
@@ -52,7 +57,9 @@ struct ForYouView: View {
             .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
             .navigationTitle("For You")
-            .navigationBarTitleDisplayMode(.inline)
+            // Beside the other tabs' large titles in a Duo pane; inline on a
+            // phone, where the deck needs the height.
+            .navigationBarTitleDisplayMode(isUnfoldedPane ? .large : .inline)
             .walletToolbar($showCoinShop)
             .navigationDestination(item: $selectedProduct) { product in
                 ProductDetailView(product: product)
@@ -84,15 +91,12 @@ struct ForYouView: View {
 
     /// Up to three cards mounted at once: the draggable front card plus two
     /// peeking behind it. Slot 0 is the front; higher slots sit further back.
-    private func deck(size: CGSize) -> some View {
-        let visible = Array(products.prefix(3).enumerated())
-        // Pin the card to the catalog art's own aspect (686x858 ≈ 0.8 w/h) so
-        // scaledToFill never crops the garment off the left/right edges. Fit
-        // the largest such rect into the available space: width-bound on tall
-        // screens, height-bound (narrower card) on short ones.
-        let artAspect: CGFloat = 0.8
-        let cardHeight = min(size.height, size.width / artAspect)
-        let cardWidth = min(size.width, cardHeight * artAspect)
+    /// `card` is pinned to the catalog art's own aspect so scaledToFill never
+    /// crops the garment off the edges, and sized below a strip the cards
+    /// behind peek into, so on a short screen they never rise into the header.
+    private func deck(card: CGSize, size: CGSize) -> some View {
+        let visible = Array(products.prefix(DeckLayout.depth).enumerated())
+        let cardWidth = card.width, cardHeight = card.height
         return ZStack {
             ForEach(visible.reversed(), id: \.element.id) { slot, product in
                 cardView(product, slot: slot, size: CGSize(width: cardWidth, height: cardHeight))
@@ -114,6 +118,7 @@ struct ForYouView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.top, DeckLayout.rise)
         .onAppear { maybeHintSwipe() }
     }
 
@@ -163,12 +168,22 @@ struct ForYouView: View {
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.leading)
                 .lineLimit(2)
-            Text(product.styleTags.prefix(3).map { "#\($0)" }.joined(separator: "  "))
-                .font(.dcLabel)
-                .foregroundStyle(.white.opacity(0.82))
-                .lineLimit(1)
+                // A long name on a narrow card shrinks to fit rather than trail off.
+                .minimumScaleFactor(0.6)
+            // As many whole tags as the card's width holds, never a cut-off one.
+            ViewThatFits(in: .horizontal) {
+                tagLine(product, count: 3).fixedSize()
+                tagLine(product, count: 2).fixedSize()
+                tagLine(product, count: 1).lineLimit(1)
+            }
+            .font(.dcLabel)
+            .foregroundStyle(.white.opacity(0.82))
         }
         .padding(20)
+    }
+
+    private func tagLine(_ product: ProductWithBrand, count: Int) -> Text {
+        Text(product.styleTags.prefix(count).map { "#\($0)" }.joined(separator: "  "))
     }
 
     /// Corner stamps that fade in with the drag, Tinder-style: cart-green on
@@ -205,8 +220,8 @@ struct ForYouView: View {
         return Double(min(1, max(0, travel / 90)))
     }
 
-    private func controls(size: CGSize) -> some View {
-        HStack(spacing: 28) {
+    private func controls(spacing: CGFloat, size: CGSize) -> some View {
+        HStack(spacing: spacing) {
             actionButton("xmark", color: .red, label: "Pass") { fling(direction: -1, size: size) }
             actionButton("cart.badge.plus", color: .green, label: "Add to cart") { fling(direction: 1, size: size) }
         }
@@ -244,7 +259,7 @@ struct ForYouView: View {
     // Negative: cards behind recede *upward*, so the front card's bottom edge
     // (where the copy lives) stays flush and the controls below never collide
     // with a peeking card poking out underneath.
-    private func restingY(_ slot: Int) -> CGFloat { CGFloat(slot) * -18 }
+    private func restingY(_ slot: Int) -> CGFloat { CGFloat(slot) * -DeckLayout.step }
 
     /// 0 at rest, 1 once the front card has traveled a full swipe. Drives the
     /// cards behind it rising into place as it's dragged (and, later, flung) away.

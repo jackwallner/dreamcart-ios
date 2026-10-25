@@ -23,6 +23,9 @@ final class RouteCoordinator {
         overlayCount > 0 || (detailDepth[selectedTab] ?? 0) > 0
     }
 
+    /// A full-screen celebration covers the bar whatever is pushed.
+    var isOverlayShowing: Bool { overlayCount > 0 }
+
     var canOpenRoutes: Bool { isSignedIn && isCatalogReady }
 
     func setReadiness(signedIn: Bool, catalogReady: Bool) {

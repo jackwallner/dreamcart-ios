@@ -4,7 +4,7 @@ import UIKit
 struct SpinView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(UpsellCoordinator.self) private var upsell
-    @Environment(\.dismiss) private var dismiss
+    @PaneAwareDismiss private var dismiss
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

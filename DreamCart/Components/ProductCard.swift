@@ -12,17 +12,45 @@ struct RemoteImage: View {
     // Grid thumbnails default to a small bucket; hero shots (ForYou,
     // product detail) pass a larger one so they stay sharp full-bleed.
     var maxPixelSize: CGFloat = 700
+    /// Show the whole piece on a blurred wash of the same art, for a frame
+    /// wider than the art (the product photo across an unfolded Duo pane),
+    /// instead of cropping the garment to fill it.
+    var showsWholePiece = false
     @Environment(\.colorScheme) private var scheme
     @State private var image: UIImage?
     @State private var failed = false
     @State private var attempt = 0
 
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [rarity.color.opacity(0.16), rarity.color.opacity(0.04)],
-                           startPoint: .top, endPoint: .bottom)
+        // The backdrop sets the size and the art fills it, so an image whose
+        // aspect differs from the frame (the trimmed Pollinations renders)
+        // never widens a tile past its column.
+        LinearGradient(colors: [rarity.color.opacity(0.16), rarity.color.opacity(0.04)],
+                       startPoint: .top, endPoint: .bottom)
+        .overlay {
             if isScreenshotMode {
                 screenshotArtwork
+            } else if let image, showsWholePiece {
+                // Color.clear takes the frame exactly, so the art fits it
+                // (a ZStack grew to the filled wash and the art filled too).
+                Color.clear
+                    .background {
+                        Image(uiImage: image).resizable().scaledToFill()
+                            .blur(radius: 30, opaque: true)
+                    }
+                    .overlay {
+                        // Feathered sides, so the art melts into its wash
+                        // instead of ending in a seam either side.
+                        Image(uiImage: image).resizable().scaledToFit()
+                            .mask {
+                                LinearGradient(stops: [.init(color: .clear, location: 0),
+                                                       .init(color: .black, location: 0.14),
+                                                       .init(color: .black, location: 0.86),
+                                                       .init(color: .clear, location: 1)],
+                                               startPoint: .leading, endPoint: .trailing)
+                            }
+                    }
+                    .transition(.opacity)
             } else if let image {
                 Image(uiImage: image).resizable().scaledToFill()
                     .transition(.opacity)
@@ -40,6 +68,7 @@ struct RemoteImage: View {
                 ShimmerView()
             }
         }
+        .clipped()
         .task(id: "\(url)#\(attempt)") { await load() }
     }
 
@@ -162,6 +191,8 @@ struct RarityTag: View {
                 .padding(.horizontal, 7).padding(.vertical, 3)
                 .background(rarity.color, in: Capsule())
                 .shadow(color: rarity.glow ? rarity.color.opacity(0.6) : .clear, radius: 5)
+                // A narrow tile must never wrap the badge ("RAR / E").
+                .fixedSize()
         }
     }
 }
@@ -172,6 +203,7 @@ struct ProductCard: View {
     var owned: Bool = false
     var isNew: Bool = false
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
     @ScaledMetric(relativeTo: .headline) private var nameHeight: CGFloat = 44
     @ScaledMetric(relativeTo: .headline) private var metadataHeight: CGFloat = 92
     @ScaledMetric(relativeTo: .body) private var priceHeight: CGFloat = 24
@@ -191,6 +223,7 @@ struct ProductCard: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 7).padding(.vertical, 3)
                                 .background(Theme.pink, in: Capsule())
+                                .fixedSize()
                         }
                     }
                     Spacer()
@@ -228,6 +261,9 @@ struct ProductCard: View {
                     .foregroundStyle(Theme.ink(scheme))
                     .lineLimit(2, reservesSpace: true)
                     .truncationMode(.tail)
+                    // A pane's whole-card row is narrower than a phone shelf:
+                    // shrink a long name before cutting it short.
+                    .minimumScaleFactor(isUnfoldedPane ? 0.75 : 1)
                     .frame(maxWidth: .infinity, minHeight: nameHeight, alignment: .topLeading)
                 CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))

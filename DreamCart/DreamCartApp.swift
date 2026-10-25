@@ -80,6 +80,13 @@ struct DreamCartApp: App {
                         }
                     }
                     #endif
+                    #if DEBUG
+                    if DuoScreenshotMode.isSeeded {
+                        await DuoScreenshotMode.seed(auth: auth, shop: shop, shipping: shipping)
+                        router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
+                        return
+                    }
+                    #endif
                     AppDelegate.onNotificationRoute = { userInfo in
                         router.receive(notificationUserInfo: userInfo)
                     }

@@ -6,6 +6,10 @@ struct TodayView: View {
     @Environment(RouteCoordinator.self) private var router
     @Environment(LocalNotificationCoordinator.self) private var notifications
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.floatingTabBarTop) private var barTop
+    /// ProductCard's caption block (8 pt gap and the 92 pt metadata frame).
+    @ScaledMetric(relativeTo: .headline) private var cardCaption: CGFloat = 100
 
     @State private var showCoinShop = false
     @State private var showSpin = false
@@ -14,19 +18,28 @@ struct TodayView: View {
     @State private var greetingDate = Date()
     @State private var showNotificationPrimer = false
     @State private var showShop = false
+    @State private var isAtRest = true
+    /// The Just dropped shelf's window frame with the page at rest.
+    @State private var shelfFrame: CGRect = .zero
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: sectionSpacing) {
                     if shop.loadError != nil {
                         LoadErrorBanner()
                     }
                     if shop.isLoading && shop.products.isEmpty {
                         TodayLoadingView()
                     } else {
-                        if !isScreenshotMode { dailyCard }
-                        if !isScreenshotMode { spinCard }
+                        if isScreenshotMode {
+                            EmptyView()
+                        } else if usesPaneDailyRow {
+                            paneDailyRow
+                        } else {
+                            dailyCard
+                            spinCard
+                        }
                         if !shop.newDrops.isEmpty { newDropsSection }
                         brandShelves
                     }
@@ -35,6 +48,7 @@ struct TodayView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
             }
+            .tracksScrollRest($isAtRest)
             .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
             .navigationTitle(greeting)
@@ -43,6 +57,11 @@ struct TodayView: View {
             .navigationDestination(for: ProductWithBrand.self) { ProductDetailView(product: $0) }
             .navigationDestination(for: Brand.self) { BrandView(brand: $0) }
             .navigationDestination(isPresented: $showShop) { ShopView() }
+            #if DEBUG
+            .navigationDestination(item: Bindable(DuoTour.shared).product) { ProductDetailView(product: $0) }
+            .onChange(of: DuoTour.shared.showShop) { _, open in showShop = open }
+            .onChange(of: DuoTour.shared.coins) { _, open in showCoinShop = open }
+            #endif
             .refreshable { await shop.refreshAll() }
             .onChange(of: router.presentedRoute) { _, route in
                 guard route == .shop else { return }
@@ -54,7 +73,6 @@ struct TodayView: View {
                 showShop = true
                 _ = router.consumePresentedRoute()
             }
-            .sheet(isPresented: $showSpin) { SpinView() }
             .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
             .task {
                 while !Task.isCancelled {
@@ -63,6 +81,11 @@ struct TodayView: View {
                 }
             }
         }
+        // Outside the stack, so unfolded it covers the whole Today pane.
+        .paneSheet(isPresented: $showSpin) { SpinView() }
+        #if DEBUG
+        .onChange(of: DuoTour.shared.spin) { _, open in showSpin = open }
+        #endif
         .overlay {
             if let r = reward {
                 RewardOverlay(title: r.title, amount: r.amount, subtitle: r.subtitle) {
@@ -195,6 +218,21 @@ struct TodayView: View {
     }
 
     private var claimedDailyChip: some View {
+        // A narrow column (the folded Duo, a Duo pane) keeps the claim and the
+        // streak whole and drops the hint rather than cutting all three.
+        ViewThatFits(in: .horizontal) {
+            claimedDailyRow(showsHint: true)
+            claimedDailyRow(showsHint: false)
+        }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
+        .animation(.spring(response: 0.45, dampingFraction: 0.8), value: shop.me?.canClaimDaily)
+    }
+
+    private func claimedDailyRow(showsHint: Bool) -> some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.dcIconM)
@@ -211,17 +249,67 @@ struct TodayView: View {
                     .background(.white.opacity(0.22), in: Capsule())
             }
             Spacer(minLength: 6)
-            Text("More tomorrow")
-                .font(.dcSub)
-                .foregroundStyle(.white.opacity(0.85))
-                .lineLimit(1)
+            if showsHint {
+                Text("More tomorrow")
+                    .font(.dcSub)
+                    .foregroundStyle(.white.opacity(0.85))
+                    .lineLimit(1)
+            }
         }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 16)
+    }
+
+    /// In an unfolded pane the claimed drop and the wheel sit side by side as
+    /// two short tiles, using the pane's width so the first screen still
+    /// reaches a whole row of drops. A claim still waiting keeps its full card.
+    private var usesPaneDailyRow: Bool {
+        guard isUnfoldedPane, !auth.isGuest, let me = shop.me else { return false }
+        return !me.canClaimDaily
+    }
+
+    @ViewBuilder
+    private var paneDailyRow: some View {
+        let streak = shop.me?.streak ?? 0
+        let canSpin = shop.me?.canSpin ?? false
+        HStack(spacing: 12) {
+            paneTile(icon: "checkmark.seal.fill", title: "Daily claimed",
+                     detail: streak > 0 ? "\(streak)-day streak" : "More tomorrow", onCandy: true)
+                .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
+            Button { Haptics.tap(); showSpin = true } label: {
+                paneTile(icon: "dial.medium.fill", title: canSpin ? "Spin the wheel" : "Spin used",
+                         detail: canSpin ? "Free spin ready" : "Resets tomorrow", onCandy: false)
+                    .cardStyle(scheme)
+            }
+            .buttonStyle(PressableStyle())
+            .disabled(!canSpin)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func paneTile(icon: String, title: String, detail: String, onCandy: Bool) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(onCandy ? AnyShapeStyle(Color.white.opacity(0.22)) : AnyShapeStyle(Theme.goldGradient))
+                    .frame(width: 38, height: 38)
+                Image(systemName: icon)
+                    .font(.dcIconS.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.dcLabel)
+                    .foregroundStyle(onCandy ? .white : Theme.ink(scheme))
+                Text(detail)
+                    .font(.dcSub)
+                    .foregroundStyle(onCandy ? .white.opacity(0.85) : Theme.subtle(scheme))
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .frame(maxWidth: .infinity)
-        .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
-        .animation(.spring(response: 0.45, dampingFraction: 0.8), value: shop.me?.canClaimDaily)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func claimDaily() async {
@@ -307,21 +395,39 @@ struct TodayView: View {
 
     // MARK: shelves
 
+    private let sectionSpacing: CGFloat = 20
+
+    /// In an unfolded pane, Just dropped fills the content width with whole
+    /// cards sized to rest above the tab bar (no card cut at the fold or
+    /// against the bar). Every shelf then uses that card width.
+    private var firstRow: FirstScreenRow.Row? {
+        guard isUnfoldedPane, barTop > shelfFrame.minY, shelfFrame.minY > 0 else { return nil }
+        return FirstScreenRow.row(width: shelfFrame.width, room: barTop - shelfFrame.minY,
+                                  caption: cardCaption)
+    }
+
+    private var cardWidth: CGFloat { firstRow?.tileWidth ?? 150 }
+
     private var newDropsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Just dropped", subtitle: "Fresh today",
                           actionTitle: isScreenshotMode ? nil : "Shop all") { router.receive(.shop) }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(alignment: .top, spacing: FirstScreenRow.spacing) {
                     ForEach(shop.newDrops) { p in
                         NavigationLink(value: p) {
                             ProductCard(product: p, owned: shop.ownedIds.contains(p.id), isNew: true)
-                                .frame(width: 150)
+                                .frame(width: cardWidth)
                         }
                         .buttonStyle(.plain)
                     }
                 }
             }
+            // In a pane the space below the shelf runs down to the tab bar,
+            // so the brand shelves after it start below the bar, not cut
+            // against it.
+            .padding(.bottom, firstRow.map { barTop - shelfFrame.minY - sectionSpacing + 8 - $0.tileHeight } ?? 0)
+            .onRestingFrame(isAtRest: isAtRest) { shelfFrame = $0 }
         }
         .id("new-drops")
     }
@@ -355,7 +461,7 @@ struct TodayView: View {
                                 ForEach(Array(items)) { p in
                                     NavigationLink(value: p) {
                                         ProductCard(product: p, owned: shop.ownedIds.contains(p.id))
-                                            .frame(width: 150)
+                                            .frame(width: cardWidth)
                                     }
                                     .buttonStyle(.plain)
                                 }
