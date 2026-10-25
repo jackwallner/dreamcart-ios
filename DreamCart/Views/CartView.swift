@@ -10,6 +10,10 @@ struct CartView: View {
     @State private var showCheckout = false
     @State private var showUpsell = false
     @State private var unboxing: [Product]? = nil
+    /// Height the list shows between the title and the checkout bar.
+    @State private var visibleHeight: CGFloat = 0
+    /// Trailing safe-area inset (the unfolded Duo's vertical status bar).
+    @State private var trailingInset: CGFloat = 0
 
     var body: some View {
         NavigationStack {
@@ -46,15 +50,19 @@ struct CartView: View {
                     }
                 } else {
                     ScrollView {
-                        VStack(spacing: 12) {
+                        VStack(spacing: compactRows ? CartListLayout.compactSpacing : CartListLayout.regularSpacing) {
                             ForEach(shop.cartProducts) { p in
-                                CartRow(product: p) { shop.removeFromCart(p.id) }
+                                CartRow(product: p, compact: compactRows) { shop.removeFromCart(p.id) }
                             }
                         }
-                        .padding(16)
+                        .padding(.leading, CartListLayout.regularPadding)
+                        .padding(.trailing, trailingPadding)
+                        .padding(.vertical, compactRows ? CartListLayout.compactVerticalPadding : CartListLayout.regularPadding)
                     }
+                    .onVisibleScrollSize { visibleHeight = $0.height }
                 }
             }
+            .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { trailingInset = $0 }
             .safeAreaInset(edge: .bottom) {
                 if !isScreenshotMode && !shop.cartProducts.isEmpty { checkoutBar }
             }
@@ -65,7 +73,7 @@ struct CartView: View {
             .navigationTitle(isScreenshotMode ? "Saved pieces" : "Cart")
             .walletToolbar($showCoinShop)
         }
-        .sheet(isPresented: $showCheckout) {
+        .paneSheet(isPresented: $showCheckout) {
             CheckoutView { bought in
                 showCheckout = false
                 if reduceMotion {
@@ -76,6 +84,9 @@ struct CartView: View {
             }
         }
         .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
+        #if DEBUG
+        .onChange(of: DuoTour.shared.checkout, initial: true) { _, open in showCheckout = open }
+        #endif
         .overlay {
             if let items = unboxing {
                 UnboxingView(items: items) {
@@ -89,6 +100,16 @@ struct CartView: View {
         .onChange(of: unboxing == nil) { _, dismissed in
             router.setOverlayVisible(!dismissed)
         }
+    }
+
+    /// A short pane (the unfolded iPhone Duo) tightens the rows rather than
+    /// leave the last one cut in half by the checkout bar.
+    private var compactRows: Bool {
+        CartListLayout.isCompact(rows: shop.cartProducts.count, visibleHeight: visibleHeight)
+    }
+
+    private var trailingPadding: CGFloat {
+        CartListLayout.trailingPadding(safeAreaInset: trailingInset)
     }
 
     private var isScreenshotMode: Bool {
@@ -125,20 +146,23 @@ struct CartView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(.vertical, 16)
+        .padding(.leading, CartListLayout.regularPadding)
+        .padding(.trailing, trailingPadding)
         .background(.bar)
     }
 }
 
 struct CartRow: View {
     let product: Product
+    var compact = false
     let onRemove: () -> Void
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         HStack(spacing: 12) {
             RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
-                .frame(width: 66, height: 82)
+                .frame(width: compact ? 55 : 66, height: compact ? 68 : 82)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 4) {
                 Text(product.name)
@@ -158,7 +182,7 @@ struct CartRow: View {
             }
             .accessibilityLabel("Remove \(product.name) from cart")
         }
-        .padding(12)
+        .padding(compact ? 10 : 12)
         .cardStyle(scheme)
     }
 }

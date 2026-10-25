@@ -13,9 +13,9 @@ struct RootView: View {
             Theme.bg(scheme).ignoresSafeArea()
             switch auth.state {
             case .unknown:
-                SplashView()
+                UnfoldedColumn(showsMark: false) { SplashView() }
             case .signedOut:
-                WelcomeView()
+                UnfoldedColumn { WelcomeView() }
             case .guest, .signedIn:
                 // Stay on the splash through the first catalog load. Auth resolves
                 // long before the products arrive, and cutting to the tabs early
@@ -32,15 +32,17 @@ struct RootView: View {
                         // ask and it improves the loop itself. Coin packs are
                         // still one tap away from the wallet pill, and the same
                         // offer stays reachable from the You tab afterwards.
-                        PlusOfferView(presentation: .onboarding) {
-                            auth.justCompletedOnboarding = false
+                        UnfoldedColumn {
+                            PlusOfferView(presentation: .onboarding) {
+                                auth.justCompletedOnboarding = false
+                            }
                         }
-                            .transition(.opacity)
+                        .transition(.opacity)
                     } else {
                         MainTabView().transition(.opacity)
                     }
                 } else {
-                    SplashView().transition(.opacity)
+                    UnfoldedColumn(showsMark: false) { SplashView() }.transition(.opacity)
                 }
             }
         }
@@ -49,6 +51,10 @@ struct RootView: View {
         // the work (AuthController.requireAccount).
         .sheet(isPresented: $auth.promptSignIn) { SignInPromptView() }
         .onChange(of: auth.state) { _, new in
+            #if DEBUG
+            // The seeded shopper has no server session to load.
+            if DuoScreenshotMode.isSeeded { return }
+            #endif
             let browsing = new == .signedIn || new == .guest
             router.setReadiness(signedIn: browsing,
                                 catalogReady: browsing && !shop.products.isEmpty)

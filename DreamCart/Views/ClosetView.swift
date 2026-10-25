@@ -5,16 +5,37 @@ struct ClosetView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.floatingTabBarTop) private var barTop
+    /// ClosetTile's caption: 8 pt gap and the two-line name.
+    @ScaledMetric(relativeTo: .headline) private var tileCaption: CGFloat = 52
 
     @State private var showCoinShop = false
+    @State private var isAtRest = true
+    /// The grid's window frame with the page at rest.
+    @State private var gridFrame: CGRect = .zero
     @State private var category: String?
     @State private var query = ""
     @State private var sort: ClosetSort = .newest
+    /// Measured chip widths (keyed by category, "" for All, and `moreKey`)
+    /// and the room beside the sort button, so the row ends on a whole chip.
+    @State private var chipWidths: [String: CGFloat] = [:]
+    @State private var chipRoom: CGFloat = 0
+    private let moreKey = "more"
+    private let chipSpacing: CGFloat = 8
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-    ]
+    private let gridSpacing: CGFloat = 18
+
+    /// In an unfolded pane the grid's first row rests whole above the tab bar
+    /// and fills the content width, and the rows after it start below the bar.
+    private var firstRow: FirstScreenRow.Row? {
+        guard isUnfoldedPane, barTop > gridFrame.minY, gridFrame.minY > 0 else { return nil }
+        return FirstScreenRow.row(width: gridFrame.width, room: barTop - gridFrame.minY, caption: tileCaption)
+    }
+
+    private var columns: [GridItem] {
+        Array(repeating: GridItem(.flexible(), spacing: FirstScreenRow.spacing), count: firstRow?.columns ?? 2)
+    }
 
     var body: some View {
         NavigationStack {
@@ -27,7 +48,9 @@ struct ClosetView: View {
                                            message: "Sign in so everything you buy is saved and ready to style into outfits.",
                                            feature: "closet_tab")
                         } else {
-                            collectionHeader
+                            // Unfolded, All pieces already counts them, and
+                            // the pane needs the height for a whole row.
+                            if !isUnfoldedPane { collectionHeader }
 
                             if shop.isLoading && shop.closet.isEmpty {
                                 ProgressView("Loading your closet…")
@@ -52,6 +75,7 @@ struct ClosetView: View {
                     }
                     .padding(16)
                 }
+                .tracksScrollRest($isAtRest)
                 .onAppear { scrollToHighlight(using: proxy) }
                 .onChange(of: router.highlightedClosetIds) { _, _ in
                     scrollToHighlight(using: proxy)
@@ -128,17 +152,78 @@ struct ClosetView: View {
         }
     }
 
+    /// The chips that fit whole beside the sort button; the rest go in a
+    /// "More" menu, so the row never ends on a chip cut in half.
     private var categoryBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                FilterChip(label: "All", selected: category == nil) { category = nil }
-                ForEach(ownedCategories, id: \.self) { value in
-                    FilterChip(label: categoryLabel(value), selected: category == value) {
-                        category = category == value ? nil : value
+        let categories = ownedCategories
+        let shown = categories.prefix(visibleCategoryCount(categories))
+        let hidden = Array(categories.dropFirst(shown.count))
+        // A chip-high strip that takes whatever the sort button leaves, so the
+        // room measured never depends on the chips drawn in it.
+        return FilterChipLabel(label: "All", selected: false)
+            .hidden()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .onGeometryChange(for: CGFloat.self, of: \.size.width) { chipRoom = $0 }
+            .overlay(alignment: .leading) {
+                HStack(spacing: chipSpacing) {
+                    FilterChip(label: "All", selected: category == nil) { category = nil }
+                    ForEach(shown, id: \.self) { value in
+                        categoryChip(value)
+                    }
+                    if !hidden.isEmpty {
+                        moreMenu(hidden)
                     }
                 }
             }
+            .background(alignment: .leading) { chipMeasurer(categories) }
+    }
+
+    private func categoryChip(_ value: String) -> some View {
+        FilterChip(label: categoryLabel(value), selected: category == value) {
+            category = category == value ? nil : value
         }
+    }
+
+    private func moreMenu(_ hidden: [String]) -> some View {
+        Menu {
+            Picker("Category", selection: $category) {
+                ForEach(hidden, id: \.self) { value in
+                    Text(categoryLabel(value)).tag(Optional(value))
+                }
+            }
+        } label: {
+            FilterChipLabel(label: "More", trailingIcon: "chevron.down",
+                            selected: category.map { hidden.contains($0) } ?? false)
+        }
+        .accessibilityLabel("More categories")
+    }
+
+    /// Every chip at its natural width, laid out invisibly to size the row.
+    private func chipMeasurer(_ categories: [String]) -> some View {
+        HStack(spacing: chipSpacing) {
+            measured("", FilterChipLabel(label: "All", selected: false))
+            ForEach(categories, id: \.self) { value in
+                measured(value, FilterChipLabel(label: categoryLabel(value), selected: false))
+            }
+            measured(moreKey, FilterChipLabel(label: "More", trailingIcon: "chevron.down", selected: false))
+        }
+        .fixedSize()
+        .hidden()
+        .accessibilityHidden(true)
+    }
+
+    private func measured(_ key: String, _ chip: FilterChipLabel) -> some View {
+        chip.onGeometryChange(for: CGFloat.self, of: \.size.width) { chipWidths[key] = $0 }
+    }
+
+    /// Category chips that fit whole after All, leaving room for More.
+    private func visibleCategoryCount(_ categories: [String]) -> Int {
+        let keys = [""] + categories
+        let widths = keys.compactMap { chipWidths[$0] }
+        guard widths.count == keys.count, let more = chipWidths[moreKey] else { return categories.count }
+        let count = ChipOverflow.visibleCount(widths: widths, available: chipRoom,
+                                              spacing: chipSpacing, moreWidth: more)
+        return max(0, count - 1)
     }
 
     private var newHaulSection: some View {
@@ -175,24 +260,37 @@ struct ClosetView: View {
     private var collectionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(
-                title: query.isEmpty ? "All pieces" : "Search results",
+                title: query.isEmpty ? category.map(categoryLabel) ?? "All pieces" : "Search results",
                 subtitle: filteredProducts.count == 1 ? "1 piece" : "\(filteredProducts.count) pieces"
             )
             if filteredProducts.isEmpty {
                 EmptyState(icon: "magnifyingglass", title: "Nothing matches", message: "Try another search or category.")
             } else {
-                LazyVGrid(columns: columns, spacing: 18) {
-                    ForEach(filteredProducts) { product in
-                        NavigationLink {
-                            ProductDetailView(product: detailProduct(product))
-                        } label: {
-                            ClosetTile(product: product, highlighted: router.highlightedClosetIds.contains(product.id))
+                let products = filteredProducts
+                let leading = firstRow.map { products.prefix($0.columns) } ?? []
+                VStack(spacing: gridSpacing) {
+                    if !leading.isEmpty {
+                        LazyVGrid(columns: columns, spacing: gridSpacing) {
+                            ForEach(leading) { tile($0) }
                         }
-                        .buttonStyle(.plain)
+                        .frame(height: barTop - gridFrame.minY - gridSpacing + 8, alignment: .top)
+                    }
+                    LazyVGrid(columns: columns, spacing: gridSpacing) {
+                        ForEach(products.dropFirst(leading.count)) { tile($0) }
                     }
                 }
+                .onRestingFrame(isAtRest: isAtRest) { gridFrame = $0 }
             }
         }
+    }
+
+    private func tile(_ product: Product) -> some View {
+        NavigationLink {
+            ProductDetailView(product: detailProduct(product))
+        } label: {
+            ClosetTile(product: product, highlighted: router.highlightedClosetIds.contains(product.id))
+        }
+        .buttonStyle(.plain)
     }
 
     private var ownedCategories: [String] {
@@ -309,6 +407,7 @@ struct ClosetTile: View {
     var highlighted = false
 
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
     @ScaledMetric(relativeTo: .headline) private var nameHeight: CGFloat = 44
 
     var body: some View {
@@ -334,6 +433,7 @@ struct ClosetTile: View {
                 .foregroundStyle(Theme.ink(scheme))
                 .lineLimit(2, reservesSpace: true)
                 .truncationMode(.tail)
+                .minimumScaleFactor(isUnfoldedPane ? 0.75 : 1)
                 .frame(maxWidth: .infinity, minHeight: nameHeight, alignment: .topLeading)
         }
         .contentShape(Rectangle())

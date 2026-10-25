@@ -7,6 +7,8 @@ struct ProductDetailView: View {
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.floatingTabBarHeight) private var tabBarHeight
     @State private var showCoinShop = false
     @State private var showCheckout = false
     @State private var addedPulse = false
@@ -17,6 +19,15 @@ struct ProductDetailView: View {
     // The tab this detail was pushed onto, captured at appear so the matching
     // pop decrements the same tab even after the selected tab has changed.
     @State private var owningTab: AppTab?
+    /// Where the scroll view's visible area starts (below the navigation
+    /// bar) and where the buy bar starts, in window coordinates, and the
+    /// visible width. Scroll geometry's content insets and a GeometryProxy's
+    /// bottom inset both overcounted the buy bar here, so the photo always
+    /// fell to its floor.
+    @State private var visibleTop: CGFloat = 0
+    @State private var barTop: CGFloat = 0
+    @State private var visibleWidth: CGFloat = 0
+    @State private var infoHeight: CGFloat = 0
 
     private var owned: Bool { shop.ownedIds.contains(product.id) }
     private var inCart: Bool { shop.inCart(product.id) }
@@ -24,59 +35,38 @@ struct ProductDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400)
-                    .aspectRatio(0.82, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
-                    .overlay(alignment: .topTrailing) {
-                        favoriteButton.padding(12)
-                    }
-                    .overlay(alignment: .topLeading) {
-                        RarityTag(rarity: product.rarityKind).padding(12)
-                    }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    if let brand {
-                        NavigationLink {
-                            BrandView(brand: brand)
-                        } label: {
-                            Text(brand.name.uppercased())
-                                .font(.dcOverline)
-                                .tracking(0.6)
-                                .foregroundStyle(Color(hex: brand.accentHex))
-                        }
-                    }
-                    Text(product.name)
-                        .font(.dcTitle)
-                        .foregroundStyle(Theme.ink(scheme))
-                    Text(product.description)
-                        .font(.dcBodyText)
-                        .foregroundStyle(Theme.subtle(scheme))
-
-                    HStack(spacing: 8) {
-                        ForEach(product.styleTags.prefix(3), id: \.self) { tag in
-                            Text("#\(tag)")
-                                .font(.dcLabel)
-                                .foregroundStyle(Theme.violet)
-                                .padding(.horizontal, 10).padding(.vertical, 5)
-                                .background(Theme.violet.opacity(0.1), in: Capsule())
-                        }
-                    }
-                    .padding(.top, 2)
+            VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
+                VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
+                    photo
+                    info
+                        .onGeometryChange(for: CGFloat.self, of: \.size.height) { infoHeight = $0 }
                 }
+                .frame(minHeight: hero?.height, alignment: .top)
 
                 specRows
                 completeTheLook
             }
-            .padding(16)
+            .padding(DetailHeroLayout.padding)
         }
+        // Pushed in a pane, the scroll view's frame already starts below the
+        // navigation bar and still reports that bar as its top inset (82 pt
+        // unfolded, 24 pt folded), so adding the two counted it twice.
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            max(proxy.frame(in: .global).minY, proxy.safeAreaInsets.top)
+        } action: { visibleTop = $0 }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width - proxy.safeAreaInsets.leading - proxy.safeAreaInsets.trailing
+        } action: { visibleWidth = $0 }
         .background(Theme.bg(scheme))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .safeAreaInset(edge: .bottom) { buyBar }
+        // Unfolded the tab bar stays below the buy bar (folded it hides).
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear.frame(height: isUnfoldedPane ? tabBarHeight : 0)
+        }
         .sheet(isPresented: $showCoinShop) { CoinShopView() }
-        .sheet(isPresented: $showCheckout) {
+        .paneSheet(isPresented: $showCheckout) {
             CheckoutView { bought in
                 showCheckout = false
                 if reduceMotion { unboxing = bought }
@@ -117,6 +107,75 @@ struct ProductDetailView: View {
             props.merge(product.tasteProps) { current, _ in current }
             Analytics.track("product_dwell", props)
         }
+    }
+
+    /// On a short screen (the iPhone Duo's panes, a small phone) a full-width
+    /// photo pushed the name, then the spec card, under the buy bar. There the
+    /// photo shrinks so the first screen ends on the tags and the specs start
+    /// below the bar.
+    private var hero: DetailHeroLayout.Hero? {
+        guard barTop > visibleTop else { return nil }
+        let visible = CGSize(width: visibleWidth, height: barTop - visibleTop)
+        return DetailHeroLayout.hero(visible: visible, infoHeight: infoHeight)
+    }
+
+    /// Capped in an unfolded pane, the photo keeps the pane's full width and
+    /// shows the whole piece on a wash of its own art, rather than a
+    /// phone-width photo with empty margins either side.
+    private var widensPhoto: Bool { isUnfoldedPane && hero != nil }
+
+    private var photoAspect: CGFloat {
+        guard widensPhoto, let hero else { return DetailHeroLayout.photoAspect }
+        return DetailHeroLayout.widePhotoAspect(visibleWidth: visibleWidth, photoHeight: hero.photoHeight)
+    }
+
+    private var photo: some View {
+        RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400,
+                    showsWholePiece: widensPhoto)
+            .aspectRatio(photoAspect, contentMode: .fit)
+            .frame(maxWidth: widensPhoto ? .infinity : hero.map { $0.photoHeight * DetailHeroLayout.photoAspect },
+                   maxHeight: hero?.photoHeight)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.corner, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                favoriteButton.padding(12)
+            }
+            .overlay(alignment: .topLeading) {
+                RarityTag(rarity: product.rarityKind).padding(12)
+            }
+            .frame(maxWidth: .infinity)
+    }
+
+    private var info: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let brand {
+                NavigationLink {
+                    BrandView(brand: brand)
+                } label: {
+                    Text(brand.name.uppercased())
+                        .font(.dcOverline)
+                        .tracking(0.6)
+                        .foregroundStyle(Color(hex: brand.accentHex))
+                }
+            }
+            Text(product.name)
+                .font(.dcTitle)
+                .foregroundStyle(Theme.ink(scheme))
+            Text(product.description)
+                .font(.dcBodyText)
+                .foregroundStyle(Theme.subtle(scheme))
+
+            HStack(spacing: 8) {
+                ForEach(product.styleTags.prefix(3), id: \.self) { tag in
+                    Text("#\(tag)")
+                        .font(.dcLabel)
+                        .foregroundStyle(Theme.violet)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Theme.violet.opacity(0.1), in: Capsule())
+                }
+            }
+            .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var favoriteButton: some View {
@@ -212,8 +271,14 @@ struct ProductDetailView: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 10)
-        .background(.ultraThinMaterial)
-        .overlay(alignment: .top) { Divider() }
+        // In a pane, the page's own background, so the bar meets the fold
+        // without a strip of material ending short of the Cart pane. The
+        // hairline keeps to the content margins.
+        .background(isUnfoldedPane ? AnyShapeStyle(Theme.bg(scheme)) : AnyShapeStyle(.ultraThinMaterial))
+        .overlay(alignment: .top) { Divider().padding(.horizontal, isUnfoldedPane ? 16 : 0) }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.frame(in: .global).minY
+        } action: { barTop = $0 }
     }
 
     private var priceBlock: some View {

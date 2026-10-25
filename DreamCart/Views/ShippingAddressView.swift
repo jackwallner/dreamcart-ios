@@ -6,7 +6,7 @@ import SwiftUI
 /// part of the dopamine-shopping fantasy.
 struct ShippingAddressView: View {
     @Environment(ShippingAddressStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
+    @PaneAwareDismiss private var dismiss
     @Environment(\.colorScheme) private var scheme
 
     @State private var draft = ShippingAddress()

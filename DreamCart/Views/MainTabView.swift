@@ -3,10 +3,27 @@ import SwiftUI
 struct MainTabView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(RouteCoordinator.self) private var router
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     // Tabs mount lazily on first visit (like TabView), then stay alive so
     // their navigation/scroll state survives switching away.
     @State private var mounted: Set<AppTab> = [.today]
     @State private var barHeight: CGFloat = 0
+    /// The bar's top edge in window coordinates, so an unfolded pane can end
+    /// its first screen on whole tiles above it.
+    @State private var barTop: CGFloat = 0
+    /// The container's width and fold, measured so the unfolded iPhone Duo can
+    /// put the browsing tabs and the Cart on opposite sides of the fold.
+    @State private var paneGeometry = PaneGeometry(width: 0, fold: nil)
+
+    /// Unfolded, the Cart has its own pane beside whatever is being browsed,
+    /// so adding a piece lands in view and it is never a tab.
+    private var split: UnfoldedSplit? {
+        UnfoldedSplit.make(
+            width: paneGeometry.width,
+            isRegularWidth: horizontalSizeClass == .regular,
+            fold: paneGeometry.fold
+        )
+    }
 
     var body: some View {
         @Bindable var router = router
@@ -15,35 +32,97 @@ struct MainTabView: View {
         // and the system still reserved a "shadow" bar slot of its own. A
         // ZStack is pure SwiftUI, so the inset below genuinely occupies the
         // slot the system tab bar used to.
-        ZStack {
+        //
+        // Opening or closing the Duo only moves these frames, so no tab is
+        // rebuilt and each keeps its navigation and scroll position.
+        ZStack(alignment: .topLeading) {
             ForEach(AppTab.allCases, id: \.self) { tab in
                 if mounted.contains(tab) {
-                    tabRoot(tab)
-                        .opacity(router.selectedTab == tab ? 1 : 0)
-                        .allowsHitTesting(router.selectedTab == tab)
-                        .accessibilityHidden(router.selectedTab != tab)
+                    let isPane = isCartPane(tab)
+                    PaneCoverHost(isActive: split != nil) { tabRoot(tab) }
+                        // Each pane is phone-width, so its screen lays out as on a phone.
+                        .environment(\.horizontalSizeClass, split == nil ? horizontalSizeClass : .compact)
+                        // The Cart pane has no tab bar beneath it to make room for.
+                        .environment(\.floatingTabBarHeight, isPane ? 0 : barHeight)
+                        .environment(\.floatingTabBarTop, isPane ? 0 : barTop)
+                        .environment(\.isUnfoldedPane, split != nil)
+                        // One balance on screen: the browsing pane's toolbar keeps it.
+                        .environment(\.showsWalletPill, !isPane)
+                        // While split the status bar is hidden, yet both panes still got
+                        // its 84 pt far-edge inset: the leading pane (iOS 27.1 simulator
+                        // 24A94232) beside the fold, and the Cart at the display's edge,
+                        // where its rows sat in a column with dead space to their right.
+                        .ignoresSafeArea(.container, edges: split != nil ? .trailing : [])
+                        .frame(maxWidth: paneWidth(tab), maxHeight: .infinity)
+                        .padding(.leading, isPane ? split?.secondaryX ?? 0 : 0)
+                        .opacity(isVisible(tab) ? 1 : 0)
+                        .allowsHitTesting(isVisible(tab))
+                        .accessibilityHidden(!isVisible(tab))
                 }
             }
         }
-        .overlay(alignment: .bottom) {
-            if !router.isTabBarHidden {
-                FloatingTabBar(selection: $router.selectedTab, cartCount: shop.cartIds.count)
+        // Measured at the window's width, never the panes': the ZStack would
+        // otherwise shrink to the leading pane and undo the split it measured.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .overlay(alignment: .bottomLeading) {
+            if !isTabBarHidden {
+                FloatingTabBar(selection: $router.selectedTab, cartCount: shop.cartIds.count,
+                               showsCart: split == nil)
                     .onGeometryChange(for: CGFloat.self, of: \.size.height) { barHeight = $0 }
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { barTop = $0 }
+                    .background(alignment: .bottom) {
+                        if split != nil { TabBarPaneBand() } else { TabBarEdgeBlur() }
+                    }
+                    // Within the browsing pane, never across the fold.
+                    .frame(maxWidth: split?.primaryWidth ?? .infinity)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        // Each tab root reserves the bar's measured slot via
-        // reservesFloatingTabBar() — a safeAreaInset here doesn't reach them
-        // (NavigationStack roots are UIKit-hosted and ignore it), which is
-        // what let content slide under the bar.
-        .environment(\.floatingTabBarHeight, barHeight)
+        .onGeometryChange(for: PaneGeometry.self) { proxy in
+            PaneGeometry(width: proxy.size.width, fold: proxy.verticalFold())
+        } action: { paneGeometry = $0 }
         // Keep the bar pinned when the keyboard rises (matches system tab bar).
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        .animation(.easeOut(duration: 0.18), value: router.isTabBarHidden)
+        .animation(.easeOut(duration: 0.18), value: isTabBarHidden)
+        // The inner display's vertical status column (time, Wi-Fi in a
+        // battery ring) stood beside the Cart like a loading badge. While
+        // split the app runs edge to edge, as an iPhone app does in landscape.
+        .statusBarHidden(split != nil)
+        .onChange(of: split != nil, initial: true) { _, isSplit in
+            guard isSplit else { return }
+            mounted.insert(.cart)
+            if router.selectedTab == .cart { router.selectedTab = .today }
+        }
         .onChange(of: router.selectedTab) { old, new in
+            // Routes can still ask for the Cart tab; unfolded it is already open.
+            if new == .cart, split != nil {
+                router.selectedTab = old
+                return
+            }
             mounted.insert(new)
             Analytics.track("tab_switch", ["from": old.rawValue, "to": new.rawValue])
         }
+        #if DEBUG
+        .task { await DuoScreenshotMode.runTour(router: router, shop: shop, isSplit: { split != nil }) }
+        #endif
+    }
+
+    private func isCartPane(_ tab: AppTab) -> Bool { tab == .cart && split != nil }
+
+    /// Folded, a pushed product detail takes the whole screen and its buy bar
+    /// replaces the tab bar. Unfolded the bar stays, so every screen in the
+    /// browsing pane keeps the same navigation.
+    private var isTabBarHidden: Bool {
+        split == nil ? router.isTabBarHidden : router.isOverlayShowing
+    }
+
+    private func isVisible(_ tab: AppTab) -> Bool {
+        router.selectedTab == tab || isCartPane(tab)
+    }
+
+    private func paneWidth(_ tab: AppTab) -> CGFloat {
+        guard let split else { return .infinity }
+        return tab == .cart ? split.secondaryWidth : split.primaryWidth
     }
 
     @ViewBuilder
@@ -61,6 +140,8 @@ struct MainTabView: View {
 private struct FloatingTabBar: View {
     @Binding var selection: AppTab
     let cartCount: Int
+    /// False on the unfolded Duo, where the Cart is a pane of its own.
+    let showsCart: Bool
     @Environment(\.colorScheme) private var scheme
 
     private let items: [(tab: AppTab, title: String, icon: String)] = [
@@ -73,7 +154,7 @@ private struct FloatingTabBar: View {
 
     var body: some View {
         HStack(spacing: 2) {
-            ForEach(items, id: \.tab) { item in
+            ForEach(items.filter { showsCart || $0.tab != .cart }, id: \.tab) { item in
                 Button {
                     Haptics.select()
                     selection = item.tab
@@ -99,11 +180,14 @@ private struct FloatingTabBar: View {
                 .accessibilityAddTraits(selection == item.tab ? .isSelected : [])
             }
         }
-        .frame(width: 355)
+        // Folded it keeps its phone width. In an unfolded pane it spans the
+        // content margins, so nothing scrolling past shows beyond its ends.
+        .frame(maxWidth: showsCart ? 355 : .infinity)
         .padding(5)
-        .background(Theme.surface(scheme).opacity(0.97), in: Capsule())
+        .background(Theme.surface(scheme), in: Capsule())
         .overlay(Capsule().strokeBorder(.black.opacity(scheme == .dark ? 0 : 0.05), lineWidth: 1))
         .shadow(color: .black.opacity(scheme == .dark ? 0.25 : 0.10), radius: 12, y: 5)
+        .padding(.horizontal, showsCart ? 0 : 16)
         .padding(.bottom, 6)
         .frame(maxWidth: .infinity)
     }
@@ -130,12 +214,26 @@ private struct FloatingTabBar: View {
 extension EnvironmentValues {
     /// Measured height of the floating tab bar (0 while it's hidden).
     @Entry var floatingTabBarHeight: CGFloat = 0
+    /// The floating tab bar's top edge in window coordinates (0 in the Cart
+    /// pane, which has no bar beneath it).
+    @Entry var floatingTabBarTop: CGFloat = 0
+    /// True inside either pane of the unfolded Duo, where a screen may use
+    /// the pane's landscape shape (the For You buttons beside the card, the
+    /// product photo across the pane). Folded screens keep the phone layout.
+    @Entry var isUnfoldedPane: Bool = false
+    /// False for the unfolded Cart pane: the browsing pane beside it already
+    /// shows the balance.
+    @Entry var showsWalletPill: Bool = true
 }
 
 /// Reserve the floating tab bar's slot at the bottom of a tab root's content.
 /// Applied inside each tab's NavigationStack (on the scroll content) because
 /// the stacks are UIKit-hosted and don't inherit a safeAreaInset placed on
 /// their SwiftUI ancestor.
+///
+/// Scroll content runs on to the screen edge beneath the bar (blurred by
+/// `TabBarEdgeBlur`), and the last row still scrolls clear of it. An opaque
+/// band of its own (2026-10-22) cut grids off in a hard edge above the bar.
 struct FloatingTabBarReservation: ViewModifier {
     @Environment(\.floatingTabBarHeight) private var barHeight
 
@@ -143,6 +241,60 @@ struct FloatingTabBarReservation: ViewModifier {
         content.safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear.frame(height: barHeight)
         }
+    }
+}
+
+/// Folded, what scrolls beneath the floating bar blurs progressively down to
+/// the screen edge, like the system tab bar's scroll edge effect: images still
+/// run off the edge, but captions never sit crisp around, below or sliced
+/// against the bar. Drawn by hand because a `safeAreaBar` slot inside the
+/// UIKit-hosted stacks never showed the system effect.
+private struct TabBarEdgeBlur: View {
+    /// How far above the bar the blur starts; it is at full strength by the
+    /// bar's top edge.
+    private let rise: CGFloat = 28
+
+    var body: some View {
+        Rectangle()
+            .fill(.thinMaterial)
+            .mask {
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                        .frame(height: rise)
+                    Color.black
+                }
+            }
+            .padding(.top, -rise)
+            .ignoresSafeArea(edges: [.bottom, .horizontal])
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Unfolded, the bar sits on the page colour from its top edge to the screen
+/// edge, across the whole browsing pane. Each pane's first screen ends on
+/// whole tiles above it (`FirstScreenRow`), so at rest nothing shows behind,
+/// below or beside the bar (review rejection, 2026-10-23: blurred tiles read
+/// as hidden under it); while scrolling, rows pass under it.
+private struct TabBarPaneBand: View {
+    @Environment(\.colorScheme) private var scheme
+    /// A short fade above the bar, so a row scrolling under it never ends in
+    /// a hard line.
+    private let rise: CGFloat = 10
+
+    var body: some View {
+        Theme.bg(scheme)
+            .mask {
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                        .frame(height: rise)
+                    Color.black
+                }
+            }
+            .padding(.top, -rise)
+            .ignoresSafeArea(edges: [.bottom, .leading])
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }
 
@@ -155,18 +307,21 @@ extension View {
 struct WalletToolbar: ViewModifier {
     @Environment(ShopStore.self) private var shop
     @Environment(AuthController.self) private var auth
+    @Environment(\.showsWalletPill) private var showsWalletPill
     @Binding var showCoinShop: Bool
 
     func body(content: Content) -> some View {
         content.toolbar {
-            if #available(iOS 26.0, *) {
-                ToolbarItem(placement: .topBarTrailing) { walletItem }
-                    .sharedBackgroundVisibility(.hidden)
-            } else {
-                ToolbarItem(placement: .topBarTrailing) { walletItem }
+            if showsWalletPill {
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .topBarTrailing) { walletItem }
+                        .sharedBackgroundVisibility(.hidden)
+                } else {
+                    ToolbarItem(placement: .topBarTrailing) { walletItem }
+                }
             }
         }
-        .sheet(isPresented: $showCoinShop) { CoinShopView() }
+        .paneSheet(isPresented: $showCoinShop) { CoinShopView() }
     }
 
     // A guest has no wallet, so the pill becomes the way into signing up

@@ -64,14 +64,20 @@ struct WalletPill: View {
     var body: some View {
         HStack(spacing: 7) {
             CoinIcon(size: 20)
-            Text(Format.coins(coins))
-                .font(.dcNumeral)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(minWidth: 40, alignment: .leading)
-                .contentTransition(.numericText(value: Double(coins)))
-                .animation(.snappy(duration: 0.35), value: coins)
+            // The toolbar keeps the pill at the size it had before the balance
+            // loaded ("0"), which cut "18,450" to "18,4…"; hold room for five digits.
+            ZStack(alignment: .leading) {
+                Text(Format.coins(88_888))
+                    .fixedSize()
+                    .hidden()
+                Text(Format.coins(coins))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .contentTransition(.numericText(value: Double(coins)))
+                    .animation(.snappy(duration: 0.35), value: coins)
+            }
+            .font(.dcNumeral)
+            .monospacedDigit()
             Image(systemName: "plus")
                 .font(.system(.subheadline, weight: .bold))
                 .foregroundStyle(.white)

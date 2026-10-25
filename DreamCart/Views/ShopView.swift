@@ -3,6 +3,7 @@ import SwiftUI
 struct ShopView: View {
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.paneCovers) private var paneCovers
     @State private var showCoinShop = false
     @State private var query = ""
     @State private var category: String? = nil
@@ -48,9 +49,14 @@ struct ShopView: View {
                 }
             }
         }
+        .reservesFloatingTabBar()
         .background(Theme.bg(scheme))
         .navigationTitle("Shop")
-        .searchable(text: $query, prompt: "Search brands, colors, styles")
+        // In an unfolded Duo pane iOS lays search along the bottom edge, under
+        // the floating tab bar, so there it sits under the title instead.
+        .searchable(text: $query,
+                    placement: paneCovers == nil ? .automatic : .navigationBarDrawer(displayMode: .always),
+                    prompt: "Search brands, colors, styles")
         .walletToolbar($showCoinShop)
     }
 
@@ -152,6 +158,7 @@ struct BrandView: View {
                 .padding(16)
             }
         }
+        .reservesFloatingTabBar()
         .background(Theme.bg(scheme))
         .navigationTitle(brand.name)
         .navigationBarTitleDisplayMode(.large)
