@@ -35,6 +35,7 @@ class ShopStore(
     private val prefs: SharedPreferences,
     private val analytics: Analytics,
     private val scope: CoroutineScope,
+    private val reviewAccess: ReviewAccess? = null,
 ) {
     val purchaseRecovery = PurchaseRecovery(
         read = { prefs.getString(it, null) },
@@ -89,6 +90,8 @@ class ShopStore(
         private set
 
     val coins: Int get() = me?.coins ?: 0
+    /** DreamCart+ for the client checks: the server flag, or the Play reviewer unlock on this install. */
+    val isPlus: Boolean get() = me?.isPlus == true || reviewAccess?.isGranted == true
     val ownedIds: Set<String> get() = closet.map { it.id }.toSet()
 
     fun logic() = CatalogLogic(products, ownedIds, favoriteIds, dismissedIds, acceptedIds, cartIds.toList())
