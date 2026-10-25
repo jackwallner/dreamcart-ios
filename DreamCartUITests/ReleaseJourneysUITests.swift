@@ -28,8 +28,13 @@ final class ReleaseJourneysUITests: XCTestCase {
             tapTab(tab, in: app)
             QA.checkpoint(app, tab.lowercased().replacingOccurrences(of: " ", with: "-"))
         }
+        // The DreamCart+ row sits below the fold of the You tab.
         let plus = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "DreamCart+")).firstMatch
-        XCTAssertTrue(plus.waitForExistence(timeout: 15))
+        var swipes = 0
+        while !(plus.exists && plus.isHittable) && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
         plus.tap()
         let priced = app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "per week")).firstMatch
         XCTAssertTrue(priced.waitForExistence(timeout: 25))

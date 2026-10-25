@@ -101,6 +101,8 @@ struct RewardOverlay: View {
                         .fill(Theme.gold.opacity(glow ? 0.2 : 0.08))
                         .frame(width: 156, height: 156)
                         .blur(radius: 18)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 1.1).repeatForever(autoreverses: true).delay(0.35),
+                                   value: glow)
                     HStack(spacing: 8) {
                         if let amount {
                             CoinIcon(size: 44)
@@ -151,7 +153,7 @@ struct RewardOverlay: View {
             withAnimation(.easeOut(duration: 0.22)) { stage = 1 }
             withAnimation(.spring(response: 0.5, dampingFraction: 0.62).delay(0.18)) { stage = 2 }
             withAnimation(.easeOut(duration: 0.3).delay(0.48)) { stage = 3 }
-            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true).delay(0.35)) { glow = true }
+            glow = true
         }
     }
 }
