@@ -236,11 +236,18 @@ extension EnvironmentValues {
 /// band of its own (2026-10-22) cut grids off in a hard edge above the bar.
 struct FloatingTabBarReservation: ViewModifier {
     @Environment(\.floatingTabBarHeight) private var barHeight
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
 
     func body(content: Content) -> some View {
         content.safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear.frame(height: barHeight)
         }
+        // Unfolded, each tab's stack can re-apply the hidden status column's
+        // 84 pt inset that the panes ignore: launched unfolded, Today ended
+        // 84 pt short of the fold and the Cart 84 pt short of the display's
+        // edge (review 2026-10-24). Every tab root reserves the bar inside
+        // its stack, so it drops the inset here too.
+        .ignoresSafeArea(.container, edges: isUnfoldedPane ? .trailing : [])
     }
 }
 
