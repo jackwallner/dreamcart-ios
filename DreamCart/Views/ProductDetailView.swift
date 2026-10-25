@@ -9,6 +9,7 @@ struct ProductDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
     @Environment(\.floatingTabBarHeight) private var tabBarHeight
+    @Environment(\.dismiss) private var dismiss
     @State private var showCoinShop = false
     @State private var showCheckout = false
     @State private var addedPulse = false
@@ -60,11 +61,19 @@ struct ProductDetailView: View {
         .background(Theme.bg(scheme))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        // In a pane iOS 27.1 may put the navigation bar in a column beside
+        // the fold, with the back button there and the page 84 pt short of
+        // it, so the pane draws its own back button over the page instead.
+        .toolbar(isUnfoldedPane ? .hidden : .automatic, for: .navigationBar)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if isUnfoldedPane { paneBackButton }
+        }
         .safeAreaInset(edge: .bottom) { buyBar }
         // Unfolded the tab bar stays below the buy bar (folded it hides).
         .safeAreaInset(edge: .bottom, spacing: 0) {
             Color.clear.frame(height: isUnfoldedPane ? tabBarHeight : 0)
         }
+        .ignoresSafeArea(.container, edges: isUnfoldedPane ? .trailing : [])
         .sheet(isPresented: $showCoinShop) { CoinShopView() }
         .paneSheet(isPresented: $showCheckout) {
             CheckoutView { bought in
@@ -107,6 +116,25 @@ struct ProductDetailView: View {
             props.merge(product.tasteProps) { current, _ in current }
             Analytics.track("product_dwell", props)
         }
+    }
+
+    private var paneBackButton: some View {
+        HStack {
+            Button { dismiss() } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 44, height: 44)
+                    .background(.regularMaterial, in: Circle())
+                    .overlay(Circle().stroke(.primary.opacity(0.08), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Back")
+            Spacer()
+        }
+        .padding(.horizontal, DetailHeroLayout.padding)
+        .padding(.top, 8)
+        .padding(.bottom, 4)
     }
 
     /// On a short screen (the iPhone Duo's panes, a small phone) a full-width

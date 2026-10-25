@@ -6,6 +6,7 @@ struct CartView: View {
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isUnfoldedPane) private var isUnfoldedPane
     @State private var showCoinShop = false
     @State private var showCheckout = false
     @State private var showUpsell = false
@@ -108,8 +109,10 @@ struct CartView: View {
         CartListLayout.isCompact(rows: shop.cartProducts.count, visibleHeight: visibleHeight)
     }
 
+    /// In a pane the stack's trailing inset is ignored (`FloatingTabBarReservation`),
+    /// so the rows keep the usual margin.
     private var trailingPadding: CGFloat {
-        CartListLayout.trailingPadding(safeAreaInset: trailingInset)
+        isUnfoldedPane ? CartListLayout.regularPadding : CartListLayout.trailingPadding(safeAreaInset: trailingInset)
     }
 
     private var isScreenshotMode: Bool {
