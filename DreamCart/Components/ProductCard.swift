@@ -210,6 +210,11 @@ struct ProductCard: View {
             ZStack(alignment: .topLeading) {
                 RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
                     .clipped()
+                    // Filled art overflows the tile before the clip, and that
+                    // unclipped frame used to widen the card's accessibility
+                    // frame (and grow it when the art arrived). The card's
+                    // label already names the piece.
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading) {
                     HStack {
                         RarityTag(rarity: product.rarityKind)
