@@ -1,0 +1,17 @@
+{
+  "project": "DreamCart.xcodeproj",
+  "scheme": "DreamCartUITests",
+  "uitests_dir": "DreamCartUITests",
+  "journeys": [
+    "DreamCartUITests/ReleaseJourneysUITests"
+  ],
+  "personas": [
+    "newcomer",
+    "accessibility",
+    "reduce-motion",
+    "german"
+  ],
+  "persona_overrides": {},
+  "slot": null,
+  "bundle_id": "com.jackwallner.shop"
+}
