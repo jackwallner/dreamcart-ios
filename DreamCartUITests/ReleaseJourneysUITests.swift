@@ -30,7 +30,9 @@ final class ReleaseJourneysUITests: XCTestCase {
         }
         // The Duo seed is already a DreamCart+ member (its row opens the App
         // Store), so the purchase screen here is the coin shop, one row below.
-        let coins = app.buttons.containing(NSPredicate(format: "label BEGINSWITH %@", "Get more coins")).firstMatch
+        // Every tab stays mounted, so Cart has its own "Get more coins" button;
+        // the identifier picks the one on You.
+        let coins = app.buttons["profile.get-coins"].firstMatch
         var swipes = 0
         while !(coins.exists && coins.isHittable) && swipes < 8 {
             app.swipeUp()

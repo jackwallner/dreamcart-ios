@@ -293,6 +293,7 @@ struct ProfileView: View {
             }
             Divider().padding(.leading, 50)
             row("Get more coins", "plus.circle.fill", Theme.violet) { showCoinShop = true }
+                .accessibilityIdentifier("profile.get-coins")
             Divider().padding(.leading, 50)
             subtitledRow("Shipping address", shippingSubtitle, "shippingbox.fill", Theme.coral) { showShipping = true }
             Divider().padding(.leading, 50)
