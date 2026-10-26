@@ -56,7 +56,12 @@ struct SpinView: View {
                     ZStack {
                         wheel(diameter: diameter)
                             .frame(width: diameter, height: diameter)
-                            .rotationEffect(.degrees(displayAngle))
+                            .rotationEffect(.degrees(angle))
+                            // The idle wobble animates only this rotation, so the
+                            // loop never reaches views that appear with the wheel.
+                            .animation(wobbleAnimation) { wheel in
+                                wheel.rotationEffect(.degrees(displayWobble))
+                            }
                             .shadow(color: .black.opacity(0.28), radius: 18, y: 12)
                         if !reduceMotion {
                             shimmerOverlay(diameter: diameter)
@@ -130,10 +135,14 @@ struct SpinView: View {
 
     private var canSpin: Bool { shop.me?.canSpin ?? false }
 
-    /// The rotation actually rendered — the drag/spin angle plus a small idle
-    /// wobble that's suppressed the moment the wheel is touched or spinning.
-    private var displayAngle: Double {
-        angle + (spinning || isDragging || reduceMotion ? 0 : idleWobble)
+    /// A small idle wobble on top of the drag/spin angle, suppressed the moment
+    /// the wheel is touched or spinning.
+    private var displayWobble: Double {
+        spinning || isDragging || reduceMotion ? 0 : idleWobble
+    }
+
+    private var wobbleAnimation: Animation {
+        displayWobble == 0 ? .easeOut(duration: 0.25) : .easeInOut(duration: 1.7).repeatForever(autoreverses: true)
     }
 
     // MARK: - Win tiers (server decides the prize; this only decides the payoff style)
@@ -312,13 +321,7 @@ struct SpinView: View {
 
     private func setIdleWobble(_ active: Bool) {
         guard !reduceMotion else { return }
-        if active {
-            withAnimation(.easeInOut(duration: 1.7).repeatForever(autoreverses: true)) {
-                idleWobble = 3
-            }
-        } else {
-            withAnimation(.easeOut(duration: 0.25)) { idleWobble = 0 }
-        }
+        idleWobble = active ? 3 : 0
     }
 
     // MARK: - Spin
