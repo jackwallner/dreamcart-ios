@@ -41,8 +41,12 @@ final class ReleaseJourneysUITests: XCTestCase {
             app.swipeUp()
             swipes += 1
         }
+        // A tap while the swipe is still coasting only stops the scroll.
+        if swipes > 0 { sleep(2) }
         coins.tap()
-        XCTAssertTrue(app.staticTexts["Your balance"].waitForExistence(timeout: 25))
+        let balance = app.staticTexts["Your balance"]
+        if !balance.waitForExistence(timeout: 8) { coins.tap() }
+        XCTAssertTrue(balance.waitForExistence(timeout: 25))
         QA.checkpoint(app, "coin-shop", paywall: true)
         tap("Done", in: app)
         tapTab("Today", in: app)
