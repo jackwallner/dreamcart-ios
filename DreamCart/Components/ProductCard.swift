@@ -69,6 +69,7 @@ struct RemoteImage: View {
             }
         }
         .clipped()
+        .contentShape(.accessibility, Rectangle())
         .task(id: "\(url)#\(attempt)") { await load() }
     }
 
@@ -278,6 +279,10 @@ struct ProductCard: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
+        // Filled art is drawn past the tile and clipped. Pin the card's
+        // accessibility frame to the tile so it does not widen when the art
+        // arrives.
+        .contentShape(.accessibility, Rectangle())
     }
 
     private var accessibilityDescription: String {
