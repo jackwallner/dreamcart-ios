@@ -29,21 +29,13 @@ final class ReleaseJourneysUITests: XCTestCase {
             QA.checkpoint(app, tab.lowercased().replacingOccurrences(of: " ", with: "-"))
         }
         // The Duo seed is already a DreamCart+ member (its row opens the App
-        // Store), so the purchase screen here is the coin shop, one row below.
-        // Every tab stays mounted, so Cart has its own "Get more coins" button;
-        // the identifier picks the one on You.
-        let coins = app.buttons["profile.get-coins"].firstMatch
-        var swipes = 0
-        // isHittable is true for rows below the fold, so scroll until the row
-        // sits above the floating tab bar.
-        let visibleBottom = app.windows.firstMatch.frame.maxY - 140
-        while !(coins.exists && coins.frame.maxY < visibleBottom) && swipes < 8 {
-            app.swipeUp()
-            swipes += 1
-        }
-        // A tap while the swipe is still coasting only stops the scroll.
-        if swipes > 0 { sleep(2) }
-        coins.tap()
+        // Store), so the purchase screen here is the coin shop. The wallet pill
+        // in the You bar opens it without scrolling; every tab stays mounted
+        // with its own pill, so the bar picks the one on You.
+        let pill = app.navigationBars["You"].buttons
+            .matching(NSPredicate(format: "label BEGINSWITH 'Coin balance'")).firstMatch
+        XCTAssertTrue(pill.waitForExistence(timeout: 15))
+        pill.tap()
         XCTAssertTrue(app.staticTexts["Your balance"].waitForExistence(timeout: 25))
         QA.checkpoint(app, "coin-shop", paywall: true)
         tap("Done", in: app)
