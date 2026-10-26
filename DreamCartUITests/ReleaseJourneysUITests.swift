@@ -34,7 +34,10 @@ final class ReleaseJourneysUITests: XCTestCase {
         // the identifier picks the one on You.
         let coins = app.buttons["profile.get-coins"].firstMatch
         var swipes = 0
-        while !(coins.exists && coins.isHittable) && swipes < 8 {
+        // isHittable is true for rows below the fold, so scroll until the row
+        // sits above the floating tab bar.
+        let visibleBottom = app.windows.firstMatch.frame.maxY - 140
+        while !(coins.exists && coins.frame.maxY < visibleBottom) && swipes < 8 {
             app.swipeUp()
             swipes += 1
         }
