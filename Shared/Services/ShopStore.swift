@@ -337,10 +337,52 @@ final class ShopStore {
     }
     func clearCart() { cartIds.removeAll() }
 
+    #if DEBUG
+    /// Set by the DEBUG seeded shopper (`QAShopper`), which has no server
+    /// session: checkout settles on the device by `purchase_cart`'s rules
+    /// instead of calling it, then hands the result to `onLocalSettle`.
+    @ObservationIgnored var settlesLocally = false
+    @ObservationIgnored var onLocalSettle: (() -> Void)?
+
+    /// `purchase_cart` on the device: only active catalog pieces not already
+    /// owned are charged, and nothing is bought when the total is over the
+    /// balance.
+    func settleLocally(_ ids: [String], now: Date = Date()) -> PurchaseResult {
+        let buying = products.filter { ids.contains($0.id) && !ownedIds.contains($0.id) }
+        let total = buying.reduce(0) { $0 + $1.price }
+        guard !buying.isEmpty else {
+            return PurchaseResult(ok: false, reason: "nothing_to_buy", orderId: nil, spent: nil,
+                                  itemCount: nil, coins: coins, need: nil, bought: nil)
+        }
+        guard let me, total <= me.coins else {
+            return PurchaseResult(ok: false, reason: "insufficient_coins", orderId: nil, spent: nil,
+                                  itemCount: nil, coins: coins, need: total, bought: nil)
+        }
+        let acquired = ISO8601DateFormatter().string(from: now)
+        closet.insert(contentsOf: buying.map(Self.plain), at: 0)
+        for piece in buying { closetAcquiredAt[piece.id] = acquired }
+        ownedIds.formUnion(buying.map(\.id))
+        self.me = MeSnapshot(
+            id: me.id, displayName: me.displayName, coins: me.coins - total, streak: me.streak,
+            bestStreak: me.bestStreak, isPlus: me.isPlus, lifetimeSpent: me.lifetimeSpent + total,
+            itemsOwned: me.itemsOwned + buying.count, canClaimDaily: me.canClaimDaily, canSpin: me.canSpin,
+            lastDailyClaim: me.lastDailyClaim, lastSpinDate: me.lastSpinDate
+        )
+        clearCart()
+        onLocalSettle?()
+        return PurchaseResult(ok: true, reason: nil, orderId: UUID().uuidString, spent: total,
+                              itemCount: buying.count, coins: me.coins - total, need: nil,
+                              bought: buying.map(\.id))
+    }
+    #endif
+
     @discardableResult
     func checkout() async -> PurchaseResult? {
         let ids = cartIds
         guard !ids.isEmpty else { return nil }
+        #if DEBUG
+        if settlesLocally { return settleLocally(ids) }
+        #endif
         let itemCount = ids.count
         let coinTotal = cartTotal
         Analytics.track("checkout_started", ["item_count": itemCount, "coin_total": coinTotal])
