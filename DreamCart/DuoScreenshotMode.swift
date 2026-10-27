@@ -21,7 +21,9 @@ import Observation
 enum DuoScreenshotMode {
     private static let arguments = ProcessInfo.processInfo.arguments
 
-    static var isSeeded: Bool { arguments.contains("-DuoSeed") }
+    /// A seeded shopper with no server session: this capture's or the
+    /// release journeys' (`QAShopper`).
+    static var isSeeded: Bool { arguments.contains("-DuoSeed") || QAShopper.isActive }
     static var wantsTour: Bool { arguments.contains("-DuoTour") }
 
     static func value(_ key: String) -> String? {

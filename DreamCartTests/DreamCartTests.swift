@@ -161,6 +161,45 @@ final class DreamCartTests: XCTestCase {
         XCTAssertEqual(shop.products.map(\.id), ["a", "b"])
     }
 
+    @MainActor
+    func testLocalCheckoutChargesOnlyUnownedPiecesAndMovesThemToCloset() {
+        let shop = ShopStore()
+        shop.products = [makeProduct(id: "a", price: 300), makeProduct(id: "b", price: 500)]
+        shop.me = makeMe(coins: 1_000)
+        shop.ownedIds = ["b"]
+        var saved = 0
+        shop.onLocalSettle = { saved += 1 }
+
+        let result = shop.settleLocally(["a", "b"])
+
+        XCTAssertTrue(result.ok)
+        XCTAssertEqual(result.spent, 300)
+        XCTAssertEqual(result.bought, ["a"])
+        XCTAssertEqual(shop.coins, 700)
+        XCTAssertEqual(shop.me?.lifetimeSpent, 300)
+        XCTAssertEqual(shop.closet.first?.id, "a")
+        XCTAssertTrue(shop.ownedIds.contains("a"))
+        XCTAssertNotNil(shop.closetAcquiredAt["a"])
+        XCTAssertTrue(shop.cartIds.isEmpty)
+        XCTAssertEqual(saved, 1)
+    }
+
+    @MainActor
+    func testLocalCheckoutRefusesAnOrderOverTheBalance() {
+        let shop = ShopStore()
+        shop.products = [makeProduct(id: "a", price: 800)]
+        shop.me = makeMe(coins: 700)
+        shop.cartIds = ["a"]
+
+        let result = shop.settleLocally(["a"])
+
+        XCTAssertFalse(result.ok)
+        XCTAssertEqual(result.reason, "insufficient_coins")
+        XCTAssertEqual(shop.coins, 700)
+        XCTAssertTrue(shop.closet.isEmpty)
+        XCTAssertEqual(shop.cartIds, ["a"])
+    }
+
     func testHexColorParsingDoesNotCrash() {
         _ = Color(hex: "#7C3AED")
         _ = Color(hex: "FFFFFF")
