@@ -206,7 +206,7 @@ struct TodayView: View {
 
     @ViewBuilder
     private var streakLabel: some View {
-        if let streak = shop.me?.streak, streak > 0 {
+        if let streak = shop.me?.liveStreak(), streak > 0 {
             Label("\(streak) day\(streak == 1 ? "" : "s")", systemImage: "flame.fill")
                 .font(.dcLabel)
                 .foregroundStyle(.white)
@@ -235,7 +235,7 @@ struct TodayView: View {
                 .font(.dcLabel)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-            if let streak = shop.me?.streak, streak > 0 {
+            if let streak = shop.me?.liveStreak(), streak > 0 {
                 // Just the flame + number so it never wraps or crowds the row.
                 Label("\(streak)", systemImage: "flame.fill")
                     .font(.dcLabel)
@@ -259,7 +259,7 @@ struct TodayView: View {
 
     @ViewBuilder
     private var paneDailyRow: some View {
-        let streak = shop.me?.streak ?? 0
+        let streak = shop.me?.liveStreak() ?? 0
         let canSpin = shop.canSpin
         HStack(spacing: 12) {
             paneTile(icon: "checkmark.seal.fill", title: "Daily claimed",
@@ -308,9 +308,10 @@ struct TodayView: View {
         defer { claiming = false }
         if let r = await shop.claimDaily(), r.ok, let g = r.granted {
             Haptics.celebrate()
+            let streak = r.streak ?? 0
             let sub = (r.weeklyBonus ?? false)
-                ? "Weekly bonus! Streak \(r.streak ?? 0). See you tomorrow."
-                : "Streak \(r.streak ?? 0) days. Come back tomorrow for more."
+                ? "Weekly bonus! Streak \(streak). See you tomorrow."
+                : "Streak \(streak) day\(streak == 1 ? "" : "s"). Come back tomorrow for more."
             withAnimation { reward = ("Daily Drop claimed", g, sub) }
         }
     }

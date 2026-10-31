@@ -108,7 +108,7 @@ struct ProfileView: View {
                 .foregroundStyle(Theme.ink(scheme))
             HStack(spacing: 5) {
                 Image(systemName: "flame.fill").foregroundStyle(Theme.coral)
-                Text("\(shop.me?.streak ?? 0)-day streak")
+                Text("\(shop.me?.liveStreak() ?? 0)-day streak")
                     .font(.dcLabel)
                     .foregroundStyle(Theme.subtle(scheme))
             }
