@@ -144,18 +144,26 @@ actor SupabaseClient {
         req.setValue("application/json", forHTTPHeaderField: "content-type")
         req.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": refreshToken])
         let (data, resp) = try await URLSession.shared.data(for: req)
-        do {
-            try Self.ensureOK(resp, data)
-            try storeSession(from: data)
-        } catch {
-            // Only a dead refresh token forces re-auth, and not when another
-            // call already replaced the session while this one was in flight.
-            if case SBError.http(let code, _) = error, (400...403).contains(code),
-               session?.refreshToken == refreshToken {
-                signOutLocal()
-            }
+        // Only the auth server refusing the token ends the session. A 429, a 5xx
+        // or a 200 that is not a token (a Wi-Fi sign-in page) says nothing about
+        // it; those throw and the next call tries again with the same token.
+        if let http = resp as? HTTPURLResponse, Self.refusesRefreshToken(status: http.statusCode) {
+            // A call that overlapped this one may already have swapped in a newer
+            // session (or the person signed out); that one stands.
+            guard session?.refreshToken == refreshToken else { return }
+            // The refresh token is dead, so force re-auth.
+            signOutLocal()
             throw SBError.notAuthenticated
         }
+        try Self.ensureOK(resp, data)
+        try storeSession(from: data)
+    }
+
+    /// GoTrue answers a refresh token it no longer honours (revoked, already
+    /// used, unknown) with a 4xx. Timeouts and rate limits are also 4xx but
+    /// pass once the server has room.
+    private static func refusesRefreshToken(status: Int) -> Bool {
+        (400..<500).contains(status) && ![408, 425, 429].contains(status)
     }
 
     func accessToken() async throws -> String {
