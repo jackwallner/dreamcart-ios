@@ -77,6 +77,7 @@ struct RootView: View {
                 }
             case .unknown, .signedOut:
                 shop.purchaseRecovery.selectAccount(nil)
+                shop.forgetAccount()
             }
         }
     }
