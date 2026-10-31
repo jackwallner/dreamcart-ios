@@ -39,6 +39,14 @@ final class ShopStore {
 
     var coins: Int { me?.coins ?? 0 }
 
+    /// Whether the wheel can be spun right now. `me()` only reports the
+    /// once-a-day limit; the server's `spin()` lifts it for DreamCart+ members,
+    /// so the app has to as well or "spin as often as you like" never shows up.
+    var canSpin: Bool {
+        guard let me else { return false }
+        return me.canSpin || me.isPlus
+    }
+
     var brandById: [String: Brand] { Dictionary(brands.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a }) }
 
     // MARK: bulk load
