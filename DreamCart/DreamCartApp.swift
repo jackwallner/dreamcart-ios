@@ -105,6 +105,13 @@ struct DreamCartApp: App {
                     _ = router.consumePendingRoute()
                 }
                 .onChange(of: scenePhase) { _, new in
+                    // Notification permission is changed in Settings, outside the
+                    // app. Read it again on every return, or a shopper who denied
+                    // the prompt and then allowed it in Settings kept seeing
+                    // "Notifications are off in Settings" until a relaunch.
+                    if new == .active {
+                        Task { await notifications.refreshStatus() }
+                    }
                     if new == .active, auth.state == .signedIn {
                         Task { await shop.reconcilePurchases() }
                     }
