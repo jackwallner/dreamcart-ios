@@ -84,4 +84,6 @@ final class SupabaseStub: URLProtocol, @unchecked Sendable {
     static let brandJSON = ##"{"id":"b1","slug":"nova","name":"Nova","tagline":"Soft tailoring","accent_hex":"#7C3AED","bg_hex":"#F2F2F2","sort":1}"##
 
     static let productJSON = ##"{"id":"p1","brand_id":"b1","name":"Nova Camel Trench","category":"outerwear","slot":"outerwear","style_tags":["minimal"],"color_name":"Camel","price":900,"rarity":"rare","description":"","image_url":"","drop_date":"2026-10-30","brands":\##(brandJSON)}"##
+
+    static let meJSON = ##"{"id":"user-1","display_name":"Shopper","coins":1234,"streak":2,"best_streak":3,"is_plus":false,"lifetime_spent":0,"items_owned":0,"can_claim_daily":true,"can_spin":true,"last_daily_claim":null,"last_spin_date":null}"##
 }
