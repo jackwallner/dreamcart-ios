@@ -121,6 +121,11 @@ struct TodayView: View {
         let can = shop.me?.canClaimDaily ?? false
         if auth.isGuest {
             guestCoinsCard
+        } else if shop.me == nil {
+            // The account did not load (offline, a server error). Unknown is not
+            // "claimed": the load banner above says what happened and Retry
+            // brings the real card back.
+            EmptyView()
         } else if can {
             claimableDailyCard
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
@@ -320,8 +325,9 @@ struct TodayView: View {
 
     @ViewBuilder
     private var spinCard: some View {
-        if auth.isGuest {
-            // Folded into guestCoinsCard above.
+        if auth.isGuest || shop.me == nil {
+            // A guest's wheel is folded into guestCoinsCard above; with no
+            // profile loaded the wheel's state is unknown, not "used".
             EmptyView()
         } else if shop.canSpin {
             spinCardReady
