@@ -109,7 +109,7 @@ struct SpinView: View {
                 RewardOverlay(title: t == .jackpot ? "JACKPOT!" : "You won",
                               amount: prize,
                               subtitle: t == .jackpot ? "Huge. Go treat yourself."
-                                                       : "Added to your wallet. Spin again tomorrow.",
+                                                       : "Added to your wallet. Spin again \(shop.me?.isPlus == true ? "anytime" : "tomorrow").",
                               coinsOnly: t != .jackpot,
                               showConfetti: t != .small) {
                     if reduceMotion { showReward = false } else { withAnimation { showReward = false } }
@@ -133,7 +133,7 @@ struct SpinView: View {
         upsell.canShowNonBlocking() && shop.coins < lowBalanceUpsellThreshold
     }
 
-    private var canSpin: Bool { shop.me?.canSpin ?? false }
+    private var canSpin: Bool { shop.canSpin }
 
     /// A small idle wobble on top of the drag/spin angle, suppressed the moment
     /// the wheel is touched or spinning.

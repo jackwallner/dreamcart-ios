@@ -260,7 +260,7 @@ struct TodayView: View {
     @ViewBuilder
     private var paneDailyRow: some View {
         let streak = shop.me?.streak ?? 0
-        let canSpin = shop.me?.canSpin ?? false
+        let canSpin = shop.canSpin
         HStack(spacing: 12) {
             paneTile(icon: "checkmark.seal.fill", title: "Daily claimed",
                      detail: streak > 0 ? "\(streak)-day streak" : "More tomorrow", onCandy: true)
@@ -322,7 +322,7 @@ struct TodayView: View {
         if auth.isGuest {
             // Folded into guestCoinsCard above.
             EmptyView()
-        } else if shop.me?.canSpin ?? false {
+        } else if shop.canSpin {
             spinCardReady
                 .transition(.scale(scale: 0.96).combined(with: .opacity))
         } else {
