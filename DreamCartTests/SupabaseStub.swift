@@ -9,9 +9,11 @@ final class SupabaseStub: URLProtocol, @unchecked Sendable {
     struct Reply {
         var status = 200
         var body = Data("[]".utf8)
+        /// Seconds to hold the answer back, so a test can act while the request is out.
+        var delay: TimeInterval = 0
 
-        static func json(_ text: String, status: Int = 200) -> Reply {
-            Reply(status: status, body: Data(text.utf8))
+        static func json(_ text: String, status: Int = 200, delay: TimeInterval = 0) -> Reply {
+            Reply(status: status, body: Data(text.utf8), delay: delay)
         }
     }
 
@@ -56,9 +58,16 @@ final class SupabaseStub: URLProtocol, @unchecked Sendable {
         let response = HTTPURLResponse(url: request.url!, statusCode: reply.status,
                                        httpVersion: "HTTP/1.1",
                                        headerFields: ["Content-Type": "application/json"])!
-        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: reply.body)
-        client?.urlProtocolDidFinishLoading(self)
+        let deliver = { [self] in
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: reply.body)
+            client?.urlProtocolDidFinishLoading(self)
+        }
+        if reply.delay > 0 {
+            DispatchQueue.global().asyncAfter(deadline: .now() + reply.delay, execute: deliver)
+        } else {
+            deliver()
+        }
     }
 
     override func stopLoading() {}
