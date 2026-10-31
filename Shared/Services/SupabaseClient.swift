@@ -205,7 +205,13 @@ actor SupabaseClient {
 
     /// Insert/delete helpers for user-owned tables (favorites, outfits).
     func write(_ path: String, method: String, body: Any?) async throws -> Data {
-        var req = URLRequest(url: Config.restURL.appendingPathComponent(path))
+        // `path` can carry a PostgREST filter ("favorites?product_id=eq.x").
+        // `appendingPathComponent` would escape the "?" and ask for a table by
+        // that whole name, so build the URL the way `select` does.
+        guard let url = URL(string: Config.restURL.absoluteString + "/" + path) else {
+            throw URLError(.badURL)
+        }
+        var req = URLRequest(url: url)
         req.httpMethod = method
         req.setValue(apikey, forHTTPHeaderField: "apikey")
         req.setValue("application/json", forHTTPHeaderField: "content-type")
