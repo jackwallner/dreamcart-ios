@@ -83,9 +83,13 @@ final class ShopStore {
             // already decoded.
             let gridWarm = Array(products.prefix(12).map(\.imageUrl))
             Task { await ImagePrefetcher.warmGrid(urls: gridWarm) }
-            await loadCloset()
+            let closetLoaded = await loadCloset()
             await loadFavorites()
             await loadRecommendationFeedback()
+            // A closet that failed to load looks like an empty one (Closet says
+            // "Your closet is empty", owned pieces offer "Add to cart"), so the
+            // load banner has to say it.
+            if !closetLoaded { loadError = "Couldn't load your closet." }
             // For You's ranking depends on closet/favorites/recs, so warm it
             // once those are in — still well before the user taps the tab.
             let forYouWarm = Array(forYouProducts.prefix(8).map(\.imageUrl))
@@ -208,21 +212,23 @@ final class ShopStore {
         return snapshot
     }
 
-    func loadCloset() async {
+    /// False when the closet could not be fetched; what was loaded before stays.
+    @discardableResult
+    func loadCloset() async -> Bool {
         struct Row: Decodable {
             let acquiredAt: String
             let products: Product?
         }
-        if let rows: [Row] = try? await sb.select(
-            "closet_items?select=acquired_at,products(*)&order=acquired_at.desc") {
-            let owned = rows.compactMap { row -> (Product, String)? in
-                guard let product = row.products else { return nil }
-                return (product, row.acquiredAt)
-            }
-            closet = owned.map(\.0)
-            closetAcquiredAt = Dictionary(owned.map { ($0.0.id, $0.1) }, uniquingKeysWith: { first, _ in first })
-            ownedIds = Set(closet.map(\.id))
+        guard let rows: [Row] = try? await sb.select(
+            "closet_items?select=acquired_at,products(*)&order=acquired_at.desc") else { return false }
+        let owned = rows.compactMap { row -> (Product, String)? in
+            guard let product = row.products else { return nil }
+            return (product, row.acquiredAt)
         }
+        closet = owned.map(\.0)
+        closetAcquiredAt = Dictionary(owned.map { ($0.0.id, $0.1) }, uniquingKeysWith: { first, _ in first })
+        ownedIds = Set(closet.map(\.id))
+        return true
     }
 
     func loadFavorites() async {
