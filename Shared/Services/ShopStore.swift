@@ -111,13 +111,7 @@ final class ShopStore {
             isLoading = false
             hasLoadedOnce = true
         }
-        me = nil
-        closet = []
-        closetAcquiredAt = [:]
-        ownedIds = []
-        favoriteIds = []
-        outfits = []
-        ledger = []
+        clearAccountState()
         do {
             async let b: [Brand] = sb.select("brands?select=*&order=sort.asc", authed: false)
             async let p: [ProductWithBrand] =
@@ -131,6 +125,31 @@ final class ShopStore {
         } catch {
             loadError = (error as? SBError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    /// Lets go of everything that belongs to the signed-in account: sign-out, a
+    /// deleted account and a session the server ended. The store outlives them,
+    /// so without this the next sign-in drew the last account's balance and
+    /// closet until its own load landed and carried the old cart into the new
+    /// account's order, and a guest saw that cart's count on the tab bar. The
+    /// public catalog stays, and the next load counts as a first load.
+    func forgetAccount() {
+        clearAccountState()
+        loadError = nil
+        hasLoadedOnce = false
+    }
+
+    private func clearAccountState() {
+        me = nil
+        closet = []
+        closetAcquiredAt = [:]
+        ownedIds = []
+        favoriteIds = []
+        outfits = []
+        ledger = []
+        cartIds = []
+        dismissedRecommendationIds = []
+        acceptedRecommendationIds = []
     }
 
     private func loadRemainingCatalog(generation: Int) async {
