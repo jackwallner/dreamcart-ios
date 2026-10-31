@@ -163,7 +163,7 @@ final class SupabaseClientTests: XCTestCase {
         SupabaseStub.install { request in
             guard SupabaseStub.isTokenCall(request) else { return .json("[]") }
             if SupabaseStub.grantType(request) == "refresh_token" {
-                return .json(SupabaseStub.tokenJSON(), delay: 0.4)
+                return .json(SupabaseStub.tokenJSON(), delay: 1.0)
             }
             return .json(SupabaseStub.tokenJSON(expiresIn: 30))
         }
