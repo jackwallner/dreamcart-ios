@@ -36,6 +36,10 @@ Read these before assuming fleet defaults (global agent rules + `ios-dev` skill)
 Two-pane unfolded layout (tabs beside the Cart), pane covers and capture
 mode: `.claude/rules/iphone-duo.md`.
 
+## Tests
+
+Unit-test conventions (Supabase stub, the singleton client): `.claude/rules/testing.md`.
+
 ## Android
 
 Native Kotlin/Compose port in `android/`. Rules, commands and open decisions:
