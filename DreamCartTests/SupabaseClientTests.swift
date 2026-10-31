@@ -109,6 +109,37 @@ final class SupabaseClientTests: XCTestCase {
         XCTAssertTrue(signedIn, "A captive portal is not the auth server")
     }
 
+    /// When the session does end the person has to be told and sent back to
+    /// sign-in. `AuthController` kept `.signedIn` over a client with no session:
+    /// the tabs stayed up, "Claim now" did nothing and checkout failed for good.
+    func testEndedSessionSendsTheAppBackToSignIn() async throws {
+        try await signInThenRefreshAnswers(
+            status: 400,
+            body: #"{"error":"invalid_grant","error_description":"Invalid Refresh Token: Already Used"}"#)
+        let auth = AuthController()
+        auth.state = .signedIn
+
+        _ = await accessTokenThrows()
+        for _ in 0..<40 where auth.state != .signedOut {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+
+        XCTAssertEqual(auth.state, .signedOut)
+        XCTAssertNotNil(auth.errorMessage)
+    }
+
+    func testTransientRefreshFailureLeavesTheAppSignedIn() async throws {
+        try await signInThenRefreshAnswers(status: 503, body: #"{"message":"upstream unavailable"}"#)
+        let auth = AuthController()
+        auth.state = .signedIn
+
+        _ = await accessTokenThrows()
+        try? await Task.sleep(for: .milliseconds(200))
+
+        XCTAssertEqual(auth.state, .signedIn)
+        XCTAssertNil(auth.errorMessage)
+    }
+
     /// The other side of the rule: a refresh token the server no longer honours
     /// does end the session.
     func testRefusedRefreshTokenEndsTheSession() async throws {
