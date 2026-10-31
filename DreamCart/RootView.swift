@@ -65,21 +65,36 @@ struct RootView: View {
                     store.configure(userId: shop.purchaseRecovery.accountId)
                     await shop.refreshAll()
                     await shop.reconcilePurchases()
-                    router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
-                    _ = router.consumePendingRoute()
+                    syncRoutes()
                 }
             case .guest:
                 shop.purchaseRecovery.selectAccount(nil)
                 Task {
                     await shop.refreshCatalogForGuest()
-                    router.setReadiness(signedIn: true, catalogReady: !shop.products.isEmpty)
-                    _ = router.consumePendingRoute()
+                    syncRoutes()
                 }
             case .unknown, .signedOut:
                 shop.purchaseRecovery.selectAccount(nil)
                 shop.forgetAccount()
             }
         }
+        // The catalog does not always arrive during the launch checks above: a
+        // first load that failed is recovered later by Retry or a pull to
+        // refresh. Without this, routes stayed "not ready" for the session and
+        // "Shop all" did nothing.
+        .onChange(of: shop.products.isEmpty) { _, _ in
+            #if DEBUG
+            if DuoScreenshotMode.isSeeded { return }
+            #endif
+            syncRoutes()
+        }
+    }
+
+    /// Opens whatever route is waiting once the shopper is browsing (signed in
+    /// or as a guest) and the catalog is in.
+    private func syncRoutes() {
+        router.sync(browsing: auth.state == .signedIn || auth.state == .guest,
+                    catalogLoaded: !shop.products.isEmpty)
     }
 }
 

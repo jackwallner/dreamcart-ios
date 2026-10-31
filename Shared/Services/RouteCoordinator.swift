@@ -33,6 +33,17 @@ final class RouteCoordinator {
         isCatalogReady = catalogReady
     }
 
+    /// Brings readiness up to date and opens the route that was waiting for it.
+    /// Called whenever what the app has loaded changes, not only at launch: a
+    /// first load that failed is recovered later by Retry or a pull to refresh,
+    /// and a route that stayed "not ready" until the next launch left "Shop all"
+    /// and the other links into the shop doing nothing.
+    @discardableResult
+    func sync(browsing: Bool, catalogLoaded: Bool) -> AppRoute? {
+        setReadiness(signedIn: browsing, catalogReady: browsing && catalogLoaded)
+        return consumePendingRoute()
+    }
+
     func receive(_ route: AppRoute) {
         pendingRoute = route
         _ = consumePendingRoute()
