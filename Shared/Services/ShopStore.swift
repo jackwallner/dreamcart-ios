@@ -309,6 +309,10 @@ final class ShopStore {
 
     func resetRecommendationDismissals() {
         dismissedRecommendationIds.removeAll()
+        // The passes are recorded on the server too, and refreshAll() loads them
+        // back, so clearing only the set lasted until the next launch or pull to
+        // refresh. Carted pieces keep their record.
+        Task { _ = try? await sb.write("recommendation_feedback?action=eq.dismissed", method: "DELETE", body: nil) }
     }
 
     func dismissRecommendation(_ id: String) {
