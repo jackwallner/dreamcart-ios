@@ -60,6 +60,15 @@ ANDROID_SERIAL=emulator-5554 fm-gradle :app:connectedDebugAndroidTest -Pkotlin.c
   `--es appearance dark`, `--ez screenshot true`, `--ez rcProbe true` (Plus button buys
   the Test Store offering's first package).
 
+## Process death
+
+The system can kill a backgrounded app and restore its Activity (with a saved
+state) onto a new process, where `AppGraph` and `ShopStore` start from scratch.
+`MainActivity` therefore calls `ShopStore.onActivityCreated(freshLaunch)`, which
+bootstraps on a fresh launch and whenever `authState` is still `UNKNOWN`; the
+root draws `UNKNOWN` as the splash. Anything the Activity sets up only when
+`savedInstanceState == null` has to survive that. Guard: `BootstrapTests`.
+
 ## jmbp2 emulator notes (2026-10-20)
 
 - agent-emu-1 (API 36 Play image, 2 vCPU, SwiftShader) renders about 1 to 10 fps.
