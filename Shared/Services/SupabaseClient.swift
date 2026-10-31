@@ -26,6 +26,12 @@ enum SBError: LocalizedError {
     }
 }
 
+extension Notification.Name {
+    /// Posted when the auth server refuses the stored refresh token and the
+    /// session is dropped, so the app can send the person back to sign-in.
+    static let supabaseSessionEnded = Notification.Name("SupabaseClient.sessionEnded")
+}
+
 actor SupabaseClient {
     static let shared = SupabaseClient()
 
@@ -153,6 +159,7 @@ actor SupabaseClient {
             guard session?.refreshToken == refreshToken else { return }
             // The refresh token is dead, so force re-auth.
             signOutLocal()
+            NotificationCenter.default.post(name: .supabaseSessionEnded, object: nil)
             throw SBError.notAuthenticated
         }
         try Self.ensureOK(resp, data)

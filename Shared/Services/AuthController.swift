@@ -36,6 +36,23 @@ final class AuthController {
 
     private var currentNonce: String?
 
+    init() {
+        // The client drops its session when the auth server refuses the refresh
+        // token. Without this the tabs stay up over a client that can no longer
+        // claim, spin or check out, with nothing saying why.
+        NotificationCenter.default.addObserver(
+            forName: .supabaseSessionEnded, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.sessionEnded() }
+        }
+    }
+
+    private func sessionEnded() {
+        guard state == .signedIn else { return }
+        errorMessage = "Your session ended. Sign in again."
+        state = .signedOut
+    }
+
     func bootstrap() async {
         #if DEBUG
         // A reinstall keeps the Keychain session, so a QA journey that needs the
