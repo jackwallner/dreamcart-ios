@@ -92,6 +92,31 @@ final class ShopStoreNetworkTests: XCTestCase {
         await finishCatalogPaging(of: shop)
     }
 
+    /// For You's "Reconsider passes" brings passed pieces back. It only emptied
+    /// the set in memory: the passes stay in `recommendation_feedback`, and the
+    /// next `refreshAll()` (every launch, every pull to refresh) loaded them
+    /// again, so the deck emptied itself once more.
+    func testReconsideringPassesRemovesThemOnTheServerToo() async throws {
+        SupabaseStub.install { request in
+            SupabaseStub.isTokenCall(request) ? .json(SupabaseStub.tokenJSON()) : .json("[]")
+        }
+        try await SupabaseClient.shared.signInWithPassword(email: "shopper@example.com", password: "pw")
+        let shop = ShopStore()
+        shop.dismissedRecommendationIds = ["p1", "p2"]
+
+        shop.resetRecommendationDismissals()
+
+        XCTAssertTrue(shop.dismissedRecommendationIds.isEmpty)
+        // The delete goes out from a task of its own.
+        for _ in 0..<100 where !SupabaseStub.requests.contains(where: { $0.httpMethod == "DELETE" }) {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        let delete = try XCTUnwrap(SupabaseStub.requests.first { $0.httpMethod == "DELETE" })
+        XCTAssertEqual(delete.url?.path, "/rest/v1/recommendation_feedback")
+        XCTAssertEqual(delete.url?.query, "action=eq.dismissed",
+                       "Only the passes go; a piece the shopper carted stays recorded as carted")
+    }
+
     /// The catalog's remaining pages load in a task of their own; let it ask
     /// for its page before the stub goes away.
     private func finishCatalogPaging(of shop: ShopStore) async {
