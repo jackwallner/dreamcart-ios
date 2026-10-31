@@ -591,12 +591,7 @@ final class ShopStore {
     }
 
     /// Today in UTC as "YYYY-MM-DD", matching the DB's `current_date`.
-    static func todayUTC() -> String {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "UTC")!
-        let c = cal.dateComponents([.year, .month, .day], from: Date())
-        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
-    }
+    static func todayUTC() -> String { UTCDay.string(Date()) }
 
     static func plain(_ p: ProductWithBrand) -> Product {
         Product(id: p.id, brandId: p.brandId, name: p.name, category: p.category, slot: p.slot,
