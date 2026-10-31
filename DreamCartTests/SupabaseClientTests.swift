@@ -153,4 +153,49 @@ final class SupabaseClientTests: XCTestCase {
         XCTAssertTrue(failed)
         XCTAssertFalse(signedIn)
     }
+
+    // MARK: sign-out racing a refresh
+
+    /// A refresh is a network round trip. Signing out while one is out must
+    /// stick: the late answer used to be stored as a fresh session, so the
+    /// Keychain held a login again and the next launch signed the person back in.
+    func testSignOutWhileARefreshIsOutIsNotUndoneByItsAnswer() async throws {
+        SupabaseStub.install { request in
+            guard SupabaseStub.isTokenCall(request) else { return .json("[]") }
+            if SupabaseStub.grantType(request) == "refresh_token" {
+                return .json(SupabaseStub.tokenJSON(), delay: 0.4)
+            }
+            return .json(SupabaseStub.tokenJSON(expiresIn: 30))
+        }
+        try await signIn()
+
+        let refreshing = Task { try? await SupabaseClient.shared.accessToken() }
+        for _ in 0..<40 where !SupabaseStub.requests.contains(where: { SupabaseStub.grantType($0) == "refresh_token" }) {
+            try? await Task.sleep(for: .milliseconds(25))
+        }
+        await SupabaseClient.shared.signOutLocal()
+        let token = await refreshing.value
+        let signedIn = await SupabaseClient.shared.isSignedIn
+
+        XCTAssertNil(token, "A signed-out client has no token to hand out")
+        XCTAssertFalse(signedIn, "The late refresh answer must not sign the person back in")
+        XCTAssertNil(Keychain.load(), "Nothing may be written back to the Keychain after sign-out")
+    }
+
+    /// Control: with nobody signing out, the refresh answer is stored and used.
+    func testRefreshAnswerIsStoredWhenNobodySignedOut() async throws {
+        SupabaseStub.install { request in
+            guard SupabaseStub.isTokenCall(request) else { return .json("[]") }
+            if SupabaseStub.grantType(request) == "refresh_token" {
+                return .json(#"{"access_token":"access-2","refresh_token":"refresh-2","expires_in":3600,"user":{"id":"user-1"}}"#,
+                             delay: 0.1)
+            }
+            return .json(SupabaseStub.tokenJSON(expiresIn: 30))
+        }
+        try await signIn()
+
+        let token = try await SupabaseClient.shared.accessToken()
+
+        XCTAssertEqual(token, "access-2")
+    }
 }

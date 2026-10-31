@@ -163,6 +163,10 @@ actor SupabaseClient {
             throw SBError.notAuthenticated
         }
         try Self.ensureOK(resp, data)
+        // The request was out while this actor served other calls. A sign-out
+        // (or a sign-in as someone else) that landed meanwhile stands; storing
+        // this answer would hand the old login back, and the Keychain with it.
+        guard session?.refreshToken == s.refreshToken else { return }
         try storeSession(from: data)
     }
 
