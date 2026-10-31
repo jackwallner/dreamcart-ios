@@ -38,11 +38,20 @@ final class ShopStore {
     private var catalogGeneration = 0
 
     var coins: Int { me?.coins ?? 0 }
+
     var brandById: [String: Brand] { Dictionary(brands.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a }) }
 
     // MARK: bulk load
 
     func refreshAll() async {
+        // A guest has no session, so `me` and the account tables would all fail
+        // with "Please sign in." and take the public catalog down with them.
+        // Today's pull to refresh and the load banner's Retry reach this for
+        // guests too: give them the catalog, which is all they can load.
+        guard await sb.isSignedIn else {
+            await refreshCatalogForGuest()
+            return
+        }
         catalogGeneration += 1
         let generation = catalogGeneration
         isLoading = true
