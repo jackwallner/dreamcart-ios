@@ -92,6 +92,34 @@ final class ShopStoreNetworkTests: XCTestCase {
         await finishCatalogPaging(of: shop)
     }
 
+    /// The closet is one request of the bootstrap. A failed one was swallowed:
+    /// the Closet tab then said "Your closet is empty" to someone with a closet,
+    /// the pieces they own showed "Add to cart", and nothing on screen said the
+    /// load had failed. The load banner (with its Retry) now covers it.
+    func testRefreshAllReportsAClosetThatDidNotLoad() async throws {
+        SupabaseStub.install { request in
+            if SupabaseStub.isTokenCall(request) { return .json(SupabaseStub.tokenJSON()) }
+            let query = request.url?.query ?? ""
+            switch request.url?.path {
+            case "/rest/v1/rpc/me": return .json(SupabaseStub.meJSON)
+            case "/rest/v1/brands": return .json("[\(SupabaseStub.brandJSON)]")
+            case "/rest/v1/products":
+                return query.contains("offset=") ? .json("[]") : .json("[\(SupabaseStub.productJSON)]")
+            case "/rest/v1/closet_items": return .json(#"{"message":"upstream unavailable"}"#, status: 503)
+            default: return .json("[]")
+            }
+        }
+        try await SupabaseClient.shared.signInWithPassword(email: "shopper@example.com", password: "pw")
+        let shop = ShopStore()
+
+        await shop.refreshAll()
+
+        XCTAssertNotNil(shop.loadError, "A closet that failed to load must not look like an empty one")
+        XCTAssertEqual(shop.coins, 1234, "The rest of the account still loads")
+        XCTAssertTrue(shop.hasLoadedOnce)
+        await finishCatalogPaging(of: shop)
+    }
+
     /// For You's "Reconsider passes" brings passed pieces back. It only emptied
     /// the set in memory: the passes stay in `recommendation_feedback`, and the
     /// next `refreshAll()` (every launch, every pull to refresh) loaded them
