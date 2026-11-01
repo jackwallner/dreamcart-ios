@@ -62,6 +62,9 @@ final class ReleaseJourneysUITests: XCTestCase {
             tap("Sign in", in: app)
         }
         tap("Continue as tester", in: app)
+        // A first sign-in is offered DreamCart+ before Today; decline it.
+        let notNow = app.buttons["Not now"].firstMatch
+        if notNow.waitForExistence(timeout: 20) { notNow.tap() }
         XCTAssertTrue(app.buttons["Closet"].firstMatch.waitForExistence(timeout: 60))
         tapTab("Closet", in: app)
         let before = ownedCount(app)
