@@ -1,0 +1,1 @@
+Förbättringar bakom kulisserna och buggfixar så att DreamCart fungerar smidigt. Tack för att du är här.

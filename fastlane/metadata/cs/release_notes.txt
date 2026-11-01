@@ -1,0 +1,1 @@
+Vylepšení na pozadí a opravy chyb, aby DreamCart běžel hladce. Děkujeme, že jste tu.
