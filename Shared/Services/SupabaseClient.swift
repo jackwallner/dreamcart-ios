@@ -119,9 +119,22 @@ actor SupabaseClient {
         persist()
     }
 
+    private var refreshing: Task<Void, Error>?
+
+    /// One refresh at a time. Refresh tokens are single use, so parallel
+    /// requests that each refreshed (launch fires many at once) made the
+    /// losers' rejection sign the shopper out.
     private func refreshIfNeeded() async throws {
-        guard var s = session else { throw SBError.notAuthenticated }
+        guard let s = session else { throw SBError.notAuthenticated }
         guard s.expiresAt.timeIntervalSinceNow < 120 else { return }
+        if let refreshing { return try await refreshing.value }
+        let task = Task { try await self.refreshSession(using: s.refreshToken) }
+        refreshing = task
+        defer { refreshing = nil }
+        try await task.value
+    }
+
+    private func refreshSession(using refreshToken: String) async throws {
         var comps = URLComponents(url: Config.authURL.appendingPathComponent("token"),
                                   resolvingAgainstBaseURL: false)!
         comps.queryItems = [URLQueryItem(name: "grant_type", value: "refresh_token")]
@@ -129,17 +142,20 @@ actor SupabaseClient {
         req.httpMethod = "POST"
         req.setValue(apikey, forHTTPHeaderField: "apikey")
         req.setValue("application/json", forHTTPHeaderField: "content-type")
-        req.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": s.refreshToken])
+        req.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": refreshToken])
         let (data, resp) = try await URLSession.shared.data(for: req)
         do {
             try Self.ensureOK(resp, data)
             try storeSession(from: data)
         } catch {
-            // Refresh token dead — force re-auth.
-            signOutLocal()
+            // Only a dead refresh token forces re-auth, and not when another
+            // call already replaced the session while this one was in flight.
+            if case SBError.http(let code, _) = error, (400...403).contains(code),
+               session?.refreshToken == refreshToken {
+                signOutLocal()
+            }
             throw SBError.notAuthenticated
         }
-        _ = s
     }
 
     func accessToken() async throws -> String {
