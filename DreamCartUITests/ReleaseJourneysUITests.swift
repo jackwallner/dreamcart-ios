@@ -8,7 +8,8 @@ final class ReleaseJourneysUITests: XCTestCase {
 
     func test1FirstRunToBrowsing() {
         let app = XCUIApplication(bundleIdentifier: "com.jackwallner.shop")
-        QA.launch(app)
+        // A reinstall keeps the Keychain session, so ask for a clean first run.
+        QA.launch(app, arguments: ["-FreshInstall"])
         checkpoint("welcome", button: "Next", in: app)
         tap("Next", in: app)
         checkpoint("welcome-coins", button: "Next", in: app)
@@ -51,16 +52,11 @@ final class ReleaseJourneysUITests: XCTestCase {
     /// closet, and still own it after a relaunch.
     func testCoreLoopCheckoutAddsToCloset() {
         let app = XCUIApplication(bundleIdentifier: "com.jackwallner.shop")
-        QA.launch(app)
-        // A fresh install starts at the welcome pages; an install that an earlier
-        // journey already browsed as a guest opens on Today with a Sign in card.
-        if app.buttons["Next"].firstMatch.waitForExistence(timeout: 20) {
-            tap("Next", in: app)
-            tap("Next", in: app)
-            tap("Get started", in: app)
-        } else {
-            tap("Sign in", in: app)
-        }
+        QA.launch(app, arguments: ["-FreshInstall"])
+        checkpoint("core-welcome", button: "Next", in: app)
+        tap("Next", in: app)
+        tap("Next", in: app)
+        tap("Get started", in: app)
         tap("Continue as tester", in: app)
         // A first sign-in is offered DreamCart+ before Today; decline it.
         let notNow = app.buttons["Not now"].firstMatch
@@ -96,6 +92,8 @@ final class ReleaseJourneysUITests: XCTestCase {
         XCTAssertEqual(ownedCount(app), before + 1, "closet gained the purchased piece")
         QA.checkpoint(app, "core-closet-after")
 
+        // The relaunch keeps the session: only the first launch starts clean.
+        app.launchArguments.removeAll { $0 == "-FreshInstall" }
         QA.relaunch(app)
         // Unsigned simulator builds (gh-sim) cannot write the Keychain, so the
         // session is gone after a relaunch there: sign in again. The purchase
@@ -112,11 +110,17 @@ final class ReleaseJourneysUITests: XCTestCase {
         QA.checkpoint(app, "core-closet-after-relaunch")
     }
 
-    /// Reads "N pieces owned" from the Closet header.
+    /// Reads the closet's piece count: "N pieces owned" on the collection card,
+    /// or "N pieces" under All pieces where the unfolded pane drops the card.
     private func ownedCount(_ app: XCUIApplication) -> Int {
-        let header = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'owned'")).firstMatch
-        XCTAssertTrue(header.waitForExistence(timeout: 30))
-        return Int(header.label.prefix { $0.isNumber }) ?? -1
+        let count = app.staticTexts
+            .matching(NSPredicate(format: "label MATCHES '^[0-9]+ pieces?( owned)?$'")).firstMatch
+        let empty = app.staticTexts["Your closet is empty"]
+        let deadline = Date().addingTimeInterval(30)
+        while Date() < deadline, !count.exists, !empty.exists { _ = count.waitForExistence(timeout: 1) }
+        if empty.exists { return 0 }
+        XCTAssertTrue(count.exists, "the closet shows how many pieces are owned")
+        return Int(count.label.prefix { $0.isNumber }) ?? -1
     }
 
     private func tap(_ label: String, in app: XCUIApplication) {

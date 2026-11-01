@@ -37,6 +37,14 @@ final class AuthController {
     private var currentNonce: String?
 
     func bootstrap() async {
+        #if DEBUG
+        // A reinstall keeps the Keychain session, so a QA journey that needs the
+        // first-run screens starts from a clean slate with this argument.
+        if ProcessInfo.processInfo.arguments.contains("-FreshInstall") {
+            await SupabaseClient.shared.signOutLocal()
+            UserDefaults.standard.removeObject(forKey: Self.guestKey)
+        }
+        #endif
         await SupabaseClient.shared.restore()
         let signed = await SupabaseClient.shared.isSignedIn
         if signed {

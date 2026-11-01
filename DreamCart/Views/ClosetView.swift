@@ -7,8 +7,9 @@ struct ClosetView: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
     @Environment(\.floatingTabBarTop) private var barTop
-    /// ClosetTile's caption: 8 pt gap and the two-line name.
-    @ScaledMetric(relativeTo: .headline) private var tileCaption: CGFloat = 52
+    /// ClosetTile's caption: 8 pt gap and the three-line name an unfolded pane
+    /// reserves (the only place this is read).
+    @ScaledMetric(relativeTo: .headline) private var tileCaption: CGFloat = 74
 
     @State private var showCoinShop = false
     @State private var isAtRest = true
@@ -408,7 +409,10 @@ struct ClosetTile: View {
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
-    @ScaledMetric(relativeTo: .headline) private var nameHeight: CGFloat = 44
+    @ScaledMetric(relativeTo: .headline) private var nameLineHeight: CGFloat = 22
+    /// Three lines in a narrow pane tile: "Palermo Powder Blue Graphic Baby Tee"
+    /// ended in an ellipsis after two lines at 75%.
+    private var nameLines: Int { isUnfoldedPane ? 3 : 2 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -431,10 +435,10 @@ struct ClosetTile: View {
             Text(product.name)
                 .font(.dcItem)
                 .foregroundStyle(Theme.ink(scheme))
-                .lineLimit(2, reservesSpace: true)
+                .lineLimit(nameLines, reservesSpace: true)
                 .truncationMode(.tail)
                 .minimumScaleFactor(isUnfoldedPane ? 0.75 : 1)
-                .frame(maxWidth: .infinity, minHeight: nameHeight, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: nameLineHeight * CGFloat(nameLines), alignment: .topLeading)
         }
         .contentShape(Rectangle())
     }
