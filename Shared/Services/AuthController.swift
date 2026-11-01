@@ -43,6 +43,7 @@ final class AuthController {
         if ProcessInfo.processInfo.arguments.contains("-FreshInstall") {
             await SupabaseClient.shared.signOutLocal()
             UserDefaults.standard.removeObject(forKey: Self.guestKey)
+            UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
         }
         #endif
         await SupabaseClient.shared.restore()
