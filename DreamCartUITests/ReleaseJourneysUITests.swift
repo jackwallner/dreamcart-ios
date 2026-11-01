@@ -97,6 +97,15 @@ final class ReleaseJourneysUITests: XCTestCase {
         QA.checkpoint(app, "core-closet-after")
 
         QA.relaunch(app)
+        // Unsigned simulator builds (gh-sim) cannot write the Keychain, so the
+        // session is gone after a relaunch there: sign in again. The purchase
+        // itself lives on the server and must still be in the closet.
+        let tester = app.buttons["Continue as tester"].firstMatch
+        if tester.waitForExistence(timeout: 20) {
+            tester.tap()
+            let offer = app.buttons["Not now"].firstMatch
+            if offer.waitForExistence(timeout: 20) { offer.tap() }
+        }
         XCTAssertTrue(app.buttons["Closet"].firstMatch.waitForExistence(timeout: 60))
         tapTab("Closet", in: app)
         XCTAssertEqual(ownedCount(app), before + 1, "the purchase survives a relaunch")
@@ -129,7 +138,8 @@ final class ReleaseJourneysUITests: XCTestCase {
     }
 
     private func checkpoint(_ name: String, button label: String, in app: XCUIApplication) {
-        XCTAssertTrue(app.buttons[label].firstMatch.waitForExistence(timeout: 15))
+        // The first launch loads the catalog before the welcome pages show.
+        XCTAssertTrue(app.buttons[label].firstMatch.waitForExistence(timeout: 60))
         QA.checkpoint(app, name)
     }
 
