@@ -52,9 +52,15 @@ final class ReleaseJourneysUITests: XCTestCase {
     func testCoreLoopCheckoutAddsToCloset() {
         let app = XCUIApplication(bundleIdentifier: "com.jackwallner.shop")
         QA.launch(app)
-        tap("Next", in: app)
-        tap("Next", in: app)
-        tap("Get started", in: app)
+        // A fresh install starts at the welcome pages; an install that an earlier
+        // journey already browsed as a guest opens on Today with a Sign in card.
+        if app.buttons["Next"].firstMatch.waitForExistence(timeout: 20) {
+            tap("Next", in: app)
+            tap("Next", in: app)
+            tap("Get started", in: app)
+        } else {
+            tap("Sign in", in: app)
+        }
         tap("Continue as tester", in: app)
         XCTAssertTrue(app.buttons["Closet"].firstMatch.waitForExistence(timeout: 60))
         tapTab("Closet", in: app)
