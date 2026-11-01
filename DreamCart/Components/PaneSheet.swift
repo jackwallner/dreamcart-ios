@@ -48,6 +48,9 @@ struct PaneCoverHost<Content: View>: View {
 
     var body: some View {
         content
+            // The cover only hides the pane visually; without this VoiceOver
+            // (and the QA hierarchy) still reaches the rows beneath it.
+            .accessibilityHidden(!covers.isEmpty)
             .overlay {
                 ZStack {
                     ForEach(covers) { cover in
