@@ -49,6 +49,11 @@ struct ClosetView: View {
                                            message: "Sign in so everything you buy is saved and ready to style into outfits.",
                                            feature: "closet_tab")
                         } else {
+                            // The new haul leads, so showing it scrolls to the top
+                            // and nothing slides under the navigation bar.
+                            if !highlightedProducts.isEmpty, !shop.closet.isEmpty {
+                                newHaulSection.id("new-haul")
+                            }
                             // Unfolded, All pieces already counts them, and
                             // the pane needs the height for a whole row.
                             if !isUnfoldedPane { collectionHeader }
@@ -67,9 +72,6 @@ struct ClosetView: View {
                                 .padding(.top, 40)
                             } else {
                                 controls
-                                if !highlightedProducts.isEmpty {
-                                    newHaulSection.id("new-haul")
-                                }
                                 collectionSection
                             }
                         }

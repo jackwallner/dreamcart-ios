@@ -111,7 +111,7 @@ struct CoinShopView: View {
                                 .font(.dcBadge)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(Theme.pink, in: Capsule())
+                                .background(Theme.badgePink, in: Capsule())
                         }
                     }
                     HStack(spacing: 4) {
@@ -152,11 +152,14 @@ struct CoinShopView: View {
                 .multilineTextAlignment(.center)
             HStack(spacing: 18) {
                 Link("Terms of Use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 Link("Privacy Policy", destination: URL(string: "https://jackwallner.github.io/dreamcart/privacy-policy.html")!)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .font(.dcCaption)
             .foregroundStyle(Theme.violet)
-            .frame(minHeight: 44)
         }
         .padding(.top, 6)
     }
