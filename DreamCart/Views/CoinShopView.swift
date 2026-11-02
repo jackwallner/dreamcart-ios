@@ -6,6 +6,7 @@ struct CoinShopView: View {
     @PaneAwareDismiss private var dismiss
     @Environment(\.colorScheme) private var scheme
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var buying: String? = nil
     @State private var reward: Int? = nil
@@ -95,30 +96,26 @@ struct CoinShopView: View {
             buyTask = Task { await buy(pack) }
         } label: {
             HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(Theme.goldGradient).frame(width: 58, height: 58)
-                    Image(systemName: coinIcon(pack))
-                        .font(.dcIconL).foregroundStyle(.white)
+                // Decorative, and the row needs the width at accessibility sizes.
+                if !typeSize.isAccessibilitySize {
+                    ZStack {
+                        Circle().fill(Theme.goldGradient).frame(width: 58, height: 58)
+                        Image(systemName: coinIcon(pack))
+                            .font(.dcIconL).foregroundStyle(.white)
+                    }
                 }
                 VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(pack.title)
-                            .font(.dcCard)
-                            .foregroundStyle(Theme.ink(scheme))
-                            .fixedSize()
-                        if let badge = pack.badge {
-                            Text(badge)
-                                .font(.dcBadge)
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(Theme.badgePink, in: Capsule())
-                        }
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 6) { packTitle(pack); packBadge(pack) }
+                        VStack(alignment: .leading, spacing: 4) { packTitle(pack); packBadge(pack) }
                     }
                     HStack(spacing: 4) {
                         CoinIcon(size: 14)
                         Text("\(Format.coins(pack.coins)) coins")
                             .font(.dcBody)
                             .foregroundStyle(Theme.ink(scheme))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                     }
                     Text(pack.blurb)
                         .font(.dcSub)
@@ -134,6 +131,7 @@ struct CoinShopView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                         .padding(.horizontal, 16).padding(.vertical, 9)
+                        .fixedSize()
                         .background(Theme.candy, in: Capsule())
                 }
             }
@@ -142,6 +140,26 @@ struct CoinShopView: View {
         }
         .buttonStyle(PressableStyle())
         .disabled(buying != nil || shop.purchaseRecovery.pendingCoins != nil)
+    }
+
+    private func packTitle(_ pack: CoinPack) -> some View {
+        Text(pack.title)
+            .font(.dcCard)
+            .foregroundStyle(Theme.ink(scheme))
+            .fixedSize()
+    }
+
+    @ViewBuilder
+    private func packBadge(_ pack: CoinPack) -> some View {
+        if let badge = pack.badge {
+            Text(badge)
+                .font(.dcBadge)
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .fixedSize()
+                .padding(.horizontal, 6).padding(.vertical, 2)
+                .background(Theme.badgePink, in: Capsule())
+        }
     }
 
     private var footer: some View {

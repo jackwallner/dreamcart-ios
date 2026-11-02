@@ -135,6 +135,7 @@ struct CheckoutView: View {
                         .font(.dcItem)
                         .foregroundStyle(Theme.ink(scheme))
                         .lineLimit(2, reservesSpace: true)
+                        .accessibilityIdentifier("checkoutItemName")
                     Spacer()
                     CoinLabel(amount: p.price, size: 13).foregroundStyle(Theme.ink(scheme))
                 }

@@ -369,7 +369,13 @@ struct ForYouView: View {
         let exit = CGSize(width: direction * size.width * 1.6, height: drag.height * 1.1)
         withAnimation(.easeIn(duration: 0.24)) {
             drag = exit
-        } completion: {
+        }
+        // A timer, not the animation's completion handler: a completion that
+        // never fires (the animation interrupted under load) left the card
+        // thrown off and nothing in the cart.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(280))
+            guard isFlinging else { return }
             var transaction = Transaction()
             transaction.disablesAnimations = true
             withTransaction(transaction) {

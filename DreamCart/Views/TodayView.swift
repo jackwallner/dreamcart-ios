@@ -233,12 +233,14 @@ struct TodayView: View {
                 .font(.dcIconM)
             Text("Daily claimed")
                 .font(.dcLabel)
-                .lineLimit(1)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
             if let streak = shop.me?.streak, streak > 0 {
                 // Just the flame + number so it never wraps or crowds the row.
                 Label("\(streak)", systemImage: "flame.fill")
                     .font(.dcLabel)
                     .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
                     .background(.black.opacity(0.18), in: Capsule())
@@ -350,6 +352,8 @@ struct TodayView: View {
                 Text("SPIN")
                     .font(.dcLabel)
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .fixedSize()
                     .padding(.horizontal, 14).padding(.vertical, 8)
                     .background(Theme.candy, in: Capsule())
             }
