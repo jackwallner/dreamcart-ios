@@ -236,6 +236,15 @@ enum Rarity: String {
         case .legendary: return Color(red: 0.58, green: 0.42, blue: 0.0)
         }
     }
+    /// The label colour on the dark haul summary, where `color` measured 1.9 to 2.7:1.
+    var onDarkColor: Color {
+        switch self {
+        case .common:    return Color(white: 0.8)
+        case .rare:      return Color(red: 0.55, green: 0.75, blue: 1.0)
+        case .epic:      return Color(red: 0.76, green: 0.64, blue: 1.0)
+        case .legendary: return Theme.goldLite
+        }
+    }
     var glow: Bool { self == .epic || self == .legendary }
     init(_ s: String) { self = Rarity(rawValue: s) ?? .common }
 }

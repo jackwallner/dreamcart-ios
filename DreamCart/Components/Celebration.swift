@@ -345,7 +345,7 @@ struct UnboxingView: View {
             Text(rarity.label.uppercased())
                 .font(.dcBadge)
                 .tracking(0.4)
-                .foregroundStyle(rarity.color)
+                .foregroundStyle(rarity.onDarkColor)
         }
         .padding(.horizontal, 14).padding(.vertical, 10)
         .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
