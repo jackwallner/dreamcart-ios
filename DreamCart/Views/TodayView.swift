@@ -218,12 +218,7 @@ struct TodayView: View {
     }
 
     private var claimedDailyChip: some View {
-        // A narrow column (the folded Duo, a Duo pane) keeps the claim and the
-        // streak whole and drops the hint rather than cutting all three.
-        ViewThatFits(in: .horizontal) {
-            claimedDailyRow(showsHint: true)
-            claimedDailyRow(showsHint: false)
-        }
+        claimedDailyRow
         .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -232,7 +227,7 @@ struct TodayView: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.8), value: shop.me?.canClaimDaily)
     }
 
-    private func claimedDailyRow(showsHint: Bool) -> some View {
+    private var claimedDailyRow: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.dcIconM)
@@ -249,12 +244,6 @@ struct TodayView: View {
                     .background(.white.opacity(0.22), in: Capsule())
             }
             Spacer(minLength: 6)
-            if showsHint {
-                Text("More tomorrow")
-                    .font(.dcSub)
-                    .foregroundStyle(.white.opacity(0.85))
-                    .lineLimit(1)
-            }
         }
     }
 

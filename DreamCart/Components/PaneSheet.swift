@@ -55,7 +55,9 @@ struct PaneCoverHost<Content: View>: View {
             // (and the QA hierarchy) still reaches the rows beneath it.
             .accessibilityHidden(!covers.isEmpty)
             .allowsHitTesting(covers.isEmpty)
-            .opacity(settled ? 0 : 1)
+            // Parked far off screen (not removed, so the pane keeps its state) so
+            // nothing under the cover can be reached or counted as on screen.
+            .offset(x: settled ? 10_000 : 0)
             .onChange(of: covers.map(\.id)) { _, ids in
                 guard !ids.isEmpty else { settled = false; return }
                 Task {
