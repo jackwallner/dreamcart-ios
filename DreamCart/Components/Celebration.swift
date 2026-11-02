@@ -287,6 +287,17 @@ struct UnboxingView: View {
         .accessibilityLabel("Skip to summary")
     }
 
+    private var spentLabel: some View {
+        Text("You spent")
+            .font(.dcSub)
+            .foregroundStyle(.white.opacity(0.7))
+    }
+
+    private var spentCoins: some View {
+        CoinLabel(amount: totalCoins, size: 18, weight: .heavy)
+            .foregroundStyle(.white)
+    }
+
     private var summaryCard: some View {
         VStack(spacing: 18) {
             Image(systemName: "checkmark.seal.fill")
@@ -301,12 +312,10 @@ struct UnboxingView: View {
                                       : "\(items.count) pieces delivered to your closet")
                     .font(.dcBodyText)
                     .foregroundStyle(.white.opacity(0.85))
-                HStack(spacing: 6) {
-                    Text("You spent")
-                        .font(.dcSub)
-                        .foregroundStyle(.white.opacity(0.7))
-                    CoinLabel(amount: totalCoins, size: 18, weight: .heavy)
-                        .foregroundStyle(.white)
+                // Side by side, or stacked when the text size leaves no room.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 6) { spentLabel; spentCoins }
+                    VStack(spacing: 6) { spentLabel; spentCoins }
                 }
             }
             if count(.legendary) + count(.epic) + count(.rare) > 0 {

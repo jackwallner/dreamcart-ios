@@ -235,6 +235,8 @@ struct ClosetView: View {
                 Button("Done") { router.clearClosetHighlight() }
                     .font(.dcLabel)
                     .foregroundStyle(Theme.violet)
+                    .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
+                    .contentShape(Rectangle())
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -409,10 +411,11 @@ struct ClosetTile: View {
 
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.dynamicTypeSize) private var typeSize
     @ScaledMetric(relativeTo: .headline) private var nameLineHeight: CGFloat = 22
     /// Three lines in a narrow pane tile: "Palermo Powder Blue Graphic Baby Tee"
     /// ended in an ellipsis after two lines at 75%.
-    private var nameLines: Int { isUnfoldedPane ? 3 : 2 }
+    private var nameLines: Int { typeSize.isAccessibilitySize ? 4 : (isUnfoldedPane ? 3 : 2) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -428,7 +431,7 @@ struct ClosetTile: View {
                             .foregroundStyle(.white)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 5)
-                            .background(Theme.pink, in: Capsule())
+                            .background(Theme.badgePink, in: Capsule())
                             .padding(7)
                     }
                 }
@@ -437,9 +440,15 @@ struct ClosetTile: View {
                 .foregroundStyle(Theme.ink(scheme))
                 .lineLimit(nameLines, reservesSpace: true)
                 .truncationMode(.tail)
-                .minimumScaleFactor(isUnfoldedPane ? 0.75 : 1)
+                .minimumScaleFactor(isUnfoldedPane || typeSize.isAccessibilitySize ? 0.7 : 1)
                 .frame(maxWidth: .infinity, minHeight: nameLineHeight * CGFloat(nameLines), alignment: .topLeading)
         }
         .contentShape(Rectangle())
+        // The piece first, its rarity and "new" after: the badge words led the
+        // label, so a tile half under the tab bar read as the badge text.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(product.name)
+        .accessibilityValue([product.rarityKind == .common ? nil : product.rarityKind.label,
+                             highlighted ? "New" : nil].compactMap { $0 }.joined(separator: ", "))
     }
 }

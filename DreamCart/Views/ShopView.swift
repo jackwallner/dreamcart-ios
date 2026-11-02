@@ -142,7 +142,7 @@ struct BrandView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(brand.tagline)
                     .font(.dcBodyText)
-                    .foregroundStyle(Color(hex: brand.accentHex))
+                    .foregroundStyle(Color.brandText(hex: brand.accentHex, scheme: scheme))
                     .padding(.horizontal, 16)
                 LazyVGrid(columns: cols, spacing: 18) {
                     ForEach(shop.products(brandId: brand.id)) { p in

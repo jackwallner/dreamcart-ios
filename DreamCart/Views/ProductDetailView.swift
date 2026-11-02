@@ -182,7 +182,7 @@ struct ProductDetailView: View {
                     Text(brand.name.uppercased())
                         .font(.dcOverline)
                         .tracking(0.6)
-                        .foregroundStyle(Color(hex: brand.accentHex))
+                        .foregroundStyle(Color.brandText(hex: brand.accentHex, scheme: scheme))
                 }
             }
             Text(product.name)

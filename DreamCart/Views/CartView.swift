@@ -161,17 +161,22 @@ struct CartRow: View {
     var compact = false
     let onRemove: () -> Void
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         HStack(spacing: 12) {
             RemoteImage(url: product.imageUrl, rarity: product.rarityKind)
                 .frame(width: compact ? 55 : 66, height: compact ? 68 : 82)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(product.name)
                     .font(.dcItem)
                     .foregroundStyle(Theme.ink(scheme))
-                    .lineLimit(2, reservesSpace: true)
+                    // At the largest text sizes a long name needs more than two lines.
+                    .lineLimit(typeSize.isAccessibilitySize ? 4 : 2, reservesSpace: true)
+                    // A long word ("Statement") would otherwise break mid-word in the narrow column.
+                    .minimumScaleFactor(typeSize.isAccessibilitySize ? 0.7 : 1)
                 CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))
             }

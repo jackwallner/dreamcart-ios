@@ -50,6 +50,9 @@ struct CheckoutView: View {
                 ToolbarItem(placement: .topBarLeading) { Button("Cancel") { dismiss() } }
             }
             .safeAreaInset(edge: .bottom) { placeBar }
+            // Place order sits where Check out was in the Cart, so one thumb
+            // position confirms both steps.
+            .reservesFloatingTabBar()
         }
         .paneSheet(isPresented: $showEditAddress) { ShippingAddressView() }
         .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
@@ -77,7 +80,7 @@ struct CheckoutView: View {
                         .multilineTextAlignment(.center)
                 }
             } else if skippedAddress {
-                Text("No address — your haul lands straight in your closet.")
+                Text("No address. Your haul lands straight in your closet.")
                     .font(.dcCaption)
                     .foregroundStyle(Theme.subtle(scheme))
                     .multilineTextAlignment(.center)
@@ -95,6 +98,8 @@ struct CheckoutView: View {
                     Text(addressComplete ? "Edit address" : "Add address")
                         .font(.dcLabel)
                         .foregroundStyle(Theme.violet)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 if !addressComplete && !skippedAddress {
                     Button {
@@ -125,6 +130,7 @@ struct CheckoutView: View {
                     RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
                         .frame(width: 40, height: 50)
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .accessibilityHidden(true)
                     Text(p.name)
                         .font(.dcItem)
                         .foregroundStyle(Theme.ink(scheme))
@@ -147,7 +153,7 @@ struct CheckoutView: View {
                 Spacer()
                 CoinLabel(amount: shop.cartTotal, size: 13).foregroundStyle(Theme.ink(scheme))
             }
-            receiptRow("Shipping", "FREE", accent: .green)
+            receiptRow("Shipping", "FREE", accent: scheme == .dark ? .green : Color(red: 0, green: 0.5, blue: 0.2))
             Divider()
             HStack {
                 Text("Order total").font(.dcBody).foregroundStyle(Theme.ink(scheme)).lineLimit(1)
