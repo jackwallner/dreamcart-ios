@@ -116,7 +116,7 @@ struct OnboardingCoinOfferView: View {
                 .font(.dcBadge)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Theme.pink, in: Capsule())
+                .background(Theme.badgePink, in: Capsule())
             HStack(spacing: 8) {
                 CoinIcon(size: 22)
                 Text("\(Format.coins(pack.coins)) coins")

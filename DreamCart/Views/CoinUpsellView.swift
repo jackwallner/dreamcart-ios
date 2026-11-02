@@ -149,7 +149,7 @@ struct CoinUpsellView: View {
                 .font(.dcBadge)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10).padding(.vertical, 4)
-                .background(Theme.pink, in: Capsule())
+                .background(Theme.badgePink, in: Capsule())
             ZStack {
                 Circle().fill(Theme.goldGradient).frame(width: 72, height: 72)
                 Image(systemName: "handbag.fill").font(.dcIconL).foregroundStyle(.white)
