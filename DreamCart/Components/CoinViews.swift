@@ -50,6 +50,7 @@ struct CoinLabel: View {
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(Format.coins(amount)) coins")
+        .accessibilityAddTraits(.isStaticText)
     }
 }
 

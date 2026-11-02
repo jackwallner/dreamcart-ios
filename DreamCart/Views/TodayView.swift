@@ -445,7 +445,7 @@ struct TodayView: View {
                                     .foregroundStyle(Theme.ink(scheme))
                                 Text(brand.tagline)
                                     .font(.dcSub)
-                                    .foregroundStyle(Color(hex: brand.accentHex))
+                                    .foregroundStyle(Color.brandText(hex: brand.accentHex, scheme: scheme))
                             }
                             Spacer()
                             NavigationLink {
@@ -454,6 +454,8 @@ struct TodayView: View {
                                 Text("See all")
                                     .font(.dcLabel)
                                     .foregroundStyle(Theme.violet)
+                                    .frame(minHeight: 44)
+                                    .contentShape(Rectangle())
                             }
                         }
                         ScrollView(.horizontal, showsIndicators: false) {

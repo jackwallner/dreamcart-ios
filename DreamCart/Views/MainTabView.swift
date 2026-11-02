@@ -164,6 +164,8 @@ private struct FloatingTabBar: View {
                         Text(item.title)
                             .font(.system(.caption2, weight: .semibold))
                             .lineLimit(1)
+                            // At the largest text sizes "Today" and "For You" ended in an ellipsis.
+                            .minimumScaleFactor(0.6)
                     }
                     .foregroundStyle(selection == item.tab ? Theme.violet : Theme.ink(scheme).opacity(0.72))
                     .frame(maxWidth: .infinity)
@@ -204,7 +206,7 @@ private struct FloatingTabBar: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, cartCount > 9 ? 4 : 3)
                         .frame(minWidth: 15, minHeight: 15)
-                        .background(Theme.pink, in: Capsule())
+                        .background(Theme.badgePink, in: Capsule())
                         .offset(x: 10, y: -6)
                 }
             }

@@ -187,7 +187,7 @@ struct RarityTag: View {
                 .tracking(0.6)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7).padding(.vertical, 3)
-                .background(rarity.color, in: Capsule())
+                .background(rarity.badgeColor, in: Capsule())
                 .shadow(color: rarity.glow ? rarity.color.opacity(0.6) : .clear, radius: 5)
                 // A narrow tile must never wrap the badge ("RAR / E").
                 .fixedSize()
@@ -225,7 +225,7 @@ struct ProductCard: View {
                                 .font(.dcBadge)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 7).padding(.vertical, 3)
-                                .background(Theme.pink, in: Capsule())
+                                .background(Theme.badgePink, in: Capsule())
                                 .fixedSize()
                         }
                     }

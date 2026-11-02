@@ -8,6 +8,8 @@ enum Theme {
     // Brand candy palette
     static let violet = Color(red: 0.486, green: 0.239, blue: 0.929) // #7C3AED
     static let pink   = Color(red: 1.0,   green: 0.239, blue: 0.545) // #FF3D8B
+    /// Pink behind white badge text (4.9:1; `pink` itself measured 3.3).
+    static let badgePink = Color(red: 0.8, green: 0.19, blue: 0.44)
     static let coral  = Color(red: 1.0,   green: 0.541, blue: 0.396) // #FF8A65
     static let gold   = Color(red: 0.961, green: 0.702, blue: 0.004) // #F5B301
     static let goldLite = Color(red: 1.0, green: 0.827, blue: 0.306)
@@ -169,6 +171,36 @@ extension Color {
     }
 }
 
+extension Color {
+    /// A brand accent that reads as text on the page: the accent itself when it
+    /// already clears 4.5:1, else blended toward the ink colour until it does.
+    /// Catalog accents run from near-white to saturated, so raw use measured 1.4:1.
+    static func brandText(hex: String, scheme: ColorScheme) -> Color {
+        let page = scheme == .dark ? (0.055, 0.055, 0.071) : (0.984, 0.976, 0.965)
+        let ink = scheme == .dark ? (0.96, 0.96, 0.96) : (0.09, 0.08, 0.11)
+        let s = hex.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+        var v: UInt64 = 0
+        Scanner(string: s).scanHexInt64(&v)
+        let accent = (Double((v >> 16) & 0xFF) / 255, Double((v >> 8) & 0xFF) / 255, Double(v & 0xFF) / 255)
+        func lum(_ c: (Double, Double, Double)) -> Double {
+            func f(_ x: Double) -> Double { x <= 0.03928 ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4) }
+            return 0.2126 * f(c.0) + 0.7152 * f(c.1) + 0.0722 * f(c.2)
+        }
+        func ratio(_ a: (Double, Double, Double), _ b: (Double, Double, Double)) -> Double {
+            let hi = max(lum(a), lum(b)), lo = min(lum(a), lum(b))
+            return (hi + 0.05) / (lo + 0.05)
+        }
+        var mix = 0.0
+        var c = accent
+        while ratio(c, page) < 4.5, mix < 1 {
+            mix += 0.1
+            c = (accent.0 + (ink.0 - accent.0) * mix, accent.1 + (ink.1 - accent.1) * mix,
+                 accent.2 + (ink.2 - accent.2) * mix)
+        }
+        return Color(red: c.0, green: c.1, blue: c.2)
+    }
+}
+
 extension View {
     /// Chunky elevated card used across the app.
     func cardStyle(_ scheme: ColorScheme, corner: CGFloat = Theme.cardCorner) -> some View {
@@ -193,6 +225,15 @@ enum Rarity: String {
         case .rare:      return Color(red: 0.24, green: 0.55, blue: 0.95)
         case .epic:      return Theme.violet
         case .legendary: return Theme.gold
+        }
+    }
+    /// Fill behind a white badge label: the plain colours measured 1.9 to 3.4:1.
+    var badgeColor: Color {
+        switch self {
+        case .common:    return Color(white: 0.45)
+        case .rare:      return Color(red: 0.19, green: 0.44, blue: 0.76)
+        case .epic:      return Theme.violet
+        case .legendary: return Color(red: 0.58, green: 0.42, blue: 0.0)
         }
     }
     var glow: Bool { self == .epic || self == .legendary }

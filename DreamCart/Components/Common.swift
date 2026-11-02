@@ -60,6 +60,8 @@ struct SectionHeader: View {
                     Text(actionTitle)
                         .font(.dcLabel)
                         .foregroundStyle(Theme.violet)
+                        .frame(minHeight: 44)
+                        .contentShape(Rectangle())
                 }
             }
         }
