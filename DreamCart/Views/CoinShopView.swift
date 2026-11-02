@@ -80,7 +80,7 @@ struct CoinShopView: View {
         VStack(spacing: 6) {
             Text("Your balance")
                 .font(.dcSub)
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.white)
             CoinLabel(amount: shop.coins, size: 30)
                 .foregroundStyle(.white)
         }

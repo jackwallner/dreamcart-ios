@@ -141,7 +141,7 @@ struct TodayView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text("Browse as long as you like. Sign in when you want to claim daily coins, spin the wheel and keep what you buy.")
                 .font(.dcBodyText)
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
 
             Button {
@@ -174,7 +174,7 @@ struct TodayView: View {
                 .fixedSize(horizontal: false, vertical: true)
             Text("Claim today's coins and keep your streak alive.")
                 .font(.dcBodyText)
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.white)
 
             Button {
                 Task { await claimDaily() }
@@ -212,7 +212,7 @@ struct TodayView: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(.white.opacity(0.22), in: Capsule())
+                .background(.black.opacity(0.18), in: Capsule())
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -241,7 +241,7 @@ struct TodayView: View {
                     .lineLimit(1)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
-                    .background(.white.opacity(0.22), in: Capsule())
+                    .background(.black.opacity(0.18), in: Capsule())
             }
             Spacer(minLength: 6)
         }
@@ -278,7 +278,7 @@ struct TodayView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(onCandy ? AnyShapeStyle(Color.white.opacity(0.22)) : AnyShapeStyle(Theme.goldGradient))
+                    .fill(onCandy ? AnyShapeStyle(Color.black.opacity(0.18)) : AnyShapeStyle(Theme.goldGradient))
                     .frame(width: 38, height: 38)
                 Image(systemName: icon)
                     .font(.dcIconS.weight(.bold))
@@ -290,7 +290,7 @@ struct TodayView: View {
                     .foregroundStyle(onCandy ? .white : Theme.ink(scheme))
                 Text(detail)
                     .font(.dcSub)
-                    .foregroundStyle(onCandy ? .white.opacity(0.85) : Theme.subtle(scheme))
+                    .foregroundStyle(onCandy ? .white : Theme.subtle(scheme))
             }
             .lineLimit(1)
             .minimumScaleFactor(0.85)
