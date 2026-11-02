@@ -12,6 +12,7 @@ struct ForYouView: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var drag: CGSize = .zero
     @State private var isFlinging = false
@@ -73,17 +74,24 @@ struct ForYouView: View {
                 Text("Your next obsession")
                     .font(.dcCard)
                     .foregroundStyle(Theme.ink(scheme))
-                Text("Pass left. Cart right.")
-                    .font(.dcSub)
-                    .foregroundStyle(Theme.subtle(scheme))
+                    .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                    .minimumScaleFactor(0.7)
+                // At accessibility sizes the deck needs the room more than the hint.
+                if !typeSize.isAccessibilitySize {
+                    Text("Pass left. Cart right.")
+                        .font(.dcSub)
+                        .foregroundStyle(Theme.subtle(scheme))
+                }
             }
-            Spacer()
-            Text("\(products.count) picks")
-                .font(.dcLabel)
-                .foregroundStyle(Theme.violet)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Theme.violet.opacity(0.1), in: Capsule())
+            if !typeSize.isAccessibilitySize {
+                Spacer()
+                Text("\(products.count) picks")
+                    .font(.dcLabel)
+                    .foregroundStyle(Theme.violet)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Theme.violet.opacity(0.1), in: Capsule())
+            }
         }
     }
 
@@ -171,13 +179,16 @@ struct ForYouView: View {
                 // A long name on a narrow card shrinks to fit rather than trail off.
                 .minimumScaleFactor(0.6)
             // As many whole tags as the card's width holds, never a cut-off one.
-            ViewThatFits(in: .horizontal) {
-                tagLine(product, count: 3).fixedSize()
-                tagLine(product, count: 2).fixedSize()
-                tagLine(product, count: 1).lineLimit(1)
+            // Dropped at accessibility sizes, where the card has no room for them.
+            if !typeSize.isAccessibilitySize {
+                ViewThatFits(in: .horizontal) {
+                    tagLine(product, count: 3).fixedSize()
+                    tagLine(product, count: 2).fixedSize()
+                    tagLine(product, count: 1).lineLimit(1)
+                }
+                .font(.dcLabel)
+                .foregroundStyle(.white.opacity(0.82))
             }
-            .font(.dcLabel)
-            .foregroundStyle(.white.opacity(0.82))
         }
         .padding(20)
     }
@@ -199,6 +210,8 @@ struct ForYouView: View {
         }
         .padding(20)
         .allowsHitTesting(false)
+        // Decorative: the Pass and Add to cart actions carry the meaning.
+        .accessibilityHidden(true)
     }
 
     private func stamp(_ text: String, icon: String, color: Color, angle: Double) -> some View {
