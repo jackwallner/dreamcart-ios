@@ -67,8 +67,20 @@ final class ReleaseJourneysUITests: XCTestCase {
         QA.checkpoint(app, "core-closet-before")
 
         tapTab("For You", in: app)
-        let add = app.buttons["Add to cart"].firstMatch
-        XCTAssertTrue(add.waitForExistence(timeout: 60))
+        // The tester has swiped through many decks: bring passes back if the deck is empty.
+        // Product detail pages in the other tabs expose an "Add to cart" button too, so only
+        // the hittable one on screen counts.
+        var add: XCUIElement?
+        let deadline = Date().addingTimeInterval(60)
+        while add == nil, Date() < deadline {
+            add = app.buttons.matching(identifier: "Add to cart").allElementsBoundByIndex.first { $0.exists && $0.isHittable }
+            if add == nil {
+                let again = app.buttons["Reconsider passes"].firstMatch
+                if again.exists, again.isHittable { again.tap() }
+                Thread.sleep(forTimeInterval: 1)
+            }
+        }
+        guard let add else { return XCTFail("For You offers a piece to add") }
         add.tap()
         tapTab("Cart", in: app)
         let checkout = app.buttons["cartCheckoutButton"].firstMatch

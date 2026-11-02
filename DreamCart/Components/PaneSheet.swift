@@ -44,6 +44,9 @@ struct PaneCoverHost<Content: View>: View {
     let isActive: Bool
     @ViewBuilder let content: Content
     @State private var covers: [PaneCover] = []
+    /// Set once a cover has finished sliding in, so the pane underneath drops
+    /// out of the accessibility tree and hit testing without flashing mid-slide.
+    @State private var settled = false
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
@@ -52,6 +55,14 @@ struct PaneCoverHost<Content: View>: View {
             // (and the QA hierarchy) still reaches the rows beneath it.
             .accessibilityHidden(!covers.isEmpty)
             .allowsHitTesting(covers.isEmpty)
+            .opacity(settled ? 0 : 1)
+            .onChange(of: covers.map(\.id)) { _, ids in
+                guard !ids.isEmpty else { settled = false; return }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(450))
+                    if !covers.isEmpty { settled = true }
+                }
+            }
             .overlay {
                 ZStack {
                     ForEach(covers) { cover in

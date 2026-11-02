@@ -451,7 +451,7 @@ private struct RevealCard: View {
                     .fill(product.rarityKind.color.opacity(revealed ? (haloPulse ? 0.5 : 0.3) : 0.12))
                     .frame(width: isFinal ? 300 : 260, height: isFinal ? 300 : 260)
                     .blur(radius: 50)
-                    .animation(haloLoop, value: haloPulse)
+                    .animation(reduceMotion ? nil : haloLoop, value: haloPulse)
                 RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1000)
                     .frame(width: 230, height: 288)
                     .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -466,7 +466,7 @@ private struct RevealCard: View {
                         .font(.dcIconHero)
                         .foregroundStyle(.white.opacity(0.85))
                         .scaleEffect(reduceMotion ? 1 : (haloPulse ? 1.15 : 0.9))
-                        .animation(haloLoop, value: haloPulse)
+                        .animation(reduceMotion ? nil : haloLoop, value: haloPulse)
                 }
             }
             VStack(spacing: 6) {

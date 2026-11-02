@@ -415,7 +415,7 @@ struct ClosetTile: View {
     @ScaledMetric(relativeTo: .headline) private var nameLineHeight: CGFloat = 22
     /// Three lines in a narrow pane tile: "Palermo Powder Blue Graphic Baby Tee"
     /// ended in an ellipsis after two lines at 75%.
-    private var nameLines: Int { typeSize.isAccessibilitySize ? 4 : (isUnfoldedPane ? 3 : 2) }
+    private var nameLines: Int { typeSize.isAccessibilitySize ? 4 : 3 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -440,7 +440,7 @@ struct ClosetTile: View {
                 .foregroundStyle(Theme.ink(scheme))
                 .lineLimit(nameLines, reservesSpace: true)
                 .truncationMode(.tail)
-                .minimumScaleFactor(isUnfoldedPane || typeSize.isAccessibilitySize ? 0.7 : 1)
+                .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity, minHeight: nameLineHeight * CGFloat(nameLines), alignment: .topLeading)
         }
         .contentShape(Rectangle())

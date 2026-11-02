@@ -6,6 +6,7 @@ import UIKit
 // load — so this loader retries with backoff and offers a tap-to-retry instead
 // of silently leaving holes in the grid.
 struct RemoteImage: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let url: String
     var rarity: Rarity = .common
     // Pixel cap the source is downsampled to before it's decoded/cached.
@@ -148,7 +149,7 @@ struct RemoteImage: View {
                 }
                 ImageMemoryCache.shared.set(decoded, for: url, maxPixelSize: maxPixelSize)
                 ImageDiskCache.shared.store(decoded, for: url, maxPixelSize: maxPixelSize)
-                withAnimation(.easeOut(duration: 0.3)) { image = decoded }
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { image = decoded }
                 return
             } catch {
                 if Task.isCancelled { return }
@@ -167,13 +168,14 @@ struct RemoteImage: View {
 
 struct ShimmerView: View {
     @State private var phase: CGFloat = -1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
         GeometryReader { geo in
             LinearGradient(colors: [.gray.opacity(0.10), .gray.opacity(0.22), .gray.opacity(0.10)],
                            startPoint: .leading, endPoint: .trailing)
                 .offset(x: phase * geo.size.width)
-                .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: phase)
-                .onAppear { phase = 1.4 }
+                .animation(reduceMotion ? nil : .linear(duration: 1.1).repeatForever(autoreverses: false), value: phase)
+                .onAppear { if !reduceMotion { phase = 1.4 } }
         }
     }
 }
