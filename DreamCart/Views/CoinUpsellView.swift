@@ -103,7 +103,7 @@ struct CoinUpsellView: View {
         }
         .overlay {
             if let r = reward {
-                RewardOverlay(title: "Coins added", amount: r, subtitle: "Now go get it.") {
+                RewardOverlay(title: String(localized: "Coins added"), amount: r, subtitle: String(localized: "Now go get it.")) {
                     withAnimation { reward = nil }
                     dismiss()
                 }
@@ -131,15 +131,15 @@ struct CoinUpsellView: View {
 
     private var headline: String {
         switch trigger {
-        case .insufficientCoins: return "Almost there"
-        case .postSpinLowBalance: return "Keep it going"
+        case .insufficientCoins: return String(localized: "Almost there")
+        case .postSpinLowBalance: return String(localized: "Keep it going")
         }
     }
 
     private var subheadline: String {
         switch trigger {
-        case .insufficientCoins: return "Grab more coins and finish checking out."
-        case .postSpinLowBalance: return "Top up your wallet so you're ready for the next drop."
+        case .insufficientCoins: return String(localized: "Grab more coins and finish checking out.")
+        case .postSpinLowBalance: return String(localized: "Top up your wallet so you're ready for the next drop.")
         }
     }
 
@@ -158,7 +158,7 @@ struct CoinUpsellView: View {
                 Text(pack.title).font(.dcTitle).foregroundStyle(Theme.ink(scheme))
                 HStack(spacing: 6) {
                     CoinIcon(size: 18)
-                    Text("\(Format.coins(pack.coins)) coins")
+                    Text("\(pack.coins) coins")
                         .font(.dcCard)
                         .foregroundStyle(Theme.ink(scheme))
                 }
@@ -177,8 +177,8 @@ struct CoinUpsellView: View {
     }
 
     private var buyTitle: String {
-        guard revenueCatEnabled else { return "See coin packs" }
-        return buying ? "Purchasing…" : "Get for \(store.price(for: pack))"
+        guard revenueCatEnabled else { return String(localized: "See coin packs") }
+        return buying ? String(localized: "Purchasing…") : String(localized: "Get for \(store.price(for: pack))")
     }
 
     private func buy() async {
@@ -217,7 +217,7 @@ struct CoinUpsellView: View {
         buyTask = nil
         buying = false
         store.isPurchasing = false
-        store.lastError = "Purchase didn't complete. You weren't charged."
+        store.lastError = String(localized: "Purchase didn't complete. You weren't charged.")
 
         let before = shop.coins
         await shop.reconcilePurchases()

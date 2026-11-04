@@ -236,14 +236,32 @@ struct ProductDetailView: View {
 
     private var specRows: some View {
         VStack(spacing: 0) {
-            specRow("Color", product.colorName)
+            specRow(String(localized: "Color"), product.colorName)
             Divider()
-            specRow("Category", product.category.capitalized)
+            specRow(String(localized: "Category"), categoryName)
             Divider()
-            specRow("Rarity", product.rarityKind.label)
+            specRow(String(localized: "Rarity"), product.rarityKind.label)
         }
         .padding(.horizontal, 14)
         .cardStyle(scheme)
+    }
+
+    /// The server sends these lowercase ids. A new one reads as its own id until
+    /// it has a key here.
+    private var categoryName: String {
+        switch product.category {
+        case "top": return String(localized: "Top")
+        case "bottom": return String(localized: "Bottom")
+        case "dress": return String(localized: "Dress")
+        case "outerwear": return String(localized: "Outerwear")
+        case "shoes": return String(localized: "Shoes")
+        case "bag": return String(localized: "Bag")
+        case "jewelry": return String(localized: "Jewelry")
+        case "sunglasses": return String(localized: "Sunglasses")
+        case "hat": return String(localized: "Hat")
+        case "accessory": return String(localized: "Accessory")
+        default: return product.category.capitalized
+        }
     }
 
     private func specRow(_ k: String, _ v: String) -> some View {
@@ -262,7 +280,7 @@ struct ProductDetailView: View {
         let suggestions = shop.complementaryProducts(for: product)
         if !suggestions.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                SectionHeader(title: "Complete the look", subtitle: "Picked to style with this")
+                SectionHeader(title: String(localized: "Complete the look"), subtitle: String(localized: "Picked to style with this"))
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(suggestions) { suggestion in

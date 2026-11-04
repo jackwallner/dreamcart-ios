@@ -67,27 +67,27 @@ struct ShippingAddressView: View {
 
     private var formCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            cardHeader("shippingbox.fill", "Where should it \"ship\"?")
+            cardHeader("shippingbox.fill", String(localized: "Where should it \"ship\"?"))
             Text("Give your dream orders a place to land. This fictional address is saved on this device for checkout flavor only.")
                 .font(.dcCaption)
                 .foregroundStyle(Theme.subtle(scheme))
-            field("Full name", text: $draft.name, field: .name, content: .name)
-            field("Address line 1", text: $draft.line1, field: .line1, content: .streetAddressLine1)
-            field("Address line 2 (optional)", text: $draft.line2, field: .line2, content: .streetAddressLine2)
+            field(String(localized: "Full name"), text: $draft.name, field: .name, content: .name)
+            field(String(localized: "Address line 1"), text: $draft.line1, field: .line1, content: .streetAddressLine1)
+            field(String(localized: "Address line 2 (optional)"), text: $draft.line2, field: .line2, content: .streetAddressLine2)
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 10) {
-                    field("City", text: $draft.city, field: .city, content: .addressCity)
-                    field("State", text: $draft.state, field: .state, content: .addressState)
+                    field(String(localized: "City"), text: $draft.city, field: .city, content: .addressCity)
+                    field(String(localized: "State"), text: $draft.state, field: .state, content: .addressState)
                         .frame(width: 90)
                 }
                 VStack(spacing: 10) {
-                    field("City", text: $draft.city, field: .city, content: .addressCity)
-                    field("State", text: $draft.state, field: .state, content: .addressState)
+                    field(String(localized: "City"), text: $draft.city, field: .city, content: .addressCity)
+                    field(String(localized: "State"), text: $draft.state, field: .state, content: .addressState)
                 }
             }
             HStack(spacing: 10) {
-                field("ZIP / postal code", text: $draft.zip, field: .zip, content: .postalCode)
-                field("Country", text: $draft.country, field: .country, content: .countryName)
+                field(String(localized: "ZIP / postal code"), text: $draft.zip, field: .zip, content: .postalCode)
+                field(String(localized: "Country"), text: $draft.country, field: .country, content: .countryName)
             }
         }
         .padding(16)

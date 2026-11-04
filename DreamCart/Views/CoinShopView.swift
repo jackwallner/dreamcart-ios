@@ -47,8 +47,8 @@ struct CoinShopView: View {
         }
         .overlay {
             if let r = reward {
-                RewardOverlay(title: "Coins added", amount: r,
-                              subtitle: "Go build something you love.") {
+                RewardOverlay(title: String(localized: "Coins added"), amount: r,
+                              subtitle: String(localized: "Go build something you love.")) {
                     withAnimation { reward = nil }
                 }
             }
@@ -111,7 +111,7 @@ struct CoinShopView: View {
                     }
                     HStack(spacing: 4) {
                         CoinIcon(size: 14)
-                        Text("\(Format.coins(pack.coins)) coins")
+                        Text("\(pack.coins) coins")
                             .font(.dcBody)
                             .foregroundStyle(Theme.ink(scheme))
                             .lineLimit(1)
@@ -152,7 +152,7 @@ struct CoinShopView: View {
     @ViewBuilder
     private func packBadge(_ pack: CoinPack) -> some View {
         if let badge = pack.badge {
-            Text(badge)
+            Text(badge.label)
                 .font(.dcBadge)
                 .foregroundStyle(.white)
                 .lineLimit(1)
@@ -183,11 +183,11 @@ struct CoinShopView: View {
     }
 
     private func coinIcon(_ pack: CoinPack) -> String {
-        switch pack.title {
-        case "Pocket": return "bag.fill"
-        case "Bag": return "handbag.fill"
-        case "Haul": return "cart.fill"
-        case "Spree": return "sparkles"
+        switch pack.productId {
+        case "com.jackwallner.shop.coins.pocket": return "bag.fill"
+        case "com.jackwallner.shop.coins.bag": return "handbag.fill"
+        case "com.jackwallner.shop.coins.haul": return "cart.fill"
+        case "com.jackwallner.shop.coins.spree": return "sparkles"
         default: return "crown.fill"
         }
     }
@@ -234,7 +234,7 @@ struct CoinShopView: View {
         // The SDK's continuation may never resume even on cancel, so
         // StoreController's `defer { isPurchasing = false }` can't be trusted.
         store.isPurchasing = false
-        store.lastError = "Purchase didn't complete. You weren't charged."
+        store.lastError = String(localized: "Purchase didn't complete. You weren't charged.")
 
         // Safety net for the false-positive case: if the purchase actually did
         // settle, the server grants the coins and reconcile heals it here.

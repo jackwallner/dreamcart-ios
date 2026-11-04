@@ -49,7 +49,7 @@ final class AuthController {
 
     private func sessionEnded() {
         guard state == .signedIn else { return }
-        errorMessage = "Your session ended. Sign in again."
+        errorMessage = String(localized: "Your session ended. Sign in again.")
         state = .signedOut
     }
 
@@ -115,7 +115,7 @@ final class AuthController {
                 let idToken = String(data: tokenData, encoding: .utf8),
                 let nonce = currentNonce
             else {
-                errorMessage = "Could not read your Apple credentials."
+                errorMessage = String(localized: "Could not read your Apple credentials.")
                 return
             }
             let name = [cred.fullName?.givenName, cred.fullName?.familyName]

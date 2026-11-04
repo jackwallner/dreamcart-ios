@@ -38,21 +38,32 @@ struct CoinPack: Identifiable, Hashable, Sendable {
     let coins: Int
     let title: String
     let blurb: String
-    let badge: String?      // "POPULAR" / "BEST VALUE"
+    let badge: Badge?
 
     var id: String { productId }
 
+    enum Badge: Hashable, Sendable {
+        case popular, bestValue
+
+        var label: String {
+            switch self {
+            case .popular: return String(localized: "POPULAR")
+            case .bestValue: return String(localized: "BEST VALUE")
+            }
+        }
+    }
+
     static let all: [CoinPack] = [
         .init(productId: "com.jackwallner.shop.coins.pocket", coins: 1000,
-              title: "Pocket", blurb: "A little treat", badge: nil),
+              title: String(localized: "Pocket"), blurb: String(localized: "A little treat"), badge: nil),
         .init(productId: "com.jackwallner.shop.coins.bag", coins: 3200,
-              title: "Bag", blurb: "One full look", badge: "POPULAR"),
+              title: String(localized: "Bag"), blurb: String(localized: "One full look"), badge: .popular),
         .init(productId: "com.jackwallner.shop.coins.haul", coins: 8500,
-              title: "Haul", blurb: "A whole wardrobe", badge: nil),
+              title: String(localized: "Haul"), blurb: String(localized: "A whole wardrobe"), badge: nil),
         .init(productId: "com.jackwallner.shop.coins.spree", coins: 20000,
-              title: "Spree", blurb: "Go all out", badge: "BEST VALUE"),
+              title: String(localized: "Spree"), blurb: String(localized: "Go all out"), badge: .bestValue),
         .init(productId: "com.jackwallner.shop.coins.vault", coins: 60000,
-              title: "Vault", blurb: "Never run dry", badge: nil),
+              title: String(localized: "Vault"), blurb: String(localized: "Never run dry"), badge: nil),
     ]
 
     /// The single pack showcased in upsell moments and the onboarding coin
@@ -61,6 +72,6 @@ struct CoinPack: Identifiable, Hashable, Sendable {
     /// what gets promoted. Falls back to the middle pack if nothing is
     /// tagged POPULAR.
     static var recommended: CoinPack {
-        all.first { $0.badge == "POPULAR" } ?? all[all.count / 2]
+        all.first { $0.badge == .popular } ?? all[all.count / 2]
     }
 }

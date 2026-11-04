@@ -11,7 +11,7 @@ struct CoinIcon: View {
     var body: some View {
         ZStack {
             Circle().fill(Theme.goldGradient)
-            Text("$")
+            Text(verbatim: "$")
                 .font(.system(size: scaledSize * 0.56, weight: .black))
                 .foregroundStyle(.white)
                 .offset(y: -scaledSize * 0.015)
@@ -40,7 +40,7 @@ struct CoinLabel: View {
     var body: some View {
         HStack(alignment: .center, spacing: scaledSize * 0.3) {
             CoinIcon(size: size)
-            Text(Format.coins(amount))
+            Text(DisplayFormat.coins(amount))
                 .font(.system(size: scaledSize, weight: weight))
                 .monospacedDigit()
                 .lineLimit(1)
@@ -49,7 +49,7 @@ struct CoinLabel: View {
         .frame(minHeight: scaledSize * 1.35, alignment: .center)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Format.coins(amount)) coins")
+        .accessibilityLabel("\(amount) coins")
         .accessibilityAddTraits(.isStaticText)
     }
 }
@@ -68,10 +68,10 @@ struct WalletPill: View {
             // The toolbar keeps the pill at the size it had before the balance
             // loaded ("0"), which cut "18,450" to "18,4…"; hold room for five digits.
             ZStack(alignment: .leading) {
-                Text(Format.coins(88_888))
+                Text(DisplayFormat.coins(88_888))
                     .fixedSize()
                     .hidden()
-                Text(Format.coins(coins))
+                Text(DisplayFormat.coins(coins))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .contentTransition(.numericText(value: Double(coins)))
@@ -97,7 +97,7 @@ struct WalletPill: View {
         .onTapGesture { Haptics.tap(); onTap() }
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
-        .accessibilityLabel("Coin balance: \(Format.coins(coins))")
+        .accessibilityLabel("Coin balance: \(DisplayFormat.coins(coins))")
         .onChange(of: coins) { old, new in
             guard !reduceMotion, old != new else { return }
             // Drive the bump entirely through SwiftUI's animation timeline

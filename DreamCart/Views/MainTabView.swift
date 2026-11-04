@@ -145,11 +145,11 @@ private struct FloatingTabBar: View {
     @Environment(\.colorScheme) private var scheme
 
     private let items: [(tab: AppTab, title: String, icon: String)] = [
-        (.today, "Today", "sparkles"),
-        (.forYou, "For You", "hand.thumbsup.fill"),
-        (.cart, "Cart", "cart.fill"),
-        (.closet, "Closet", "hanger"),
-        (.profile, "You", "person.fill"),
+        (.today, String(localized: "Today"), "sparkles"),
+        (.forYou, String(localized: "For You"), "hand.thumbsup.fill"),
+        (.cart, String(localized: "Cart"), "cart.fill"),
+        (.closet, String(localized: "Closet"), "hanger"),
+        (.profile, String(localized: "You"), "person.fill"),
     ]
 
     var body: some View {
@@ -201,7 +201,7 @@ private struct FloatingTabBar: View {
             .frame(height: 24)
             .overlay(alignment: .topTrailing) {
                 if item.tab == .cart, cartCount > 0 {
-                    Text(cartCount > 99 ? "99+" : "\(cartCount)")
+                    Text(cartCount > 99 ? String(localized: "99+") : cartCount.formatted())
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, cartCount > 9 ? 4 : 3)

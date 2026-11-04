@@ -9,12 +9,12 @@ struct ShopView: View {
     @State private var category: String? = nil
 
     private let categories: [(key: String, label: String, icon: String)] = [
-        ("top", "Tops", "tshirt"), ("bottom", "Bottoms", "figure.walk"),
-        ("dress", "Dresses", "figure.dress.line.vertical.figure"),
-        ("outerwear", "Outerwear", "coat"), ("shoes", "Shoes", "shoe"),
-        ("bag", "Bags", "bag"), ("jewelry", "Jewelry", "sparkle"),
-        ("sunglasses", "Shades", "sunglasses"), ("hat", "Hats", "hat.widebrim"),
-        ("accessory", "Extras", "scribble.variable"),
+        ("top", String(localized: "Tops"), "tshirt"), ("bottom", String(localized: "Bottoms"), "figure.walk"),
+        ("dress", String(localized: "Dresses"), "figure.dress.line.vertical.figure"),
+        ("outerwear", String(localized: "Outerwear"), "coat"), ("shoes", String(localized: "Shoes"), "shoe"),
+        ("bag", String(localized: "Bags"), "bag"), ("jewelry", String(localized: "Jewelry"), "sparkle"),
+        ("sunglasses", String(localized: "Shades"), "sunglasses"), ("hat", String(localized: "Hats"), "hat.widebrim"),
+        ("accessory", String(localized: "Extras"), "scribble.variable"),
     ]
 
     private let cols = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
@@ -56,7 +56,7 @@ struct ShopView: View {
         // the floating tab bar, so there it sits under the title instead.
         .searchable(text: $query,
                     placement: paneCovers == nil ? .automatic : .navigationBarDrawer(displayMode: .always),
-                    prompt: "Search brands, colors, styles")
+                    prompt: String(localized: "Search brands, colors, styles"))
         .walletToolbar($showCoinShop)
     }
 
@@ -92,7 +92,7 @@ struct ShopView: View {
     private var categoryBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                FilterChip(label: "All", selected: category == nil) { category = nil }
+                FilterChip(label: String(localized: "All"), selected: category == nil) { category = nil }
                 ForEach(categories, id: \.key) { c in
                     FilterChip(label: c.label, icon: c.icon, selected: category == c.key) {
                         category = category == c.key ? nil : c.key
@@ -107,10 +107,10 @@ struct ShopView: View {
     private func grid(_ items: [ProductWithBrand]) -> some View {
         Group {
             if items.isEmpty && !shop.isLoading {
-                EmptyState(icon: "magnifyingglass", title: "Nothing here",
+                EmptyState(icon: "magnifyingglass", title: String(localized: "Nothing here"),
                            message: shop.loadError == nil
-                               ? "Try another search or category."
-                               : "The catalog could not be loaded. Retry above.")
+                               ? String(localized: "Try another search or category.")
+                               : String(localized: "The catalog could not be loaded. Retry above."))
                     .padding(.top, 60)
             } else {
                 LazyVGrid(columns: cols, spacing: 18) {

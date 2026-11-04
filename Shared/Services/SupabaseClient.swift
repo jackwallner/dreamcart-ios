@@ -19,9 +19,9 @@ enum SBError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .http(let code, let body): return "Server error \(code): \(body)"
-        case .notAuthenticated: return "Please sign in."
-        case .decoding(let m): return "Unexpected response: \(m)"
+        case .http(let code, let body): return String(localized: "Server error \(code): \(body)")
+        case .notAuthenticated: return String(localized: "Please sign in.")
+        case .decoding(let m): return String(localized: "Unexpected response: \(m)")
         }
     }
 }

@@ -89,7 +89,7 @@ final class ShopStore {
             // A closet that failed to load looks like an empty one (Closet says
             // "Your closet is empty", owned pieces offer "Add to cart"), so the
             // load banner has to say it.
-            if !closetLoaded { loadError = "Couldn't load your closet." }
+            if !closetLoaded { loadError = String(localized: "Couldn't load your closet.") }
             // For You's ranking depends on closet/favorites/recs, so warm it
             // once those are in — still well before the user taps the tab.
             let forYouWarm = Array(forYouProducts.prefix(8).map(\.imageUrl))
@@ -612,8 +612,8 @@ enum ShopActionError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .signedOut: return "Your session expired. Sign in and try again."
-        case .missingResponse: return "The server returned an incomplete response. Try again."
+        case .signedOut: return String(localized: "Your session expired. Sign in and try again.")
+        case .missingResponse: return String(localized: "The server returned an incomplete response. Try again.")
         }
     }
 }

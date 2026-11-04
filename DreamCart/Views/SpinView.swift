@@ -78,12 +78,12 @@ struct SpinView: View {
                 .padding(.horizontal, 14)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Prize wheel")
-                .accessibilityValue(prizes.map { "\($0) coins" }.joined(separator: ", "))
+                .accessibilityValue(prizes.map { String(localized: "\($0) coins") }.joined(separator: ", "))
                 .onAppear { setIdleWobble(true) }
 
                 Spacer()
 
-                CandyButton(title: canSpin ? "Spin" : "Come back tomorrow",
+                CandyButton(title: canSpin ? String(localized: "Spin") : String(localized: "Come back tomorrow"),
                             systemImage: canSpin ? "dial.medium.fill" : "clock.fill",
                             enabled: canSpin && !spinning) {
                     Task { await doSpin() }
@@ -106,10 +106,10 @@ struct SpinView: View {
         .overlay {
             if showReward, let r = result, let prize = r.prize {
                 let t = tier(for: prize)
-                RewardOverlay(title: t == .jackpot ? "JACKPOT!" : "You won",
+                RewardOverlay(title: t == .jackpot ? String(localized: "JACKPOT!") : String(localized: "You won"),
                               amount: prize,
-                              subtitle: t == .jackpot ? "Huge. Go treat yourself."
-                                                       : "Added to your wallet. Spin again \(shop.me?.isPlus == true ? "anytime" : "tomorrow").",
+                              subtitle: t == .jackpot ? String(localized: "Huge. Go treat yourself.")
+                                                       : (shop.me?.isPlus == true ? String(localized: "Added to your wallet. Spin again anytime.") : String(localized: "Added to your wallet. Spin again tomorrow.")),
                               coinsOnly: t != .jackpot,
                               showConfetti: t != .small) {
                     if reduceMotion { showReward = false } else { withAnimation { showReward = false } }
@@ -167,7 +167,7 @@ struct SpinView: View {
                 WheelSlice(index: i, total: slices)
                     .stroke(.white.opacity(0.55), lineWidth: 2)
                 let a = Double(i) * pegSpacing
-                Text(Format.coinsShort(prizes[i]))
+                Text(DisplayFormat.coinsShort(prizes[i]))
                     .font(.dcPrice)
                     .foregroundStyle(.white)
                     .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
@@ -438,7 +438,7 @@ struct SpinView: View {
         } else {
             withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { showReward = true }
         }
-        UIAccessibility.post(notification: .announcement, argument: "You won \(prize) coins")
+        UIAccessibility.post(notification: .announcement, argument: String(localized: "You won \(prize) coins"))
     }
 }
 

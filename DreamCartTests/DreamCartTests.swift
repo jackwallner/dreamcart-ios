@@ -5,12 +5,12 @@ import XCTest
 final class DreamCartTests: XCTestCase {
 
     func testCoinFormatting() {
-        XCTAssertEqual(Format.coins(1000), "1,000")
-        XCTAssertEqual(Format.coins(1234567), "1,234,567")
-        XCTAssertEqual(Format.coinsShort(950), "950")
-        XCTAssertEqual(Format.coinsShort(1000), "1k")
-        XCTAssertEqual(Format.coinsShort(12400), "12k")
-        XCTAssertEqual(Format.coinsShort(3200), "3.2k")
+        XCTAssertEqual(DisplayFormat.coins(1000), "1,000")
+        XCTAssertEqual(DisplayFormat.coins(1234567), "1,234,567")
+        XCTAssertEqual(DisplayFormat.coinsShort(950), "950")
+        XCTAssertEqual(DisplayFormat.coinsShort(1000), "1k")
+        XCTAssertEqual(DisplayFormat.coinsShort(12400), "12k")
+        XCTAssertEqual(DisplayFormat.coinsShort(3200), "3.2k")
     }
 
     func testRarityMapping() {

@@ -120,12 +120,12 @@ final class StoreController {
     }
 
     private func fallbackPrice(_ pack: CoinPack) -> String {
-        switch pack.title {
-        case "Pocket": return "$1.99"
-        case "Bag":    return "$4.99"
-        case "Haul":   return "$9.99"
-        case "Spree":  return "$19.99"
-        default:        return "$49.99"
+        switch pack.productId {
+        case "com.jackwallner.shop.coins.pocket": return "$1.99"
+        case "com.jackwallner.shop.coins.bag": return "$4.99"
+        case "com.jackwallner.shop.coins.haul": return "$9.99"
+        case "com.jackwallner.shop.coins.spree": return "$19.99"
+        default: return "$49.99"
         }
     }
 
@@ -188,7 +188,7 @@ final class StoreController {
         guard let product = storeProducts[PlusPlan.productId] else {
             await loadProducts()
             guard let retry = storeProducts[PlusPlan.productId] else {
-                lastError = "\(PlusPlan.name) isn't available right now."
+                lastError = String(localized: "\(PlusPlan.name) isn't available right now.")
                 return false
             }
             return await run(retry, plan: PlusPlan.conversionPlan, startedTrial: withTrial)
@@ -206,7 +206,7 @@ final class StoreController {
         lastError = nil
         #if HAS_REVENUECAT
         guard Purchases.isConfigured else {
-            lastError = "Purchases aren't available in this build."
+            lastError = String(localized: "Purchases aren't available in this build.")
             return false
         }
         do {
@@ -217,7 +217,7 @@ final class StoreController {
             return false
         }
         #else
-        lastError = "Purchases aren't available in this build."
+        lastError = String(localized: "Purchases aren't available in this build.")
         return false
         #endif
     }
@@ -227,13 +227,13 @@ final class StoreController {
     func purchase(_ pack: CoinPack) async -> Bool {
         #if HAS_REVENUECAT
         #if targetEnvironment(simulator)
-        lastError = "Coin packs are available on a device or TestFlight build."
+        lastError = String(localized: "Coin packs are available on a device or TestFlight build.")
         return false
         #else
         guard let product = storeProducts[pack.productId] else {
             await loadProducts()
             guard let retry = storeProducts[pack.productId] else {
-                lastError = "This pack isn't available right now."
+                lastError = String(localized: "This pack isn't available right now.")
                 return false
             }
             return await run(retry)
@@ -279,7 +279,7 @@ final class StoreController {
         startedTrial: Bool = false
     ) async -> Bool {
         guard Purchases.isConfigured else {
-            lastError = "Purchases aren't available in this build."
+            lastError = String(localized: "Purchases aren't available in this build.")
             return false
         }
         isPurchasing = true

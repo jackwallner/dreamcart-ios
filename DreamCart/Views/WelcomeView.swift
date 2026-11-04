@@ -8,12 +8,12 @@ struct WelcomeView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     private let slides: [(icon: String, title: String, body: String, tint: Color)] = [
-        ("bag.fill.badge.plus", "Shop without the guilt",
-         "Original fashion, dream looks, zero dollars. Fill your cart with everything you'd never actually buy.", Theme.violet),
-        ("gift.fill", "Free coins every day",
-         "Claim a daily drop, spin the wheel, and keep your streak alive. The more you show up, the more you get.", Theme.pink),
-        ("sparkles", "Build your dream closet",
-         "Own the pieces, mix brands, and style full outfits with jewelry, shades and hats. All yours.", Theme.coral),
+        ("bag.fill.badge.plus", String(localized: "Shop without the guilt"),
+         String(localized: "Original fashion, dream looks, zero dollars. Fill your cart with everything you'd never actually buy."), Theme.violet),
+        ("gift.fill", String(localized: "Free coins every day"),
+         String(localized: "Claim a daily drop, spin the wheel, and keep your streak alive. The more you show up, the more you get."), Theme.pink),
+        ("sparkles", String(localized: "Build your dream closet"),
+         String(localized: "Own the pieces, mix brands, and style full outfits with jewelry, shades and hats. All yours."), Theme.coral),
     ]
 
     var body: some View {
@@ -45,7 +45,7 @@ struct WelcomeView: View {
                 }
                 .padding(.bottom, 16)
 
-                CandyButton(title: page == slides.count - 1 ? "Get started" : "Next",
+                CandyButton(title: page == slides.count - 1 ? String(localized: "Get started") : String(localized: "Next"),
                             systemImage: "arrow.right") {
                     if page == slides.count - 1 {
                         Analytics.track("onboarding_completed")

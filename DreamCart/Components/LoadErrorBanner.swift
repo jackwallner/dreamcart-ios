@@ -14,7 +14,7 @@ struct LoadErrorBanner: View {
                 Text("Shop missed a beat")
                     .font(.dcBody)
                     .foregroundStyle(Theme.ink(scheme))
-                Text(shop.loadError ?? "Try loading everything again.")
+                Text(shop.loadError ?? String(localized: "Try loading everything again."))
                     .font(.dcSub)
                     .foregroundStyle(Theme.subtle(scheme))
                     .lineLimit(2)

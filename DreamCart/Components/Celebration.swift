@@ -75,8 +75,8 @@ struct RewardOverlay: View {
     @State private var glow = false
 
     private var accessibilitySummary: String {
-        guard let amount else { return "\(title). \(subtitle)" }
-        return "\(title), \(Format.coins(amount)) coins. \(subtitle)"
+        guard let amount else { return String(localized: "\(title). \(subtitle)") }
+        return String(localized: "\(title), \(amount) coins. \(subtitle)")
     }
 
     var body: some View {
@@ -106,7 +106,7 @@ struct RewardOverlay: View {
                     HStack(spacing: 8) {
                         if let amount {
                             CoinIcon(size: 44)
-                            Text("+\(Format.coins(amount))")
+                            Text(DisplayFormat.signedCoins(amount))
                                 .font(.dcJumbo)
                                 .foregroundStyle(Theme.ink(scheme))
                                 .monospacedDigit()
@@ -308,8 +308,7 @@ struct UnboxingView: View {
                 .tracking(1)
                 .foregroundStyle(.white)
             VStack(spacing: 6) {
-                Text(items.count == 1 ? "1 piece delivered to your closet"
-                                      : "\(items.count) pieces delivered to your closet")
+                Text("\(items.count) pieces delivered to your closet")
                     .font(.dcBodyText)
                     .foregroundStyle(.white.opacity(0.85))
                 // Side by side, or stacked when the text size leaves no room.
@@ -325,7 +324,7 @@ struct UnboxingView: View {
                     if count(.rare) > 0 { rarityChip(.rare, count(.rare)) }
                 }
             }
-            CandyButton(title: "See in closet", systemImage: "sparkles") {
+            CandyButton(title: String(localized: "See in closet"), systemImage: "sparkles") {
                 Analytics.track("celebration_completed", ["item_count": items.count, "coin_total": totalCoins])
                 router.showClosetHighlighting(items.map(\.id))
                 onDone()
@@ -339,10 +338,10 @@ struct UnboxingView: View {
 
     private func rarityChip(_ rarity: Rarity, _ n: Int) -> some View {
         VStack(spacing: 2) {
-            Text("\(n)")
+            Text(n, format: .number)
                 .font(.dcStat)
                 .foregroundStyle(.white)
-            Text(rarity.label.uppercased())
+            Text(rarity.badgeLabel)
                 .font(.dcBadge)
                 .tracking(0.4)
                 .foregroundStyle(rarity.onDarkColor)
@@ -473,7 +472,7 @@ private struct RevealCard: View {
                 RarityTag(rarity: product.rarityKind)
                     .opacity(revealed ? 1 : 0)
                     .scaleEffect(revealed ? 1 : 0.6)
-                Text(revealed ? product.name : "???")
+                Text(revealed ? product.name : String(localized: "???"))
                     .font(.dcTitle)
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
@@ -492,7 +491,7 @@ private struct RevealCard: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(revealed
-            ? "\(product.name), \(Format.coins(product.price)) coins, \(product.rarityKind.label)"
-            : "Revealing next item")
+            ? String(localized: "\(product.name), \(product.price) coins, \(product.rarityKind.label)")
+            : String(localized: "Revealing next item"))
     }
 }

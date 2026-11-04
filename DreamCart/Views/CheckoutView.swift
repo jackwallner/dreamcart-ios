@@ -70,7 +70,7 @@ struct CheckoutView: View {
 
     private var addressCard: some View {
         VStack(spacing: 12) {
-            cardHeader("shippingbox.fill", "Shipping address")
+            cardHeader("shippingbox.fill", String(localized: "Shipping address"))
             if addressComplete {
                 VStack(spacing: 2) {
                     Text("Ships to").font(.dcCaption).foregroundStyle(Theme.subtle(scheme))
@@ -124,7 +124,7 @@ struct CheckoutView: View {
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            cardHeader("bag.fill", "\(shop.cartProducts.count) item\(shop.cartProducts.count == 1 ? "" : "s")")
+            cardHeader("bag.fill", String(localized: "\(shop.cartProducts.count) items"))
             ForEach(shop.cartProducts) { p in
                 HStack(spacing: 10) {
                     RemoteImage(url: p.imageUrl, rarity: p.rarityKind)
@@ -154,7 +154,7 @@ struct CheckoutView: View {
                 Spacer()
                 CoinLabel(amount: shop.cartTotal, size: 13).foregroundStyle(Theme.ink(scheme))
             }
-            receiptRow("Shipping", "FREE", accent: scheme == .dark ? .green : Color(red: 0, green: 0.5, blue: 0.2))
+            receiptRow(String(localized: "Shipping"), String(localized: "FREE"), accent: scheme == .dark ? .green : Color(red: 0, green: 0.5, blue: 0.2))
             Divider()
             HStack {
                 Text("Order total").font(.dcBody).foregroundStyle(Theme.ink(scheme)).lineLimit(1)
@@ -181,7 +181,7 @@ struct CheckoutView: View {
     private var placeBar: some View {
         VStack(spacing: 8) {
             if !shop.canAfford {
-                Text("You need \(Format.coins(shop.cartTotal - shop.coins)) more coins")
+                Text("You need \(shop.cartTotal - shop.coins) more coins")
                     .font(.dcLabel).foregroundStyle(Theme.pink)
                 Button("Get more coins") { showUpsell = true }
                     .font(.dcLabel)
@@ -191,7 +191,7 @@ struct CheckoutView: View {
                     .font(.dcLabel).foregroundStyle(Theme.subtle(scheme))
                     .multilineTextAlignment(.center)
             }
-            CandyButton(title: placing ? "Placing order…" : "Place order",
+            CandyButton(title: placing ? String(localized: "Placing order…") : String(localized: "Place order"),
                         systemImage: "checkmark.seal.fill", enabled: canPlace) {
                 Task { await place() }
             }
@@ -206,7 +206,7 @@ struct CheckoutView: View {
         let bought = shop.cartProducts
         guard let r = await shop.checkout() else {
             Haptics.warning()
-            errorMessage = "Couldn't place your order. Try again."
+            errorMessage = String(localized: "Couldn't place your order. Try again.")
             return
         }
         if r.ok {
@@ -220,9 +220,9 @@ struct CheckoutView: View {
 
     private func failureMessage(for reason: String?) -> String {
         switch reason {
-        case "insufficient_coins": return "You don't have enough coins for this order."
-        case "nothing_to_buy": return "Your cart looks empty. Add something first."
-        default: return "Couldn't place your order. Try again."
+        case "insufficient_coins": return String(localized: "You don't have enough coins for this order.")
+        case "nothing_to_buy": return String(localized: "Your cart looks empty. Add something first.")
+        default: return String(localized: "Couldn't place your order. Try again.")
         }
     }
 

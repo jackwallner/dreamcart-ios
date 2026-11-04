@@ -99,10 +99,10 @@ struct TodayView: View {
     private var greeting: String {
         let h = Calendar.current.component(.hour, from: greetingDate)
         switch h {
-        case 5..<12: return "Good morning"
-        case 12..<17: return "Good afternoon"
-        case 17..<22: return "Good evening"
-        default: return "Late-night haul"
+        case 5..<12: return String(localized: "Good morning")
+        case 12..<17: return String(localized: "Good afternoon")
+        case 17..<22: return String(localized: "Good evening")
+        default: return String(localized: "Late-night haul")
         }
     }
 
@@ -212,7 +212,7 @@ struct TodayView: View {
     @ViewBuilder
     private var streakLabel: some View {
         if let streak = shop.me?.liveStreak(), streak > 0 {
-            Label("\(streak) day\(streak == 1 ? "" : "s")", systemImage: "flame.fill")
+            Label("\(streak) days", systemImage: "flame.fill")
                 .font(.dcLabel)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10)
@@ -242,7 +242,7 @@ struct TodayView: View {
                 .fixedSize(horizontal: false, vertical: true)
             if let streak = shop.me?.liveStreak(), streak > 0 {
                 // Just the flame + number so it never wraps or crowds the row.
-                Label("\(streak)", systemImage: "flame.fill")
+                Label(streak.formatted(), systemImage: "flame.fill")
                     .font(.dcLabel)
                     .lineLimit(1)
                     .fixedSize()
@@ -267,12 +267,12 @@ struct TodayView: View {
         let streak = shop.me?.liveStreak() ?? 0
         let canSpin = shop.canSpin
         HStack(spacing: 12) {
-            paneTile(icon: "checkmark.seal.fill", title: "Daily claimed",
-                     detail: streak > 0 ? "\(streak)-day streak" : "More tomorrow", onCandy: true)
+            paneTile(icon: "checkmark.seal.fill", title: String(localized: "Daily claimed"),
+                     detail: streak > 0 ? String(localized: "\(streak)-day streak") : String(localized: "More tomorrow"), onCandy: true)
                 .background(Theme.candy, in: RoundedRectangle(cornerRadius: Theme.cardCorner, style: .continuous))
             Button { Haptics.tap(); showSpin = true } label: {
-                paneTile(icon: "dial.medium.fill", title: canSpin ? "Spin the wheel" : "Spin used",
-                         detail: canSpin ? "Free spin ready" : "Resets tomorrow", onCandy: false)
+                paneTile(icon: "dial.medium.fill", title: canSpin ? String(localized: "Spin the wheel") : String(localized: "Spin used"),
+                         detail: canSpin ? String(localized: "Free spin ready") : String(localized: "Resets tomorrow"), onCandy: false)
                     .cardStyle(scheme)
             }
             .buttonStyle(PressableStyle())
@@ -315,9 +315,9 @@ struct TodayView: View {
             Haptics.celebrate()
             let streak = r.streak ?? 0
             let sub = (r.weeklyBonus ?? false)
-                ? "Weekly bonus! Streak \(streak). See you tomorrow."
-                : "Streak \(streak) day\(streak == 1 ? "" : "s"). Come back tomorrow for more."
-            withAnimation { reward = ("Daily Drop claimed", g, sub) }
+                ? String(localized: "Weekly bonus! Streak \(streak). See you tomorrow.")
+                : String(localized: "Streak \(streak) days. Come back tomorrow for more.")
+            withAnimation { reward = (String(localized: "Daily Drop claimed"), g, sub) }
         }
     }
 
@@ -410,8 +410,8 @@ struct TodayView: View {
 
     private var newDropsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Just dropped", subtitle: "Fresh today",
-                          actionTitle: isScreenshotMode ? nil : "Shop all") { router.receive(.shop) }
+            SectionHeader(title: String(localized: "Just dropped"), subtitle: String(localized: "Fresh today"),
+                          actionTitle: isScreenshotMode ? nil : String(localized: "Shop all")) { router.receive(.shop) }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: FirstScreenRow.spacing) {
                     ForEach(shop.newDrops) { p in

@@ -99,7 +99,7 @@ struct GuestGateState: View {
         VStack(spacing: 20) {
             EmptyState(icon: icon, title: title, message: message)
             VStack(spacing: 12) {
-                CandyButton(title: "Sign in", systemImage: "person.crop.circle.badge.plus") {
+                CandyButton(title: String(localized: "Sign in"), systemImage: "person.crop.circle.badge.plus") {
                     auth.requireAccount(feature)
                 }
                 Button("Keep browsing") { router.receive(.shop) }
@@ -122,8 +122,8 @@ struct SignInPromptView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                SignInPanel(headline: "Save your haul",
-                            message: "Sign in to collect coins, fill your cart and keep everything you buy in your closet. Browsing stays free.",
+                SignInPanel(headline: String(localized: "Save your haul"),
+                            message: String(localized: "Sign in to collect coins, fill your cart and keep everything you buy in your closet. Browsing stays free."),
                             icon: "bag.fill.badge.plus",
                             tint: Theme.violet)
                 if let err = auth.errorMessage {

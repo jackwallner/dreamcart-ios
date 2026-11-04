@@ -36,6 +36,12 @@ Read these before assuming fleet defaults (global agent rules + `ios-dev` skill)
 Two-pane unfolded layout (tabs beside the Cart), pane covers and capture
 mode: `.claude/rules/iphone-duo.md`.
 
+## Localization
+
+All copy routes through `Shared/Localizable.xcstrings` (`en` only for now). Read
+`.claude/rules/localization.md` before adding or changing a user-facing string;
+`python3 Tools/Localization/check.py` fails on copy with no key.
+
 ## Tests
 
 Unit-test conventions (Supabase stub, the singleton client): `.claude/rules/testing.md`.

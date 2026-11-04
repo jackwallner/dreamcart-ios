@@ -22,8 +22,8 @@ struct CartView: View {
                 if auth.isGuest {
                     ScrollView {
                         GuestGateState(icon: "cart",
-                                       title: "The cart needs an account",
-                                       message: "Sign in to fill a cart, check out with coins and keep what you buy.",
+                                       title: String(localized: "The cart needs an account"),
+                                       message: String(localized: "Sign in to fill a cart, check out with coins and keep what you buy."),
                                        feature: "cart_tab")
                     }
                 } else if shop.cartProducts.isEmpty {
@@ -32,16 +32,16 @@ struct CartView: View {
                             if isScreenshotMode {
                                 EmptyState(
                                     icon: "hanger",
-                                    title: "Your collection is ready",
-                                    message: "Saved pieces stay here while you browse."
+                                    title: String(localized: "Your collection is ready"),
+                                    message: String(localized: "Saved pieces stay here while you browse.")
                                 )
                             } else {
                                 EmptyState(
                                     icon: "cart",
-                                    title: "Your cart is empty",
-                                    message: "Add pieces you love. Checkout is free with coins."
+                                    title: String(localized: "Your cart is empty"),
+                                    message: String(localized: "Add pieces you love. Checkout is free with coins.")
                                 )
-                                CandyButton(title: "Browse shop", systemImage: "bag.fill") {
+                                CandyButton(title: String(localized: "Browse shop"), systemImage: "bag.fill") {
                                     router.receive(.shop)
                                 }
                                 .padding(.horizontal, 32)
@@ -126,7 +126,7 @@ struct CartView: View {
     private var checkoutBar: some View {
         VStack(spacing: 10) {
             HStack {
-                Text("\(shop.cartProducts.count) item\(shop.cartProducts.count == 1 ? "" : "s")")
+                Text("\(shop.cartProducts.count) items")
                     .font(.dcSub)
                     .foregroundStyle(Theme.subtle(scheme))
                 Spacer()
@@ -134,16 +134,16 @@ struct CartView: View {
                     .foregroundStyle(Theme.ink(scheme))
             }
             if shop.canAfford {
-                CandyButton(title: "Check out", systemImage: "sparkles") {
+                CandyButton(title: String(localized: "Check out"), systemImage: "sparkles") {
                     showCheckout = true
                 }
                 .accessibilityIdentifier("cartCheckoutButton")
             } else {
                 VStack(spacing: 8) {
-                    Text("You need \(Format.coins(shop.cartTotal - shop.coins)) more coins")
+                    Text("You need \(shop.cartTotal - shop.coins) more coins")
                         .font(.dcLabel)
                         .foregroundStyle(Theme.pink)
-                    CandyButton(title: "Get more coins", systemImage: "plus.circle.fill") {
+                    CandyButton(title: String(localized: "Get more coins"), systemImage: "plus.circle.fill") {
                         showUpsell = true
                     }
                 }

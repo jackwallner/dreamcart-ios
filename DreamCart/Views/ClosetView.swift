@@ -45,8 +45,8 @@ struct ClosetView: View {
                     VStack(alignment: .leading, spacing: 18) {
                         if auth.isGuest {
                             GuestGateState(icon: "hanger",
-                                           title: "Your closet lives in your account",
-                                           message: "Sign in so everything you buy is saved and ready to style into outfits.",
+                                           title: String(localized: "Your closet lives in your account"),
+                                           message: String(localized: "Sign in so everything you buy is saved and ready to style into outfits."),
                                            feature: "closet_tab")
                         } else {
                             // The new haul leads, so showing it scrolls to the top
@@ -66,8 +66,8 @@ struct ClosetView: View {
                             } else if shop.closet.isEmpty {
                                 EmptyState(
                                     icon: "hanger",
-                                    title: "Your closet is empty",
-                                    message: "Pieces you buy stay here so you can revisit your collection anytime."
+                                    title: String(localized: "Your closet is empty"),
+                                    message: String(localized: "Pieces you buy stay here so you can revisit your collection anytime.")
                                 )
                                 .padding(.top, 40)
                             } else {
@@ -105,7 +105,7 @@ struct ClosetView: View {
                 Text("Your collection")
                     .font(.dcCard)
                     .foregroundStyle(Theme.ink(scheme))
-                Text(shop.closet.count == 1 ? "1 piece owned" : "\(shop.closet.count) pieces owned")
+                Text("\(shop.closet.count) pieces owned")
                     .font(.dcSub)
                     .foregroundStyle(Theme.subtle(scheme))
             }
@@ -163,13 +163,13 @@ struct ClosetView: View {
         let hidden = Array(categories.dropFirst(shown.count))
         // A chip-high strip that takes whatever the sort button leaves, so the
         // room measured never depends on the chips drawn in it.
-        return FilterChipLabel(label: "All", selected: false)
+        return FilterChipLabel(label: String(localized: "All"), selected: false)
             .hidden()
             .frame(maxWidth: .infinity, alignment: .leading)
             .onGeometryChange(for: CGFloat.self, of: \.size.width) { chipRoom = $0 }
             .overlay(alignment: .leading) {
                 HStack(spacing: chipSpacing) {
-                    FilterChip(label: "All", selected: category == nil) { category = nil }
+                    FilterChip(label: String(localized: "All"), selected: category == nil) { category = nil }
                     ForEach(shown, id: \.self) { value in
                         categoryChip(value)
                     }
@@ -195,7 +195,7 @@ struct ClosetView: View {
                 }
             }
         } label: {
-            FilterChipLabel(label: "More", trailingIcon: "chevron.down",
+            FilterChipLabel(label: String(localized: "More"), trailingIcon: "chevron.down",
                             selected: category.map { hidden.contains($0) } ?? false)
         }
         .accessibilityLabel("More categories")
@@ -204,11 +204,11 @@ struct ClosetView: View {
     /// Every chip at its natural width, laid out invisibly to size the row.
     private func chipMeasurer(_ categories: [String]) -> some View {
         HStack(spacing: chipSpacing) {
-            measured("", FilterChipLabel(label: "All", selected: false))
+            measured("", FilterChipLabel(label: String(localized: "All"), selected: false))
             ForEach(categories, id: \.self) { value in
                 measured(value, FilterChipLabel(label: categoryLabel(value), selected: false))
             }
-            measured(moreKey, FilterChipLabel(label: "More", trailingIcon: "chevron.down", selected: false))
+            measured(moreKey, FilterChipLabel(label: String(localized: "More"), trailingIcon: "chevron.down", selected: false))
         }
         .fixedSize()
         .hidden()
@@ -232,7 +232,7 @@ struct ClosetView: View {
     private var newHaulSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                SectionHeader(title: "New haul", subtitle: "Just added to your closet")
+                SectionHeader(title: String(localized: "New haul"), subtitle: String(localized: "Just added to your closet"))
                 Spacer()
                 Button("Done") { router.clearClosetHighlight() }
                     .font(.dcLabel)
@@ -265,11 +265,11 @@ struct ClosetView: View {
     private var collectionSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(
-                title: query.isEmpty ? category.map(categoryLabel) ?? "All pieces" : "Search results",
-                subtitle: filteredProducts.count == 1 ? "1 piece" : "\(filteredProducts.count) pieces"
+                title: query.isEmpty ? category.map(categoryLabel) ?? String(localized: "All pieces") : String(localized: "Search results"),
+                subtitle: String(localized: "\(filteredProducts.count) pieces")
             )
             if filteredProducts.isEmpty {
-                EmptyState(icon: "magnifyingglass", title: "Nothing matches", message: "Try another search or category.")
+                EmptyState(icon: "magnifyingglass", title: String(localized: "Nothing matches"), message: String(localized: "Try another search or category."))
             } else {
                 let products = filteredProducts
                 let leading = firstRow.map { products.prefix($0.columns) } ?? []
@@ -355,16 +355,16 @@ struct ClosetView: View {
 
     private func categoryLabel(_ category: String) -> String {
         switch category {
-        case "headwear", "hat": return "Hats"
-        case "eyewear", "sunglasses": return "Shades"
-        case "footwear", "shoes": return "Shoes"
-        case "top": return "Tops"
-        case "bottom": return "Bottoms"
-        case "dress": return "Dresses"
-        case "outerwear": return "Outerwear"
-        case "bag": return "Bags"
-        case "jewelry": return "Jewelry"
-        case "accessory": return "Extras"
+        case "headwear", "hat": return String(localized: "Hats")
+        case "eyewear", "sunglasses": return String(localized: "Shades")
+        case "footwear", "shoes": return String(localized: "Shoes")
+        case "top": return String(localized: "Tops")
+        case "bottom": return String(localized: "Bottoms")
+        case "dress": return String(localized: "Dresses")
+        case "outerwear": return String(localized: "Outerwear")
+        case "bag": return String(localized: "Bags")
+        case "jewelry": return String(localized: "Jewelry")
+        case "accessory": return String(localized: "Extras")
         default: return category.capitalized
         }
     }
@@ -390,10 +390,10 @@ private enum ClosetSort: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .newest: return "Newest"
-        case .name: return "Name"
-        case .priceHigh: return "Price: high to low"
-        case .priceLow: return "Price: low to high"
+        case .newest: return String(localized: "Newest")
+        case .name: return String(localized: "Name")
+        case .priceHigh: return String(localized: "Price: high to low")
+        case .priceLow: return String(localized: "Price: low to high")
         }
     }
 
@@ -451,6 +451,6 @@ struct ClosetTile: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(product.name)
         .accessibilityValue([product.rarityKind == .common ? nil : product.rarityKind.label,
-                             highlighted ? "New" : nil].compactMap { $0 }.joined(separator: ", "))
+                             highlighted ? String(localized: "New") : nil].compactMap { $0 }.joined(separator: ", "))
     }
 }

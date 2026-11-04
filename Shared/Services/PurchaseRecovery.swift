@@ -9,7 +9,7 @@ struct PendingCoinDelivery: Codable, Equatable {
 enum PurchaseRecoveryError: LocalizedError {
     case reconciliationFailed
 
-    var errorDescription: String? { "Couldn't confirm your purchase. Try again." }
+    var errorDescription: String? { String(localized: "Couldn't confirm your purchase. Try again.") }
 }
 
 /// Store success is persisted until the account's benefits are confirmed.
