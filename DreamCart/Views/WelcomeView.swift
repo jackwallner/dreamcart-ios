@@ -46,7 +46,7 @@ struct WelcomeView: View {
                 .padding(.bottom, 16)
 
                 CandyButton(title: page == slides.count - 1 ? String(localized: "Get started") : String(localized: "Next"),
-                            systemImage: "arrow.right") {
+                            systemImage: "arrow.forward") {
                     if page == slides.count - 1 {
                         Analytics.track("onboarding_completed")
                         auth.justCompletedOnboarding = true
