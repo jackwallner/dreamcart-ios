@@ -151,9 +151,9 @@ enum Appearance: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var label: String {
         switch self {
-        case .light: return "Light"
-        case .dark: return "Dark"
-        case .system: return "Auto"
+        case .light: return String(localized: "Light")
+        case .dark: return String(localized: "Dark")
+        case .system: return String(localized: "Auto")
         }
     }
     var colorScheme: ColorScheme? {
@@ -225,7 +225,23 @@ extension View {
 enum Rarity: String {
     case common, rare, epic, legendary
 
-    var label: String { rawValue.capitalized }
+    var label: String {
+        switch self {
+        case .common: return String(localized: "Common")
+        case .rare: return String(localized: "Rare")
+        case .epic: return String(localized: "Epic")
+        case .legendary: return String(localized: "Legendary")
+        }
+    }
+    /// The all-caps form on rarity tags, one whole key per rarity.
+    var badgeLabel: String {
+        switch self {
+        case .common: return String(localized: "COMMON")
+        case .rare: return String(localized: "RARE")
+        case .epic: return String(localized: "EPIC")
+        case .legendary: return String(localized: "LEGENDARY")
+        }
+    }
     var color: Color {
         switch self {
         case .common:    return Color(white: 0.6)

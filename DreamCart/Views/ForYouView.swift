@@ -151,7 +151,7 @@ struct ForYouView: View {
         .shadow(color: product.rarityKind.color.opacity(0.25), radius: 22, y: 12)
         .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(product.name), \(product.brands?.name ?? "DreamCart"), \(product.rarityKind.label), \(Format.coins(product.price)) coins")
+        .accessibilityLabel("\(product.name), \(product.brands?.name ?? String(localized: "DreamCart")), \(product.rarityKind.label), \(product.price) coins")
         .accessibilityAction(named: "Pass") { fling(direction: -1, size: size) }
         .accessibilityAction(named: "Add to cart") { fling(direction: 1, size: size) }
     }
@@ -167,7 +167,7 @@ struct ForYouView: View {
 
     private func cardCopy(_ product: ProductWithBrand) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(product.brands?.name.uppercased() ?? "DREAMCART")
+            Text(product.brands?.name.uppercased() ?? String(localized: "DREAMCART"))
                 .font(.dcOverline)
                 .foregroundStyle(.white.opacity(0.8))
                 .lineLimit(1)
@@ -194,17 +194,17 @@ struct ForYouView: View {
     }
 
     private func tagLine(_ product: ProductWithBrand, count: Int) -> Text {
-        Text(product.styleTags.prefix(count).map { "#\($0)" }.joined(separator: "  "))
+        Text(product.styleTags.prefix(count).map { String(localized: "#\($0)") }.joined(separator: "  "))
     }
 
     /// Corner stamps that fade in with the drag, Tinder-style: cart-green on
     /// a right pull, pass-red on a left pull. Only ever shown on the front card.
     private var swipeOverlay: some View {
         ZStack {
-            stamp(acceptedFlash ? "CARTED!" : "ADD", icon: "cart.fill", color: .green, angle: -10)
+            stamp(acceptedFlash ? String(localized: "CARTED!") : String(localized: "ADD"), icon: "cart.fill", color: .green, angle: -10)
                 .opacity(stampOpacity(forDirection: 1))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            stamp("PASS", icon: "xmark", color: .red, angle: 10)
+            stamp(String(localized: "PASS"), icon: "xmark", color: .red, angle: 10)
                 .opacity(stampOpacity(forDirection: -1))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         }
@@ -235,8 +235,8 @@ struct ForYouView: View {
 
     private func controls(spacing: CGFloat, size: CGSize) -> some View {
         HStack(spacing: spacing) {
-            actionButton("xmark", color: .red, label: "Pass") { fling(direction: -1, size: size) }
-            actionButton("cart.badge.plus", color: .green, label: "Add to cart") { fling(direction: 1, size: size) }
+            actionButton("xmark", color: .red, label: String(localized: "Pass")) { fling(direction: -1, size: size) }
+            actionButton("cart.badge.plus", color: .green, label: String(localized: "Add to cart")) { fling(direction: 1, size: size) }
         }
     }
 
@@ -257,9 +257,9 @@ struct ForYouView: View {
 
     private var exhausted: some View {
         VStack(spacing: 22) {
-            EmptyState(icon: "sparkles", title: "You're all caught up",
-                       message: "Fresh picks appear as new pieces drop. You can also bring passed items back.")
-            CandyButton(title: "Reconsider passes", systemImage: "arrow.counterclockwise") {
+            EmptyState(icon: "sparkles", title: String(localized: "You're all caught up"),
+                       message: String(localized: "Fresh picks appear as new pieces drop. You can also bring passed items back."))
+            CandyButton(title: String(localized: "Reconsider passes"), systemImage: "arrow.counterclockwise") {
                 shop.resetRecommendationDismissals()
             }
         }

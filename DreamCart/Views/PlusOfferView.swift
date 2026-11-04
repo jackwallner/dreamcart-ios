@@ -61,7 +61,7 @@ struct PlusOfferView: View {
     }
 
     private var exitTitle: String {
-        presentation == .onboarding ? "Not now" : "Maybe later"
+        presentation == .onboarding ? String(localized: "Not now") : String(localized: "Maybe later")
     }
 
     /// Height the scroll content should at least fill so the pitch centres.
@@ -157,9 +157,9 @@ struct PlusOfferView: View {
         }
         .overlay {
             if didSubscribe {
-                RewardOverlay(title: "\(PlusPlan.name) unlocked",
+                RewardOverlay(title: String(localized: "\(PlusPlan.name) unlocked"),
                               amount: nil,
-                              subtitle: "Your daily coins just doubled.") {
+                              subtitle: String(localized: "Your daily coins just doubled.")) {
                     onDone()
                 }
             }
@@ -179,13 +179,13 @@ struct PlusOfferView: View {
 
     private var perks: some View {
         VStack(alignment: .leading, spacing: 14) {
-            perk("bolt.fill", "Double coins every single day")
-            perk("arrow.triangle.2.circlepath", "Spin the wheel as often as you like")
+            perk("bolt.fill", String(localized: "Double coins every single day"))
+            perk("arrow.triangle.2.circlepath", String(localized: "Spin the wheel as often as you like"))
             // Only claim what `profiles.is_plus` actually grants. Nothing in the
             // backend makes checkout faster; the double grant and the unlimited
             // spin are the whole membership, and a closet filling twice as fast
             // is what they add up to.
-            perk("bag.fill", "Fill your closet twice as fast")
+            perk("bag.fill", String(localized: "Fill your closet twice as fast"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
@@ -213,18 +213,18 @@ struct PlusOfferView: View {
     // MARK: - Copy
 
     private var headline: String {
-        store.plusTrialEligible ? "Try \(PlusPlan.name) free" : "Get \(PlusPlan.name)"
+        store.plusTrialEligible ? String(localized: "Try \(PlusPlan.name) free") : String(localized: "Get \(PlusPlan.name)")
     }
 
     private var ctaTitle: String {
-        guard revenueCatEnabled else { return "Continue" }
+        guard revenueCatEnabled else { return String(localized: "Continue") }
         if shop.purchaseRecovery.pendingPlus {
-            return shop.purchaseRecovery.isRecovering ? "Activating membership" : "Retry activation"
+            return shop.purchaseRecovery.isRecovering ? String(localized: "Activating membership") : String(localized: "Retry activation")
         }
-        if buying { return "Starting…" }
+        if buying { return String(localized: "Starting…") }
         return store.plusTrialEligible
-            ? "Start \(PlusPlan.trialDays)-day free trial"
-            : "Get \(PlusPlan.name)"
+            ? String(localized: "Start \(PlusPlan.trialDays)-day free trial")
+            : String(localized: "Get \(PlusPlan.name)")
     }
 
     /// One concise line, matching the approved fleet pattern: trial length,
@@ -233,12 +233,12 @@ struct PlusOfferView: View {
     private var disclosure: String {
         guard let price = store.plusPrice else {
             return store.plusTrialEligible
-                ? "\(PlusPlan.trialDays) days free, then a weekly charge. Auto-renews until canceled."
-                : "Billed weekly. Auto-renews until canceled."
+                ? String(localized: "\(PlusPlan.trialDays) days free, then a weekly charge. Auto-renews until canceled.")
+                : String(localized: "Billed weekly. Auto-renews until canceled.")
         }
         return store.plusTrialEligible
-            ? "\(PlusPlan.trialDays) days free, then \(price) per week. Auto-renews until canceled. Cancel anytime in Settings."
-            : "\(price) per week. Auto-renews until canceled. Cancel anytime in Settings."
+            ? String(localized: "\(PlusPlan.trialDays) days free, then \(price) per week. Auto-renews until canceled. Cancel anytime in Settings.")
+            : String(localized: "\(price) per week. Auto-renews until canceled. Cancel anytime in Settings.")
     }
 
     // MARK: - Actions
@@ -292,7 +292,7 @@ struct PlusOfferView: View {
                 if profile.isPlus {
                     withAnimation { didSubscribe = true }
                 } else {
-                    store.lastError = "No previous \(PlusPlan.name) membership on this Apple Account."
+                    store.lastError = String(localized: "No previous \(PlusPlan.name) membership on this Apple Account.")
                 }
             } catch {
                 store.lastError = error.localizedDescription

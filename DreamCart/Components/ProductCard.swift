@@ -184,7 +184,7 @@ struct RarityTag: View {
     let rarity: Rarity
     var body: some View {
         if rarity != .common {
-            Text(rarity.label.uppercased())
+            Text(rarity.badgeLabel)
                 .font(.dcBadge)
                 .tracking(0.6)
                 .foregroundStyle(.white)
@@ -289,7 +289,7 @@ struct ProductCard: View {
 
     private var accessibilityDescription: String {
         let brand = product.brands?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let prefix = brand.isEmpty ? product.name : "\(brand), \(product.name)"
-        return "\(prefix), \(Format.coins(product.price)) coins, \(product.rarityKind.label)"
+        let prefix = brand.isEmpty ? product.name : String(localized: "\(brand), \(product.name)")
+        return String(localized: "\(prefix), \(product.price) coins, \(product.rarityKind.label)")
     }
 }

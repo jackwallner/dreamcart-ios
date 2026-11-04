@@ -97,7 +97,7 @@ struct OnboardingCoinOfferView: View {
         .onDisappear { buyTask?.cancel() }
         .overlay {
             if let r = reward {
-                RewardOverlay(title: "Coins added", amount: r, subtitle: "Enjoy the shop.") {
+                RewardOverlay(title: String(localized: "Coins added"), amount: r, subtitle: String(localized: "Enjoy the shop.")) {
                     withAnimation { reward = nil }
                     onContinue()
                 }
@@ -106,8 +106,8 @@ struct OnboardingCoinOfferView: View {
     }
 
     private var buyTitle: String {
-        guard revenueCatEnabled else { return "See coin packs" }
-        return buying ? "Purchasing…" : "Get \(Format.coins(pack.coins)) coins for \(store.price(for: pack))"
+        guard revenueCatEnabled else { return String(localized: "See coin packs") }
+        return buying ? String(localized: "Purchasing…") : String(localized: "Get \(pack.coins) coins for \(store.price(for: pack))")
     }
 
     private var packCard: some View {
@@ -119,7 +119,7 @@ struct OnboardingCoinOfferView: View {
                 .background(Theme.badgePink, in: Capsule())
             HStack(spacing: 8) {
                 CoinIcon(size: 22)
-                Text("\(Format.coins(pack.coins)) coins")
+                Text("\(pack.coins) coins")
                     .font(.dcTitle)
                     .foregroundStyle(Theme.ink(scheme))
             }

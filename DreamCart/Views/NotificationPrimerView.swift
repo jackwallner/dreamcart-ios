@@ -21,7 +21,7 @@ struct NotificationPrimerView: View {
                     .multilineTextAlignment(.center)
             }
             VStack(spacing: 12) {
-                CandyButton(title: isWorking ? "Turning on…" : "Turn on", systemImage: "bell.fill", enabled: !isWorking) {
+                CandyButton(title: isWorking ? String(localized: "Turning on…") : String(localized: "Turn on"), systemImage: "bell.fill", enabled: !isWorking) {
                     isWorking = true
                     Task {
                         _ = await notifications.requestAuthorizationAndEnable()

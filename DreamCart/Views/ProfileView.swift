@@ -143,14 +143,14 @@ struct ProfileView: View {
 
     private var guestActions: some View {
         VStack(spacing: 0) {
-            row("Sign in", "person.crop.circle.badge.plus", Theme.violet) {
+            row(String(localized: "Sign in"), "person.crop.circle.badge.plus", Theme.violet) {
                 auth.requireAccount("profile")
             }
             Divider().padding(.leading, 50)
-            linkRow("Privacy Policy", "hand.raised.fill",
+            linkRow(String(localized: "Privacy Policy"), "hand.raised.fill",
                     URL(string: "https://jackwallner.github.io/dreamcart/privacy-policy.html")!)
             Divider().padding(.leading, 50)
-            linkRow("Terms of Use", "doc.text.fill",
+            linkRow(String(localized: "Terms of Use"), "doc.text.fill",
                     URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
         }
         .cardStyle(scheme)
@@ -174,14 +174,14 @@ struct ProfileView: View {
 
     private var displayName: String {
         let name = shop.me?.displayName.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return name.isEmpty ? "Shopper" : name
+        return name.isEmpty ? String(localized: "Shopper") : name
     }
 
     private var statsGrid: some View {
         HStack(spacing: 12) {
-            statTile(Format.coins(shop.coins), "Coins", "circle.fill", Theme.gold)
-            statTile("\(shop.me?.itemsOwned ?? 0)", "Owned", "bag.fill", Theme.violet)
-            statTile("\(shop.me?.bestStreak ?? 0)", "Best", "flame.fill", Theme.pink)
+            statTile(DisplayFormat.coins(shop.coins), PluralLabel.coins(shop.coins), "circle.fill", Theme.gold)
+            statTile((shop.me?.itemsOwned ?? 0).formatted(), String(localized: "Owned"), "bag.fill", Theme.violet)
+            statTile((shop.me?.bestStreak ?? 0).formatted(), String(localized: "Best"), "flame.fill", Theme.pink)
         }
     }
 
@@ -277,9 +277,9 @@ struct ProfileView: View {
     }
 
     private var notificationStatusText: String {
-        if notifications.isDenied { return "Notifications are off in Settings" }
-        if notifications.isNotificationsEnabled { return "One reminder daily at \(Self.timeString(notifications.preferredTime))" }
-        return "Off"
+        if notifications.isDenied { return String(localized: "Notifications are off in Settings") }
+        if notifications.isNotificationsEnabled { return String(localized: "One reminder daily at \(Self.timeString(notifications.preferredTime))") }
+        return String(localized: "Off")
     }
 
     private static func timeString(_ date: Date) -> String {
@@ -292,12 +292,12 @@ struct ProfileView: View {
                 plusRow
             }
             Divider().padding(.leading, 50)
-            row("Get more coins", "plus.circle.fill", Theme.violet) { showCoinShop = true }
+            row(String(localized: "Get more coins"), "plus.circle.fill", Theme.violet) { showCoinShop = true }
                 .accessibilityIdentifier("profile.get-coins")
             Divider().padding(.leading, 50)
-            subtitledRow("Shipping address", shippingSubtitle, "shippingbox.fill", Theme.coral) { showShipping = true }
+            subtitledRow(String(localized: "Shipping address"), shippingSubtitle, "shippingbox.fill", Theme.coral) { showShipping = true }
             Divider().padding(.leading, 50)
-            row(ledgerLoading ? "Loading coin history…" : "Coin history",
+            row(ledgerLoading ? String(localized: "Loading coin history…") : String(localized: "Coin history"),
                 "clock.arrow.circlepath", Theme.subtle(scheme)) {
                 guard !ledgerLoading else { return }
                 Task {
@@ -312,11 +312,11 @@ struct ProfileView: View {
                 }
             }
             Divider().padding(.leading, 50)
-            row("Sign out", "rectangle.portrait.and.arrow.right", Theme.subtle(scheme)) {
+            row(String(localized: "Sign out"), "rectangle.portrait.and.arrow.right", Theme.subtle(scheme)) {
                 Task {
                     await auth.signOut()
                     if auth.state != .signedOut {
-                        profileError = auth.errorMessage ?? "Could not sign out. Try again."
+                        profileError = auth.errorMessage ?? String(localized: "Could not sign out. Try again.")
                     }
                 }
             }
@@ -339,12 +339,12 @@ struct ProfileView: View {
     @ViewBuilder
     private var plusRow: some View {
         if shop.me?.isPlus == true {
-            subtitledRow(PlusPlan.name, "Active · manage or cancel in the App Store",
+            subtitledRow(PlusPlan.name, String(localized: "Active · manage or cancel in the App Store"),
                          "crown.fill", Theme.gold) {
                 openURL(PlusLinks.manage)
             }
         } else {
-            subtitledRow(PlusPlan.name, "Double daily coins, unlimited spins",
+            subtitledRow(PlusPlan.name, String(localized: "Double daily coins, unlimited spins"),
                          "crown.fill", Theme.gold) {
                 showPlusOffer = true
             }
@@ -387,7 +387,7 @@ struct ProfileView: View {
 
     private var shippingSubtitle: String {
         let address = shipping.address
-        if !address.isValid { return "Add an address for checkout" }
+        if !address.isValid { return String(localized: "Add an address for checkout") }
         return [address.city, address.state].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.joined(separator: ", ")
     }
 
@@ -435,8 +435,8 @@ struct LedgerView: View {
         NavigationStack {
             Group {
                 if shop.ledger.isEmpty {
-                    EmptyState(icon: "clock.arrow.circlepath", title: "No coin activity yet",
-                               message: "Daily drops, spins, shopping, and coin packs will appear here.")
+                    EmptyState(icon: "clock.arrow.circlepath", title: String(localized: "No coin activity yet"),
+                               message: String(localized: "Daily drops, spins, shopping, and coin packs will appear here."))
                 } else {
                     List {
                         ForEach(shop.ledger) { e in
@@ -449,7 +449,7 @@ struct LedgerView: View {
                                         .foregroundStyle(Theme.subtle(scheme))
                                 }
                                 Spacer()
-                                Text("\(e.delta > 0 ? "+" : "")\(Format.coins(e.delta))")
+                                Text(DisplayFormat.signedCoins(e.delta))
                                     .font(.dcPrice)
                                     .foregroundStyle(e.delta > 0 ? .green : Theme.pink)
                                     .monospacedDigit()
@@ -469,11 +469,11 @@ struct LedgerView: View {
 
     private func label(_ reason: String) -> String {
         switch reason {
-        case "welcome": return "Welcome bonus"
-        case "daily": return "Daily drop"
-        case "spin": return "Spin the wheel"
-        case "checkout": return "Shopping"
-        case "pack": return "Coin pack"
+        case "welcome": return String(localized: "Welcome bonus")
+        case "daily": return String(localized: "Daily drop")
+        case "spin": return String(localized: "Spin the wheel")
+        case "checkout": return String(localized: "Shopping")
+        case "pack": return String(localized: "Coin pack")
         default: return reason.capitalized
         }
     }

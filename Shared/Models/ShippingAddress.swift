@@ -10,7 +10,7 @@ struct ShippingAddress: Codable, Equatable, Sendable {
     var city = ""
     var state = ""
     var zip = ""
-    var country = "United States"
+    var country = String(localized: "United States")
 
     /// Light validation: name, street, and city must be filled in. Line 2,
     /// state, zip, and country are all optional so the form never feels

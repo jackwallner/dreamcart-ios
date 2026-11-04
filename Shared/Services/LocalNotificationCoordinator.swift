@@ -189,8 +189,8 @@ final class LocalNotificationCoordinator {
         cancelNewDrops()
 
         let content = UNMutableNotificationContent()
-        content.title = "NEW DROP"
-        content.body = "Fresh styles are waiting in DreamCart."
+        content.title = String(localized: "NEW DROP")
+        content.body = String(localized: "Fresh styles are waiting in DreamCart.")
         content.sound = .default
         content.userInfo = ["route": "new-drops", "url": "dreamcart://new-drops"]
         let trigger = UNCalendarNotificationTrigger(dateMatching: date, repeats: true)
