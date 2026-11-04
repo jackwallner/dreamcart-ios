@@ -28,7 +28,7 @@ import sys
 
 ROOT = os.getcwd()
 DIRS = ['DreamCart', 'Shared']
-LANGS = []
+LANGS = ['ar', 'de', 'es', 'ja', 'pt-BR', 'ru', 'tr', 'zh-Hans']
 UI_FUNCS = {'Text', 'Button', 'Label', 'Section', 'Toggle', 'TextField', 'navigationTitle', 'accessibilityLabel',
             'alert', 'DatePicker', 'Stepper', 'Link', 'configurationDisplayName', 'description',
             'confirmationDialog', 'Picker', 'LocalizedStringKey', 'accessibilityHint', 'SecureField',

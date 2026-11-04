@@ -121,7 +121,7 @@ struct ProductDetailView: View {
     private var paneBackButton: some View {
         HStack {
             Button { dismiss() } label: {
-                Image(systemName: "chevron.left")
+                Image(systemName: "chevron.backward")
                     .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(.primary)
                     .frame(width: 44, height: 44)

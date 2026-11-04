@@ -8,8 +8,10 @@ paths:
 # DreamCart: localization (added 2026-11-04)
 
 Every user-facing string in the iOS app routes through the catalog, which holds
-`en` only for now. Separate runs add the other languages, then list them in
-`CFBundleLocalizations` in `DreamCart/Info.plist` and in `LANGS` in `check.py`.
+`en` plus ar, de, es, ja, pt-BR, ru, tr and zh-Hans. A new language goes in
+`CFBundleLocalizations` in `DreamCart/Info.plist`, `LANGS` in `check.py` and
+`languages` in `LocalizationTests`. Adding Slovenian needs a dual label in
+`PluralLabel.Category`.
 `android/` has its own strings and is out of this.
 
 ## Setup

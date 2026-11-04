@@ -102,4 +102,32 @@ final class LocalizationTests: XCTestCase {
         XCTAssertEqual(DisplayFormat.coinsShort(1500), "1.5k")
         XCTAssertEqual(DisplayFormat.coinsShort(25_000), "25k")
     }
+
+    static let languages = ["ar", "de", "es", "ja", "pt-BR", "ru", "tr", "zh-Hans"]
+
+    private func bundle(_ language: String) throws -> Bundle {
+        for host in [Bundle.main, Bundle(for: LocalizationTests.self)] + Bundle.allBundles {
+            if let path = host.path(forResource: language, ofType: "lproj"), let bundle = Bundle(path: path) {
+                return bundle
+            }
+        }
+        return try XCTUnwrap(nil as Bundle?, "\(language).lproj is missing")
+    }
+
+    func testEveryLanguageTranslatesThePlurals() throws {
+        for language in Self.languages {
+            let host = try bundle(language)
+            let text = String(localized: "\(4) pieces owned", bundle: host, locale: Locale(identifier: language))
+            XCTAssertFalse(text.contains("#@"), "\(language): \(text)")
+            XCTAssertNotEqual(text, "4 pieces owned", language)
+            XCTAssertTrue(text.contains("4") || text.contains("٤"), "\(language): \(text)")
+        }
+    }
+
+    func testRussianPicksPluralCategories() throws {
+        let russian = try bundle("ru")
+        let locale = Locale(identifier: "ru")
+        let forms = [1, 3, 5].map { String(localized: "\($0) items", bundle: russian, locale: locale) }
+        XCTAssertEqual(Set(forms).count, 3, "\(forms)")
+    }
 }

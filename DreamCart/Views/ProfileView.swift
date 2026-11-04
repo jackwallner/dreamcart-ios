@@ -358,7 +358,7 @@ struct ProfileView: View {
                 Text(title).font(.dcBody)
                     .foregroundStyle(Theme.ink(scheme))
                 Spacer()
-                Image(systemName: "chevron.right").font(.dcIconS).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
+                Image(systemName: "chevron.forward").font(.dcIconS).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
             }
             .padding(.horizontal, 14).padding(.vertical, 14)
         }
@@ -378,7 +378,7 @@ struct ProfileView: View {
                         .lineLimit(1)
                 }
                 Spacer()
-                Image(systemName: "chevron.right").font(.dcIconS).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
+                Image(systemName: "chevron.forward").font(.dcIconS).foregroundStyle(Theme.subtle(scheme).opacity(0.5))
             }
             .padding(.horizontal, 14).padding(.vertical, 14)
         }
