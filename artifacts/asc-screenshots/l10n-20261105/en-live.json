@@ -1,0 +1,42 @@
+{
+ "phone": {
+  "display_type": "APP_IPHONE_67",
+  "frames": [
+   {
+    "file": "01-claim-your-daily-drop.png",
+    "md5": "77e7affff3c83b1c3d87afcb8bbaae72",
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/3f8IkiJbB1UYiGh_37NMiQ/1320x2868bb.png",
+    "w": 1320,
+    "h": 2868
+   },
+   {
+    "file": "02-spin-for-something-fun.png",
+    "md5": "837d5f3f60511924eee988c278cbc03e",
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/gIDVFtrJOSztl7U12SEGKg/1320x2868bb.png",
+    "w": 1320,
+    "h": 2868
+   },
+   {
+    "file": "03-find-your-next-favorite.png",
+    "md5": "fea22540011b79bf1b75c99a3506329a",
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/hVVVdLhhnRX8kG1ixBfZrw/1320x2868bb.png",
+    "w": 1320,
+    "h": 2868
+   },
+   {
+    "file": "04-see-the-result-you-earned.png",
+    "md5": "00e3980315bc4abccc13ccfd9462b88d",
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/X_KG96Ss7c4nfdWq5hQAfw/1320x2868bb.png",
+    "w": 1320,
+    "h": 2868
+   },
+   {
+    "file": "05-build-your-virtual-closet.png",
+    "md5": "587f148824607b7b9c8aff0365c5daf0",
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/NJPZ4z3aBtcyxfnqPvoC5A/1320x2868bb.png",
+    "w": 1320,
+    "h": 2868
+   }
+  ]
+ }
+}

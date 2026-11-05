@@ -1,0 +1,23 @@
+{
+ "repo": "shop",
+ "github": "jackwallner/dreamcart-ios",
+ "bundle": "com.jackwallner.shop",
+ "family": "own",
+ "asc_id": "6787820106",
+ "live_version": "1.0.3",
+ "targets": [
+  {
+   "rank": 68,
+   "store_locale": "zh-Hans",
+   "lang": "zh-Hans",
+   "apple_languages": "(zh-Hans)",
+   "apple_locale": "zh_CN",
+   "regions": [
+    "China"
+   ],
+   "customers": 9.0
+  }
+ ],
+ "store_locales_missing": [],
+ "dest": "artifacts/asc-screenshots/l10n-20261105"
+}
