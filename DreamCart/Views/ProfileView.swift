@@ -1,6 +1,15 @@
 import SwiftUI
 
 struct ProfileView: View {
+    /// The language the app is running in, named in that language, as iOS
+    /// Settings names it ("Deutsch", "Español").
+    private static var currentLanguageName: String {
+        guard let code = Bundle.main.preferredLocalizations.first else { return "" }
+        let locale = Locale(identifier: code)
+        guard let name = locale.localizedString(forLanguageCode: code) else { return code }
+        return name.prefix(1).uppercased(with: locale) + name.dropFirst()
+    }
+
     @Environment(AuthController.self) private var auth
     @Environment(ShopStore.self) private var shop
     @Environment(LocalNotificationCoordinator.self) private var notifications
@@ -201,19 +210,49 @@ struct ProfileView: View {
     }
 
     private var appearanceCard: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 14) {
-                appearanceLabel
-                Spacer()
-                appearancePicker.frame(width: 180)
+        VStack(spacing: 0) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 14) {
+                    appearanceLabel
+                    Spacer()
+                    appearancePicker.frame(width: 180)
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    appearanceLabel
+                    appearancePicker
+                }
             }
-            VStack(alignment: .leading, spacing: 12) {
-                appearanceLabel
-                appearancePicker
-            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+            Divider().padding(.leading, 14)
+            languageRow
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
         .cardStyle(scheme)
+    }
+
+    // iOS keeps the per-app language on the app's own Settings page, where
+    // few people think to look. This row only points there.
+    private var languageRow: some View {
+        Button {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                openURL(url)
+            }
+        } label: {
+            HStack(spacing: 14) {
+                Label("Language", systemImage: "globe")
+                    .font(.dcBody)
+                    .foregroundStyle(Theme.ink(scheme))
+                Spacer()
+                Text(Self.currentLanguageName)
+                    .font(.dcBody)
+                    .foregroundStyle(Theme.subtle(scheme))
+                Image(systemName: "arrow.up.right").font(.dcIconS)
+                    .foregroundStyle(Theme.subtle(scheme).opacity(0.5))
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens iOS Settings")
     }
 
     private var appearanceLabel: some View {
