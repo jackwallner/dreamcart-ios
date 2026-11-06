@@ -1,0 +1,29 @@
+{
+  "verdict": "FIX",
+  "header_fixes": [
+    {
+      "locale": "zh-Hans",
+      "file": "01-claim-your-daily-drop.png",
+      "before": "每日上新\n发现心动好物",
+      "after": "每日好礼\n一键领取",
+      "why": "The English frame promises claiming a daily reward, not discovering newly listed products. 每日好礼 matches Daily Drop in Shared/Localizable.xcstrings; the replacement has two balanced four-character lines. Updated copy/headers.json only. The PNG still has the old header: tools/reskin.py requires every localized raw and cannot reuse the existing screen. The orchestrator must regenerate this frame from the corrected copy."
+    }
+  ],
+  "ui_defects": [
+    {
+      "locale": "zh-Hans",
+      "file": "01-claim-your-daily-drop.png",
+      "what": "The fully visible middle product card truncates its name to Zephyr Bone / Wide-Leg Trou... . Confirmed in the full frame. Use a shorter display name or enough room for the item type. This is a minor label defect; the partially visible rightmost carousel card is expected.",
+      "severity": "minor"
+    },
+    {
+      "locale": "zh-Hans",
+      "file": "01-claim-your-daily-drop.png",
+      "what": "The generic brand tagline Quiet luxury, loud calm. remains English below Halcyon. Confirmed in the full frame and traced to server-owned supabase/functions/_shared/catalog.ts; there is no matching key in Shared/Localizable.xcstrings. Localize the tagline for Chinese. Brand names, generated product names and server tags are separate from translated app controls, which render in Chinese.",
+      "severity": "minor"
+    }
+  ],
+  "unsure": [
+    "The corrected header's final native rendering needs orchestrator verification. Swift/CoreText is unavailable on imac and localized raws are absent, so no reskin, raw checks or native OCR gate was run. Reviewed the zh-Hans/phone sheet against all five fetched English frames, then opened frames 01 and 03 to confirm suspected truncation and English content. Existing header size, alignment, background continuity and phone placement appear consistent across the five frames; no clipped header, broken UI wrapping, exposed personal data or date/number-format defect was observed."
+  ]
+}
