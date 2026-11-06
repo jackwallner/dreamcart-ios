@@ -23,6 +23,7 @@ enum DuoScreenshotMode {
 
     static var isSeeded: Bool { arguments.contains("-DuoSeed") }
     static var wantsTour: Bool { arguments.contains("-DuoTour") }
+    static var wantsSpinResult: Bool { arguments.contains("-DuoSpinResult") }
 
     static func value(_ key: String) -> String? {
         guard let i = arguments.firstIndex(of: key), i + 1 < arguments.count else { return nil }

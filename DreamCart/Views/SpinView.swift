@@ -125,6 +125,14 @@ struct SpinView: View {
         .sheet(isPresented: $showUpsell, onDismiss: { dismiss() }) {
             CoinUpsellView(trigger: .postSpinLowBalance)
         }
+#if DEBUG
+        .task {
+            guard DuoScreenshotMode.wantsSpinResult else { return }
+            let sample = SpinResult(ok: true, reason: nil, prize: 1500, slice: 1, coins: 18_450)
+            result = sample
+            await presentResult(sample)
+        }
+#endif
     }
 
     /// A high-engagement moment (just spun) with a low resulting balance —

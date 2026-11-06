@@ -93,6 +93,7 @@ def main() -> int:
     english = headers.get(english_locale, headers.get('en', {}))
     failures = []
     raw_frames = {}
+    ocr_allowlist = {}
     seen = {}
     other_hashes = {}
     for other in sorted(args.out_root.iterdir()) if args.out_root.exists() else []:
@@ -119,6 +120,16 @@ def main() -> int:
                 failures.append(f'HEADER {name}: unchanged English')
             if frame['file'] not in english:
                 failures.append(f'HEADER {name}: missing English reference ({english_locale})')
+            for extra in frame.get('extra_text', []):
+                extra_key = f"{frame['file']}#{extra['key']}"
+                extra_text = headers.get(args.locale, {}).get(extra_key, '')
+                if not extra_text.strip():
+                    failures.append(f'HEADER {name}: empty extra text {extra_key}')
+                source_text = english.get(extra_key, '')
+                if not source_text:
+                    failures.append(f'HEADER {name}: missing English reference ({extra_key})')
+                elif normalize(extra_text) == normalize(source_text):
+                    failures.append(f'HEADER {name}: unchanged English extra text {extra_key}')
             path = output / frame['file']
             if path.is_file():
                 with Image.open(path) as im:
@@ -141,6 +152,8 @@ def main() -> int:
                     failures.append(f'RAW {name}: missing {target["raw"]}')
                     continue
                 raw_frames.setdefault(raw.resolve(), []).append(name)
+                allowed = {normalize(text) for text in frame.get('ocr_allowlist', [])}
+                ocr_allowlist.setdefault(raw.resolve(), set()).update(allowed)
                 if not reference.is_file():
                     failures.append(f'RAW {name}: missing English reference {target["raw"]}')
                 elif unchanged_raw(raw, reference):
@@ -157,7 +170,10 @@ def main() -> int:
         leaks = []
         for item in json.loads(result.stdout):
             for line in item['lines']:
-                if normalize(line) in sources:
+                normalized = normalize(line)
+                if not any(character.isalpha() for character in line):
+                    continue
+                if normalized in sources and normalized not in ocr_allowlist[Path(item['path'])]:
                     for name in raw_frames[Path(item['path'])]:
                         leaks.append(f'LEAK {name}: {line}')
         failures.extend(leaks[:40])

@@ -1,0 +1,23 @@
+{
+  "locales": [
+    "zh-Hans"
+  ],
+  "frames": 5,
+  "gate": {
+    "zh-Hans": "PASS"
+  },
+  "gh_sim_jobs": 2,
+  "app_code_changed": [
+    {
+      "path": "DreamCart/DuoScreenshotMode.swift",
+      "debug_only": true
+    },
+    {
+      "path": "DreamCart/Views/SpinView.swift",
+      "debug_only": true
+    }
+  ],
+  "defects": [],
+  "left_out": [],
+  "adapter": "launch"
+}

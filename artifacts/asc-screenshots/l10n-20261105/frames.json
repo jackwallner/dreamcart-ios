@@ -1,0 +1,76 @@
+{
+  "english_locale": "en-US",
+  "sets": {
+    "phone": {
+      "canvas": [1320, 2868],
+      "frames": [
+        {
+          "file": "01-claim-your-daily-drop.png",
+          "base": "en-live/phone/01-claim-your-daily-drop.png",
+          "raw": "today",
+          "screen": [110, 590, 1100, 2063],
+          "radius": 105,
+          "header_box": [40, 100, 1240, 370],
+          "font": "SFNSRounded-Heavy",
+          "color": [51, 33, 28],
+          "max_size": 138,
+          "min_size": 110,
+          "align": "center"
+        },
+        {
+          "file": "02-spin-for-something-fun.png",
+          "base": "en-live/phone/02-spin-for-something-fun.png",
+          "raw": "spin",
+          "screen": [110, 590, 1100, 2063],
+          "radius": 105,
+          "header_box": [40, 100, 1240, 370],
+          "font": "SFNSRounded-Heavy",
+          "color": [51, 33, 28],
+          "max_size": 138,
+          "min_size": 110,
+          "align": "center"
+        },
+        {
+          "file": "03-find-your-next-favorite.png",
+          "base": "en-live/phone/03-find-your-next-favorite.png",
+          "raw": "foryou",
+          "screen": [110, 590, 1100, 2063],
+          "radius": 105,
+          "header_box": [40, 100, 1240, 370],
+          "font": "SFNSRounded-Heavy",
+          "color": [51, 33, 28],
+          "max_size": 138,
+          "min_size": 110,
+          "align": "center",
+          "ocr_allowlist": ["Hat"]
+        },
+        {
+          "file": "04-see-the-result-you-earned.png",
+          "base": "en-live/phone/04-see-the-result-you-earned.png",
+          "raw": "spin-result",
+          "screen": [110, 590, 1100, 2063],
+          "radius": 105,
+          "header_box": [40, 100, 1240, 370],
+          "font": "SFNSRounded-Heavy",
+          "color": [51, 33, 28],
+          "max_size": 138,
+          "min_size": 110,
+          "align": "center"
+        },
+        {
+          "file": "05-build-your-virtual-closet.png",
+          "base": "en-live/phone/05-build-your-virtual-closet.png",
+          "raw": "closet",
+          "screen": [110, 590, 1100, 2063],
+          "radius": 105,
+          "header_box": [40, 100, 1240, 370],
+          "font": "SFNSRounded-Heavy",
+          "color": [51, 33, 28],
+          "max_size": 138,
+          "min_size": 110,
+          "align": "center"
+        }
+      ]
+    }
+  }
+}
