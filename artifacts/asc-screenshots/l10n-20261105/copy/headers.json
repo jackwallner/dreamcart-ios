@@ -1,4 +1,11 @@
 {
+  "en-US": {
+    "01-claim-your-daily-drop.png": "Claim your daily\ndrop",
+    "02-spin-for-something-fun.png": "Spin for\nsomething fun",
+    "03-find-your-next-favorite.png": "Find your next\nfavorite",
+    "04-see-the-result-you-earned.png": "See what the spin\nearned",
+    "05-build-your-virtual-closet.png": "Build your virtual\ncloset"
+  },
   "zh-Hans": {
     "01-claim-your-daily-drop.png": "每日上新\n发现心动好物",
     "02-spin-for-something-fun.png": "转动幸运转盘\n赢取惊喜金币",
