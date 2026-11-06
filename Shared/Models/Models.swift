@@ -11,6 +11,10 @@ struct Brand: Codable, Identifiable, Hashable, Sendable {
     let accentHex: String
     let bgHex: String
     let sort: Int
+
+    var localizedTagline: String {
+        slug == "halcyon" ? String(localized: "Quiet luxury, loud calm.") : tagline
+    }
 }
 
 struct Product: Codable, Identifiable, Hashable, Sendable {

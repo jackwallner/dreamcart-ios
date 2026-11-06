@@ -267,8 +267,9 @@ struct ProductCard: View {
                     .lineLimit(2, reservesSpace: true)
                     .truncationMode(.tail)
                     // A pane's whole-card row is narrower than a phone shelf:
-                    // shrink a long name before cutting it short.
-                    .minimumScaleFactor(isUnfoldedPane ? 0.75 : 1)
+                    // shrink a long name before cutting it short. Localized
+                    // screens keep server-owned product names in English.
+                    .minimumScaleFactor(isUnfoldedPane || Locale.current.language.languageCode?.identifier != "en" ? 0.75 : 1)
                     .frame(maxWidth: .infinity, minHeight: nameHeight, alignment: .topLeading)
                 CoinLabel(amount: product.price)
                     .foregroundStyle(Theme.ink(scheme))

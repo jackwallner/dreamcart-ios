@@ -140,7 +140,7 @@ struct BrandView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
-                Text(brand.tagline)
+                Text(brand.localizedTagline)
                     .font(.dcBodyText)
                     .foregroundStyle(Color.brandText(hex: brand.accentHex, scheme: scheme))
                     .padding(.horizontal, 16)
