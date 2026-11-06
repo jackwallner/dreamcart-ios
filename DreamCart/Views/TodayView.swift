@@ -443,7 +443,7 @@ struct TodayView: View {
                                 Text(brand.name)
                                     .font(.dcSection)
                                     .foregroundStyle(Theme.ink(scheme))
-                                Text(brand.tagline)
+                                Text(brand.localizedTagline)
                                     .font(.dcSub)
                                     .foregroundStyle(Color.brandText(hex: brand.accentHex, scheme: scheme))
                             }
