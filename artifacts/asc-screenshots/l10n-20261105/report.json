@@ -6,7 +6,7 @@
   "gate": {
     "zh-Hans": "PASS"
   },
-  "gh_sim_jobs": 2,
+  "gh_sim_jobs": 4,
   "app_code_changed": [
     {
       "path": "DreamCart/DuoScreenshotMode.swift",
@@ -15,9 +15,74 @@
     {
       "path": "DreamCart/Views/SpinView.swift",
       "debug_only": true
+    },
+    {
+      "path": "DreamCart/Components/ProductCard.swift"
+    },
+    {
+      "path": "DreamCart/Views/ShopView.swift"
+    },
+    {
+      "path": "DreamCart/Views/TodayView.swift"
+    },
+    {
+      "path": "Shared/Models/Models.swift"
+    },
+    {
+      "path": "Shared/Localizable.xcstrings"
     }
   ],
   "defects": [],
   "left_out": [],
-  "adapter": "launch"
+  "adapter": "launch",
+  "capture_jobs": 3,
+  "unit_test_jobs": 1,
+  "capture_run": "shop-shots@20261105-190715-b763-codex-mbpro051f-1105-191414-28101",
+  "unit_tests": {
+    "command": "gh-sim test --scheme DreamCart",
+    "result": "PASS",
+    "passed": 108,
+    "failed": 0,
+    "skipped": 0,
+    "run_id": "shop-shots@20261105-190715-b763-codex-mbpro051f-1105-192746-6302"
+  },
+  "header_fixes_applied": [
+    {
+      "locale": "zh-Hans",
+      "file": "01-claim-your-daily-drop.png",
+      "text": "每日好礼\n一键领取"
+    }
+  ],
+  "ui_defects_fixed": [
+    {
+      "locale": "zh-Hans",
+      "file": "01-claim-your-daily-drop.png",
+      "issue": "Zephyr Bone / Wide-Leg Trousers was truncated in the product card.",
+      "fix": "Localized product cards can scale server-owned names to 75% within two lines. English sizing remains unchanged."
+    },
+    {
+      "locale": "zh-Hans",
+      "file": "01-claim-your-daily-drop.png",
+      "issue": "The Halcyon tagline appeared in English.",
+      "fix": "The Halcyon tagline now uses a localized catalog key at display time. The Chinese value is 静谧奢华，自在从容。"
+    }
+  ],
+  "capture": {
+    "captured": [
+      "zh-Hans/phone/today.png"
+    ],
+    "reused": [
+      "en-US/phone/today.png",
+      "en-US/phone/spin.png",
+      "en-US/phone/foryou.png",
+      "en-US/phone/spin-result.png",
+      "en-US/phone/closet.png",
+      "zh-Hans/phone/spin.png",
+      "zh-Hans/phone/foryou.png",
+      "zh-Hans/phone/spin-result.png",
+      "zh-Hans/phone/closet.png"
+    ],
+    "installed": "fastlane/screenshots/zh-Hans/",
+    "english_screenshots_touched": false
+  }
 }
