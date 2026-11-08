@@ -90,7 +90,11 @@ struct DreamCartApp: App {
                     AppDelegate.onNotificationRoute = { userInfo in
                         router.receive(notificationUserInfo: userInfo)
                     }
-                    await notifications.refreshStatus()
+                    // Reconcile, not just refresh: the pending reminder keeps the
+                    // copy of the language it was scheduled in, and a language
+                    // change in Settings relaunches the app. Rebuilding it here
+                    // is what moves the reminder to the new language.
+                    await notifications.reconcile()
                     await auth.bootstrap()
                     if auth.state == .signedIn {
                         shop.purchaseRecovery.selectAccount(await SupabaseClient.shared.currentUserId)
