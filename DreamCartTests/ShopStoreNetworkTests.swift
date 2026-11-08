@@ -145,6 +145,37 @@ final class ShopStoreNetworkTests: XCTestCase {
                        "Only the passes go; a piece the shopper carted stays recorded as carted")
     }
 
+    /// An order that went through with its answer lost leaves the pieces in the
+    /// cart. The retry finds them owned, and the server answers `nothing_to_buy`.
+    /// The cart used to keep them, so every retry failed the same way.
+    func testCheckoutOfPiecesAlreadyOwnedClearsThemFromTheCart() async throws {
+        let owned = #"{"acquired_at":"2026-11-08T09:00:00Z","products":\#(SupabaseStub.productJSON)}"#
+        SupabaseStub.install { request in
+            if SupabaseStub.isTokenCall(request) { return .json(SupabaseStub.tokenJSON()) }
+            switch request.url?.path {
+            case "/rest/v1/rpc/purchase_cart":
+                return .json(#"{"ok":false,"reason":"nothing_to_buy","coins":1234}"#)
+            case "/rest/v1/closet_items":
+                return .json("[\(owned)]")
+            case "/rest/v1/rpc/me":
+                return .json(SupabaseStub.meJSON)
+            default:
+                return .json(#"{"code":"PGRST205","message":"Could not find the table in the schema cache"}"#,
+                             status: 404)
+            }
+        }
+        try await SupabaseClient.shared.signInWithPassword(email: "shopper@example.com", password: "pw")
+        let shop = ShopStore()
+        shop.cartIds = ["p1"]
+
+        let result = await shop.checkout()
+
+        XCTAssertEqual(result?.reason, "nothing_to_buy")
+        XCTAssertTrue(shop.cartIds.isEmpty)
+        XCTAssertTrue(shop.ownedIds.contains("p1"))
+        XCTAssertEqual(shop.coins, 1234)
+    }
+
     /// The catalog's remaining pages load in a task of their own; let it ask
     /// for its page before the stub goes away.
     private func finishCatalogPaging(of shop: ShopStore) async {
