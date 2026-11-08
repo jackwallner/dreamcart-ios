@@ -390,8 +390,15 @@ final class ShopStore {
         let itemCount = ids.count
         let coinTotal = cartTotal
         Analytics.track("checkout_started", ["item_count": itemCount, "coin_total": coinTotal])
-        guard let r: PurchaseResult = try? await sb.rpc("purchase_cart", args: ["p_product_ids": ids])
-        else { return nil }
+        guard let r: PurchaseResult = try? await sb.rpc("purchase_cart", args: ["p_product_ids": ids]) else {
+            // The order may have gone through with only the answer lost.
+            await syncCartWithCloset()
+            return nil
+        }
+        // The server skips pieces already owned. A cart of nothing else (an
+        // order whose answer was lost, or a piece bought elsewhere) failed every
+        // retry with "Your cart looks empty" over a full cart.
+        if !r.ok, r.reason == "nothing_to_buy" { await syncCartWithCloset() }
         if r.ok {
             let bought = r.bought ?? ids
             // Per-line taste signal: one event per purchased item, carrying the
@@ -409,6 +416,13 @@ final class ShopStore {
             Analytics.track("checkout_completed", ["item_count": itemCount, "coin_total": coinTotal])
         }
         return r
+    }
+
+    /// Reloads what the account owns and drops it from the cart.
+    private func syncCartWithCloset() async {
+        guard await loadCloset() else { return }
+        cartIds.removeAll { ownedIds.contains($0) }
+        await refreshMe()
     }
 
     // MARK: favorites
