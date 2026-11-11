@@ -103,6 +103,7 @@ struct PlusOfferView: View {
             }
 
             VStack(spacing: 12) {
+                billedPrice
                 CandyButton(title: ctaTitle, systemImage: "sparkles", enabled: !buying && !restoring && !shop.purchaseRecovery.isRecovering) {
                     buyTask?.cancel()
                     buyTask = Task {
@@ -212,8 +213,22 @@ struct PlusOfferView: View {
 
     // MARK: - Copy
 
+    // 3.1.2(c), rejected 2026-11-11: the billed amount must be the most
+    // conspicuous pricing element. The trial stays in the caption below the
+    // button and never appears in the headline or the button.
     private var headline: String {
-        store.plusTrialEligible ? String(localized: "Try \(PlusPlan.name) free") : String(localized: "Get \(PlusPlan.name)")
+        String(localized: "Get \(PlusPlan.name)")
+    }
+
+    /// The weekly charge, the largest price on the screen. Hidden until
+    /// StoreKit answers rather than showing a guessed amount.
+    @ViewBuilder private var billedPrice: some View {
+        if revenueCatEnabled, !shop.purchaseRecovery.pendingPlus, let price = store.plusPrice {
+            Text("\(price) per week")
+                .font(.dcStat)
+                .foregroundStyle(Theme.ink(scheme))
+                .multilineTextAlignment(.center)
+        }
     }
 
     private var ctaTitle: String {
@@ -222,9 +237,7 @@ struct PlusOfferView: View {
             return shop.purchaseRecovery.isRecovering ? String(localized: "Activating membership") : String(localized: "Retry activation")
         }
         if buying { return String(localized: "Starting…") }
-        return store.plusTrialEligible
-            ? String(localized: "Start \(PlusPlan.trialDays)-day free trial")
-            : String(localized: "Get \(PlusPlan.name)")
+        return String(localized: "Subscribe")
     }
 
     /// One concise line, matching the approved fleet pattern: trial length,
