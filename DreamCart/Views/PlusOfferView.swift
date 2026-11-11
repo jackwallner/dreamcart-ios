@@ -103,6 +103,7 @@ struct PlusOfferView: View {
             }
 
             VStack(spacing: 12) {
+                priceSlot
                 CandyButton(title: ctaTitle, systemImage: "sparkles", enabled: !buying && !restoring && !shop.purchaseRecovery.isRecovering) {
                     buyTask?.cancel()
                     buyTask = Task {
@@ -114,11 +115,6 @@ struct PlusOfferView: View {
                         }
                     }
                 }
-                Text(disclosure)
-                    .font(.dcCaption)
-                    .foregroundStyle(Theme.subtle(scheme))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: 18) {
                     Button(exitTitle) {
                         Analytics.track("plus_offer_skipped", ["source": source])
@@ -133,6 +129,7 @@ struct PlusOfferView: View {
                 .foregroundStyle(Theme.subtle(scheme))
             }
             .padding(.horizontal, 28)
+            .padding(.top, 12)
             .padding(.bottom, 28)
         }
         .background(
@@ -210,7 +207,34 @@ struct PlusOfferView: View {
         }
     }
 
+    /// The billed amount, the most conspicuous price on the page, with the
+    /// small disclosure under it (App Review 3.1.2(c), rejected 2026-11-11:
+    /// the trial outshone the price). Bridge's approved trial page, ported:
+    /// 22 pt bold, above the trial-led button.
+    private var priceSlot: some View {
+        VStack(spacing: 2) {
+            if revenueCatEnabled {
+                Text(billedPrice)
+                    .font(.dcSection)
+                    .foregroundStyle(Theme.ink(scheme))
+            }
+            Text(disclosure)
+                .font(.dcCaption)
+                .foregroundStyle(Theme.subtle(scheme))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(minHeight: 48)
+    }
+
     // MARK: - Copy
+
+    /// What the button charges, or a placeholder that holds the slot until
+    /// StoreKit answers. Never an invented amount.
+    private var billedPrice: String {
+        guard let price = store.plusPrice else { return String(localized: "Loading price…") }
+        return String(localized: "\(price)/week")
+    }
 
     private var headline: String {
         store.plusTrialEligible ? String(localized: "Try \(PlusPlan.name) free") : String(localized: "Get \(PlusPlan.name)")

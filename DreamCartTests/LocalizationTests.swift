@@ -52,6 +52,7 @@ final class LocalizationTests: XCTestCase {
 
     func testSubstitutionsKeepEnglishWording() throws {
         let en = try enBundle()
+        XCTAssertEqual(String(localized: "\("$0.99")/week", bundle: en), "$0.99/week")
         XCTAssertEqual(String(localized: "\("Halo Coat"), \(1200) coins, \("Rare")", bundle: en), "Halo Coat, 1,200 coins, Rare")
         XCTAssertEqual(String(localized: "\("Coins added"), \(3200) coins. \("Enjoy the shop.")", bundle: en), "Coins added, 3,200 coins. Enjoy the shop.")
         XCTAssertEqual(String(localized: "\("Halo Coat"), \("Après"), \("Rare"), \(1200) coins", bundle: en), "Halo Coat, Après, Rare, 1,200 coins")
