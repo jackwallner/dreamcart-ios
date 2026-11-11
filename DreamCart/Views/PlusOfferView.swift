@@ -101,6 +101,16 @@ struct PlusOfferView: View {
                 }
                 .frame(maxWidth: .infinity, minHeight: geoHeight)
             }
+            // Measure the scroll viewport, not the whole screen: the footer's
+            // height would otherwise overflow the content and slide the perks
+            // card under the price.
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear { geoHeight = geo.size.height }
+                        .onChange(of: geo.size.height) { _, h in geoHeight = h }
+                }
+            )
 
             VStack(spacing: 12) {
                 priceSlot
@@ -132,13 +142,7 @@ struct PlusOfferView: View {
             .padding(.top, 12)
             .padding(.bottom, 28)
         }
-        .background(
-            GeometryReader { geo in
-                Theme.bg(scheme)
-                    .onAppear { geoHeight = geo.size.height }
-                    .onChange(of: geo.size.height) { _, h in geoHeight = h }
-            }
-        )
+        .background(Theme.bg(scheme))
         .task {
             await store.loadProducts()
             await store.refreshPlusTrialEligibility()
