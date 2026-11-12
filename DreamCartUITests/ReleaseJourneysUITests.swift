@@ -33,11 +33,11 @@ final class ReleaseJourneysUITests: XCTestCase {
         // Store), so the purchase screen here is the coin shop. The wallet pill
         // in the You bar opens it without scrolling; every tab stays mounted
         // with its own pill, so the bar picks the one on You.
-        let pill = app.navigationBars["You"].buttons
-            .matching(NSPredicate(format: "label BEGINSWITH 'Coin balance'")).firstMatch
+        let pill = app.navigationBars[L("You")].buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", L("Coin balance"))).firstMatch
         XCTAssertTrue(pill.waitForExistence(timeout: 15))
         pill.tap()
-        XCTAssertTrue(app.staticTexts["Your balance"].waitForExistence(timeout: 25))
+        XCTAssertTrue(app.staticTexts[L("Your balance")].waitForExistence(timeout: 25))
         QA.checkpoint(app, "coin-shop", paywall: true)
         tap("Done", in: app)
         tapTab("Today", in: app)
@@ -59,9 +59,9 @@ final class ReleaseJourneysUITests: XCTestCase {
         tap("Get started", in: app)
         tap("Continue as tester", in: app)
         // A first sign-in is offered DreamCart+ before Today; decline it.
-        let notNow = app.buttons["Not now"].firstMatch
+        let notNow = app.buttons[L("Not now")].firstMatch
         if notNow.waitForExistence(timeout: 20) { notNow.tap() }
-        XCTAssertTrue(app.buttons["Closet"].firstMatch.waitForExistence(timeout: 60))
+        XCTAssertTrue(app.buttons[L("Closet")].firstMatch.waitForExistence(timeout: 60))
         tapTab("Closet", in: app)
         let before = ownedCount(app)
         QA.checkpoint(app, "core-closet-before")
@@ -73,9 +73,9 @@ final class ReleaseJourneysUITests: XCTestCase {
         var add: XCUIElement?
         let deadline = Date().addingTimeInterval(60)
         while add == nil, Date() < deadline {
-            add = app.buttons.matching(identifier: "Add to cart").allElementsBoundByIndex.first { $0.exists && $0.isHittable }
+            add = app.buttons.matching(identifier: L("Add to cart")).allElementsBoundByIndex.first { $0.exists && $0.isHittable }
             if add == nil {
-                let again = app.buttons["Reconsider passes"].firstMatch
+                let again = app.buttons[L("Reconsider passes")].firstMatch
                 if again.exists, again.isHittable { again.tap() }
                 Thread.sleep(forTimeInterval: 1)
             }
@@ -88,16 +88,16 @@ final class ReleaseJourneysUITests: XCTestCase {
         QA.checkpoint(app, "core-cart")
         checkout.tap()
 
-        let skip = app.buttons["Skip for now"].firstMatch
+        let skip = app.buttons[L("Skip for now")].firstMatch
         if skip.waitForExistence(timeout: 15) { skip.tap() }
-        let place = app.buttons["Place order"].firstMatch
+        let place = app.buttons[L("Place order")].firstMatch
         XCTAssertTrue(place.waitForExistence(timeout: 15))
         QA.checkpoint(app, "core-checkout")
         place.tap()
 
-        let skipReveal = app.buttons["Skip to summary"].firstMatch
+        let skipReveal = app.buttons[L("Skip to summary")].firstMatch
         if skipReveal.waitForExistence(timeout: 45) { skipReveal.tap() }
-        let closet = app.buttons["See in closet"].firstMatch
+        let closet = app.buttons[L("See in closet")].firstMatch
         XCTAssertTrue(closet.waitForExistence(timeout: 45), "order placed and the haul summary shows")
         QA.checkpoint(app, "core-haul")
         closet.tap()
@@ -110,13 +110,13 @@ final class ReleaseJourneysUITests: XCTestCase {
         // Unsigned simulator builds (gh-sim) cannot write the Keychain, so the
         // session is gone after a relaunch there: sign in again. The purchase
         // itself lives on the server and must still be in the closet.
-        let tester = app.buttons["Continue as tester"].firstMatch
+        let tester = app.buttons[L("Continue as tester")].firstMatch
         if tester.waitForExistence(timeout: 20) {
             tester.tap()
-            let offer = app.buttons["Not now"].firstMatch
+            let offer = app.buttons[L("Not now")].firstMatch
             if offer.waitForExistence(timeout: 20) { offer.tap() }
         }
-        XCTAssertTrue(app.buttons["Closet"].firstMatch.waitForExistence(timeout: 60))
+        XCTAssertTrue(app.buttons[L("Closet")].firstMatch.waitForExistence(timeout: 60))
         tapTab("Closet", in: app)
         XCTAssertEqual(ownedCount(app), before + 1, "the purchase survives a relaunch")
         QA.checkpoint(app, "core-closet-after-relaunch")
@@ -126,8 +126,8 @@ final class ReleaseJourneysUITests: XCTestCase {
     /// or "N pieces" under All pieces where the unfolded pane drops the card.
     private func ownedCount(_ app: XCUIApplication) -> Int {
         let count = app.staticTexts
-            .matching(NSPredicate(format: "label MATCHES '^[0-9]+ pieces?( owned)?$'")).firstMatch
-        let empty = app.staticTexts["Your closet is empty"]
+            .matching(NSPredicate(format: "label MATCHES %@", L("^[0-9]+ pieces?( owned)?$"))).firstMatch
+        let empty = app.staticTexts[L("Your closet is empty")]
         let deadline = Date().addingTimeInterval(30)
         while Date() < deadline, !count.exists, !empty.exists { _ = count.waitForExistence(timeout: 1) }
         if empty.exists { return 0 }
@@ -135,8 +135,38 @@ final class ReleaseJourneysUITests: XCTestCase {
         return Int(count.label.prefix { $0.isNumber }) ?? -1
     }
 
+    /// The journeys name controls by their English labels; the German persona
+    /// runs the app in German, so look its strings up (Shared/Localizable.xcstrings).
+    private func L(_ english: String) -> String {
+        QA.persona == "german" ? Self.german[english] ?? english : english
+    }
+
+    private static let german: [String: String] = [
+        "Next": "Weiter",
+        "Get started": "Los geht's",
+        "Browse without an account": "Ohne Account stöbern",
+        "Continue as tester": "Als Tester fortfahren",
+        "Not now": "Jetzt nicht",
+        "Closet": "Schrank",
+        "For You": "Für dich",
+        "Cart": "Warenkorb",
+        "You": "Du",
+        "Today": "Heute",
+        "Your balance": "Dein Guthaben",
+        "Done": "Fertig",
+        "Reconsider passes": "Übersprungene ansehen",
+        "Skip for now": "Vorerst überspringen",
+        "Place order": "Bestellen",
+        "Skip to summary": "Zur Übersicht",
+        "See in closet": "Im Kleiderschrank ansehen",
+        "Your closet is empty": "Dein Kleiderschrank ist leer",
+        "Add to cart": "In den Warenkorb",
+        "Coin balance": "Coin-Guthaben",
+        "^[0-9]+ pieces?( owned)?$": "^[0-9]+ Teile?( in deinem Besitz)?$",
+    ]
+
     private func tap(_ label: String, in app: XCUIApplication) {
-        let button = app.buttons[label].firstMatch
+        let button = app.buttons[L(label)].firstMatch
         XCTAssertTrue(button.waitForExistence(timeout: 15))
         button.tap()
     }
@@ -144,24 +174,24 @@ final class ReleaseJourneysUITests: XCTestCase {
     private func tapTab(_ label: String, in app: XCUIApplication) {
         // Unfolded (iPhone Duo) the Cart is a pane beside the browsing tabs and
         // has no tab button: it is already open.
-        if label == "Cart", !app.buttons["Cart"].firstMatch.waitForExistence(timeout: 3) {
-            XCTAssertTrue(app.navigationBars["Cart"].waitForExistence(timeout: 15))
+        if label == "Cart", !app.buttons[L("Cart")].firstMatch.waitForExistence(timeout: 3) {
+            XCTAssertTrue(app.navigationBars[L("Cart")].waitForExistence(timeout: 15))
             return
         }
-        let button = app.buttons[label].firstMatch
+        let button = app.buttons[L(label)].firstMatch
         XCTAssertTrue(button.waitForExistence(timeout: 15))
         button.tap()
     }
 
     private func checkpoint(_ name: String, button label: String, in app: XCUIApplication) {
         // The first launch loads the catalog before the welcome pages show.
-        XCTAssertTrue(app.buttons[label].firstMatch.waitForExistence(timeout: 60))
+        XCTAssertTrue(app.buttons[L(label)].firstMatch.waitForExistence(timeout: 60))
         QA.checkpoint(app, name)
     }
 
     /// Today has loaded once its tab is in the bar and the catalog has replaced the splash.
     private func today(_ name: String, in app: XCUIApplication) {
-        XCTAssertTrue(app.buttons["Closet"].firstMatch.waitForExistence(timeout: 60))
+        XCTAssertTrue(app.buttons[L("Closet")].firstMatch.waitForExistence(timeout: 60))
         QA.checkpoint(app, name)
     }
 }
