@@ -176,6 +176,9 @@ private struct FloatingTabBar: View {
                             Capsule().fill(Theme.violet.opacity(scheme == .dark ? 0.24 : 0.12))
                         }
                     }
+                    // A plain button only hits its opaque pixels: without this
+                    // an unselected tab answered taps on its icon and text alone.
+                    .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(item.title)

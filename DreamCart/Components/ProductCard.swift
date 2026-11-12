@@ -53,7 +53,12 @@ struct RemoteImage: View {
                     }
                     .transition(.opacity)
             } else if let image {
-                Image(uiImage: image).resizable().scaledToFill()
+                // Color.clear pins the art's frame to the tile: a bare fill
+                // image reported its overflowing size, which read as the
+                // card resizing when the art arrived.
+                Color.clear
+                    .overlay { Image(uiImage: image).resizable().scaledToFill() }
+                    .clipped()
                     .transition(.opacity)
             } else if failed {
                 VStack(spacing: 6) {
