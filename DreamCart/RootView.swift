@@ -49,7 +49,7 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.28), value: shop.hasLoadedOnce)
         // Any account-based action a guest taps raises this instead of doing
         // the work (AuthController.requireAccount).
-        .sheet(isPresented: $auth.promptSignIn) { SignInPromptView() }
+        .sheet(isPresented: $auth.promptSignIn) { SignInPromptView().formSheetSizing() }
         .onChange(of: auth.state) { _, new in
             #if DEBUG
             // The seeded shopper has no server session to load.

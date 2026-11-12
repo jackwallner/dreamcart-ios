@@ -92,6 +92,7 @@ struct PaneCoverHost<Content: View>: View {
 private struct PaneSheet<Sheet: View>: ViewModifier {
     @Binding var isPresented: Bool
     let onDismiss: (() -> Void)?
+    let formSized: Bool
     let sheet: () -> Sheet
     @State private var coverID = UUID()
     @Environment(\.paneCovers) private var paneCovers
@@ -109,7 +110,7 @@ private struct PaneSheet<Sheet: View>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .sheet(isPresented: Binding(get: { isPresented && !inPane }, set: { isPresented = $0 }),
-                   onDismiss: onDismiss, content: sheet)
+                   onDismiss: onDismiss) { formSized ? AnyView(sheet().formSheetSizing()) : AnyView(sheet()) }
             .onChange(of: covering) { _, now in
                 if now {
                     paneCovers?.present(PaneCover(
@@ -132,9 +133,12 @@ private struct PaneSheet<Sheet: View>: ViewModifier {
 }
 
 extension View {
+    /// `formSized: false` keeps the full page sheet on iPad, for a screen that
+    /// needs the height (the wheel).
     func paneSheet<Sheet: View>(isPresented: Binding<Bool>,
                                 onDismiss: (() -> Void)? = nil,
+                                formSized: Bool = true,
                                 @ViewBuilder content: @escaping () -> Sheet) -> some View {
-        modifier(PaneSheet(isPresented: isPresented, onDismiss: onDismiss, sheet: content))
+        modifier(PaneSheet(isPresented: isPresented, onDismiss: onDismiss, formSized: formSized, sheet: content))
     }
 }

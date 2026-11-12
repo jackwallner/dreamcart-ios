@@ -33,6 +33,18 @@ struct UnfoldedSplit: Equatable, Sendable {
     }
 }
 
+extension UnfoldedSplit {
+    /// The iPad's version for the screens before the app: the brand on the
+    /// leading side and one phone-width column on the trailing side. `nil` in
+    /// a compact window (Split View, Slide Over), which keeps the single column.
+    static func makePad(width: CGFloat, isRegularWidth: Bool) -> UnfoldedSplit? {
+        guard isRegularWidth, width >= 640 else { return nil }
+        let column = min(560, (width * 0.62).rounded(.down))
+        let primary = width - column
+        return UnfoldedSplit(primaryWidth: primary, secondaryX: primary, secondaryWidth: column)
+    }
+}
+
 /// What the split is measured from: the container's width and its fold.
 struct PaneGeometry: Equatable, Sendable {
     var width: CGFloat

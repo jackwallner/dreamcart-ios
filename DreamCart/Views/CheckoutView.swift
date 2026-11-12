@@ -14,6 +14,8 @@ struct CheckoutView: View {
     @Environment(ShippingAddressStore.self) private var shipping
     @PaneAwareDismiss private var dismiss
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.floatingTabBarHeight) private var barHeight
 
     @State private var placing = false
     @State private var errorMessage: String?
@@ -53,9 +55,11 @@ struct CheckoutView: View {
             // Place order sits where Check out was in the Cart, so one thumb
             // position confirms both steps.
             .reservesFloatingTabBar()
+            // A form sheet on iPad has no tab bar beneath it to clear.
+            .environment(\.floatingTabBarHeight, DeviceIdiom.isPhone ? barHeight : 0)
         }
         .paneSheet(isPresented: $showEditAddress) { ShippingAddressView() }
-        .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
+        .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins).formSheetSizing() }
         .alert("Order didn't go through", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }

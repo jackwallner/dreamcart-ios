@@ -45,6 +45,10 @@ struct SpinView: View {
     var body: some View {
         ZStack {
             Theme.bg(scheme).ignoresSafeArea()
+            GeometryReader { outer in
+            // On iPad the sheet is shorter than the wheel plus its controls,
+            // so the wheel yields height to them. Phones keep the full 420.
+            let side = DeviceIdiom.isPhone ? 420 : max(220, min(420, outer.size.height - 300))
             VStack(spacing: 30) {
                 Text("Spin to win")
                     .font(.dcTitle)
@@ -73,7 +77,7 @@ struct SpinView: View {
                     .contentShape(Circle().size(CGSize(width: diameter, height: diameter)))
                     .gesture(dragGesture(diameter: diameter))
                 }
-                .frame(maxWidth: 420)
+                .frame(maxWidth: side)
                 .aspectRatio(1, contentMode: .fit)
                 .padding(.horizontal, 14)
                 .accessibilityElement(children: .ignore)
@@ -101,6 +105,8 @@ struct SpinView: View {
                     .foregroundStyle(Theme.subtle(scheme))
                     .padding(.bottom, 20)
                     .disabled(spinning)
+            }
+            .frame(width: outer.size.width, height: outer.size.height)
             }
         }
         .overlay {

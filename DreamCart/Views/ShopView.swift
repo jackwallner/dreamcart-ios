@@ -17,7 +17,8 @@ struct ShopView: View {
         ("accessory", String(localized: "Extras"), "scribble.variable"),
     ]
 
-    private let cols = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var cols: [GridItem] { IPadLayout.productColumns(regular: sizeClass == .regular) }
 
     // ShopView is pushed onto the Today tab's stack. Keeping a second stack
     // here made product taps compete with the host stack and fail to navigate.
@@ -48,6 +49,7 @@ struct ShopView: View {
                         .padding(.vertical, 12)
                 }
             }
+            .readableWidth()
         }
         .reservesFloatingTabBar()
         .background(Theme.bg(scheme))
@@ -135,7 +137,8 @@ struct BrandView: View {
     let brand: Brand
     @Environment(ShopStore.self) private var shop
     @Environment(\.colorScheme) private var scheme
-    private let cols = [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)]
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var cols: [GridItem] { IPadLayout.productColumns(regular: sizeClass == .regular) }
 
     var body: some View {
         ScrollView {
@@ -157,6 +160,7 @@ struct BrandView: View {
                 }
                 .padding(16)
             }
+            .readableWidth()
         }
         .reservesFloatingTabBar()
         .background(Theme.bg(scheme))

@@ -20,7 +20,7 @@ struct MainTabView: View {
     private var split: UnfoldedSplit? {
         UnfoldedSplit.make(
             width: paneGeometry.width,
-            isRegularWidth: horizontalSizeClass == .regular,
+            isRegularWidth: horizontalSizeClass == .regular && DeviceIdiom.isPhone,
             fold: paneGeometry.fold
         )
     }
@@ -143,6 +143,7 @@ private struct FloatingTabBar: View {
     /// False on the unfolded Duo, where the Cart is a pane of its own.
     let showsCart: Bool
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     private let items: [(tab: AppTab, title: String, icon: String)] = [
         (.today, String(localized: "Today"), "sparkles"),
@@ -187,7 +188,7 @@ private struct FloatingTabBar: View {
         }
         // Folded it keeps its phone width. In an unfolded pane it spans the
         // content margins, so nothing scrolling past shows beyond its ends.
-        .frame(maxWidth: showsCart ? 355 : .infinity)
+        .frame(maxWidth: showsCart ? (sizeClass == .regular ? 480 : 355) : .infinity)
         .padding(5)
         .background(Theme.surface(scheme), in: Capsule())
         .overlay(Capsule().strokeBorder(.black.opacity(scheme == .dark ? 0 : 0.05), lineWidth: 1))

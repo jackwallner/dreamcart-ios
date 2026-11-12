@@ -6,6 +6,7 @@ struct ClosetView: View {
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.floatingTabBarTop) private var barTop
     /// ClosetTile's caption: 8 pt gap and the three-line name an unfolded pane
     /// reserves (the only place this is read).
@@ -35,7 +36,8 @@ struct ClosetView: View {
     }
 
     private var columns: [GridItem] {
-        Array(repeating: GridItem(.flexible(), spacing: FirstScreenRow.spacing), count: firstRow?.columns ?? 2)
+        guard let firstRow else { return IPadLayout.productColumns(regular: sizeClass == .regular, spacing: FirstScreenRow.spacing) }
+        return Array(repeating: GridItem(.flexible(), spacing: FirstScreenRow.spacing), count: firstRow.columns)
     }
 
     var body: some View {
@@ -77,6 +79,7 @@ struct ClosetView: View {
                         }
                     }
                     .padding(16)
+                    .readableWidth()
                 }
                 .tracksScrollRest($isAtRest)
                 .onAppear { scrollToHighlight(using: proxy) }

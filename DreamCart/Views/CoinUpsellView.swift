@@ -109,7 +109,7 @@ struct CoinUpsellView: View {
                 }
             }
         }
-        .sheet(isPresented: $showFullShop) { CoinShopView() }
+        .sheet(isPresented: $showFullShop) { CoinShopView().formSheetSizing() }
     }
 
     private var header: some View {

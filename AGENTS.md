@@ -36,6 +36,8 @@ Read these before assuming fleet defaults (global agent rules + `ios-dev` skill)
 Two-pane unfolded layout (tabs beside the Cart), pane covers and capture
 mode: `.claude/rules/iphone-duo.md`.
 
+iPad layout (family 1,2, widths, capture): `.claude/rules/ipad-layout.md`.
+
 Localized App Store screenshot capture and composition: `.claude/rules/screenshots.md`.
 
 ## Localization

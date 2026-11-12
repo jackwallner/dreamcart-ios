@@ -7,6 +7,7 @@ struct TodayView: View {
     @Environment(LocalNotificationCoordinator.self) private var notifications
     @Environment(\.colorScheme) private var scheme
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.floatingTabBarTop) private var barTop
     /// ProductCard's caption block (8 pt gap and the 92 pt metadata frame).
     @ScaledMetric(relativeTo: .headline) private var cardCaption: CGFloat = 100
@@ -36,6 +37,11 @@ struct TodayView: View {
                             EmptyView()
                         } else if usesPaneDailyRow {
                             paneDailyRow
+                        } else if sizeClass == .regular {
+                            HStack(alignment: .top, spacing: 12) {
+                                dailyCard
+                                spinCard
+                            }
                         } else {
                             dailyCard
                             spinCard
@@ -47,6 +53,7 @@ struct TodayView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
+                .readableWidth()
             }
             .tracksScrollRest($isAtRest)
             .reservesFloatingTabBar()
@@ -73,7 +80,7 @@ struct TodayView: View {
                 showShop = true
                 _ = router.consumePresentedRoute()
             }
-            .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
+            .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView().formSheetSizing() }
             .task {
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .seconds(60))
@@ -82,7 +89,7 @@ struct TodayView: View {
             }
         }
         // Outside the stack, so unfolded it covers the whole Today pane.
-        .paneSheet(isPresented: $showSpin) { SpinView() }
+        .paneSheet(isPresented: $showSpin, formSized: false) { SpinView() }
         #if DEBUG
         .onChange(of: DuoTour.shared.spin) { _, open in showSpin = open }
         #endif
@@ -406,7 +413,7 @@ struct TodayView: View {
                                   caption: cardCaption)
     }
 
-    private var cardWidth: CGFloat { firstRow?.tileWidth ?? 150 }
+    private var cardWidth: CGFloat { firstRow?.tileWidth ?? (sizeClass == .regular ? 200 : 150) }
 
     private var newDropsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
