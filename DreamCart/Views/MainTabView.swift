@@ -20,7 +20,7 @@ struct MainTabView: View {
     private var split: UnfoldedSplit? {
         UnfoldedSplit.make(
             width: paneGeometry.width,
-            isRegularWidth: horizontalSizeClass == .regular,
+            isRegularWidth: horizontalSizeClass == .regular && DeviceIdiom.isPhone,
             fold: paneGeometry.fold
         )
     }

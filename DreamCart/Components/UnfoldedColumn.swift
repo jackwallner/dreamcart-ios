@@ -13,7 +13,7 @@ struct UnfoldedColumn<Content: View>: View {
     var body: some View {
         GeometryReader { proxy in
             let split = UnfoldedSplit.make(width: proxy.size.width,
-                                           isRegularWidth: sizeClass == .regular,
+                                           isRegularWidth: sizeClass == .regular && DeviceIdiom.isPhone,
                                            fold: proxy.verticalFold())
             ZStack(alignment: .topLeading) {
                 // Folded, the brand pane is not built: a zero-width copy still
