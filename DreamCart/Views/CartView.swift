@@ -59,6 +59,7 @@ struct CartView: View {
                         .padding(.leading, CartListLayout.regularPadding)
                         .padding(.trailing, trailingPadding)
                         .padding(.vertical, compactRows ? CartListLayout.compactVerticalPadding : CartListLayout.regularPadding)
+                        .readableWidth(IPadLayout.column)
                     }
                     .onVisibleScrollSize { visibleHeight = $0.height }
                 }
@@ -84,7 +85,7 @@ struct CartView: View {
                 }
             }
         }
-        .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins) }
+        .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins).formSheetSizing() }
         #if DEBUG
         .onChange(of: DuoTour.shared.checkout, initial: true) { _, open in showCheckout = open }
         #endif
@@ -152,6 +153,7 @@ struct CartView: View {
         .padding(.vertical, 16)
         .padding(.leading, CartListLayout.regularPadding)
         .padding(.trailing, trailingPadding)
+        .readableWidth(IPadLayout.column)
         .background(.bar)
     }
 }

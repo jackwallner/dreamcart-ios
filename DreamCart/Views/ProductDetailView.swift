@@ -8,6 +8,7 @@ struct ProductDetailView: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.floatingTabBarHeight) private var tabBarHeight
     @Environment(\.dismiss) private var dismiss
     @State private var showCoinShop = false
@@ -36,18 +37,37 @@ struct ProductDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
-                VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
-                    photo
-                    info
-                        .onGeometryChange(for: CGFloat.self, of: \.size.height) { infoHeight = $0 }
-                }
-                .frame(minHeight: hero?.height, alignment: .top)
+            Group {
+                if isRegular {
+                    // Photo beside the text: a phone-width photo above it left
+                    // most of an iPad's width empty.
+                    VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
+                        HStack(alignment: .top, spacing: 32) {
+                            photo
+                            VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
+                                info
+                                specRows
+                            }
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                        }
+                        completeTheLook
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
+                        VStack(alignment: .leading, spacing: DetailHeroLayout.spacing) {
+                            photo
+                            info
+                                .onGeometryChange(for: CGFloat.self, of: \.size.height) { infoHeight = $0 }
+                        }
+                        .frame(minHeight: hero?.height, alignment: .top)
 
-                specRows
-                completeTheLook
+                        specRows
+                        completeTheLook
+                    }
+                }
             }
             .padding(DetailHeroLayout.padding)
+            .readableWidth(1000)
         }
         // Pushed in a pane, the scroll view's frame already starts below the
         // navigation bar and still reports that bar as its top inset (82 pt
@@ -74,7 +94,7 @@ struct ProductDetailView: View {
             Color.clear.frame(height: isUnfoldedPane ? tabBarHeight : 0)
         }
         .ignoresSafeArea(.container, edges: isUnfoldedPane ? .trailing : [])
-        .sheet(isPresented: $showCoinShop) { CoinShopView() }
+        .sheet(isPresented: $showCoinShop) { CoinShopView().formSheetSizing() }
         .paneSheet(isPresented: $showCheckout) {
             CheckoutView { bought in
                 showCheckout = false
@@ -141,8 +161,10 @@ struct ProductDetailView: View {
     /// photo pushed the name, then the spec card, under the buy bar. There the
     /// photo shrinks so the first screen ends on the tags and the specs start
     /// below the bar.
+    private var isRegular: Bool { sizeClass == .regular }
+
     private var hero: DetailHeroLayout.Hero? {
-        guard barTop > visibleTop else { return nil }
+        guard !isRegular, barTop > visibleTop else { return nil }
         let visible = CGSize(width: visibleWidth, height: barTop - visibleTop)
         return DetailHeroLayout.hero(visible: visible, infoHeight: infoHeight)
     }
@@ -317,6 +339,7 @@ struct ProductDetailView: View {
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 10)
+        .readableWidth(1000)
         // In a pane, the page's own background, so the bar meets the fold
         // without a strip of material ending short of the Cart pane. The
         // hairline keeps to the content margins.

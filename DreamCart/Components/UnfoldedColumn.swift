@@ -12,9 +12,10 @@ struct UnfoldedColumn<Content: View>: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let split = UnfoldedSplit.make(width: proxy.size.width,
-                                           isRegularWidth: sizeClass == .regular,
-                                           fold: proxy.verticalFold())
+            let split = DeviceIdiom.isPhone
+                ? UnfoldedSplit.make(width: proxy.size.width, isRegularWidth: sizeClass == .regular,
+                                     fold: proxy.verticalFold())
+                : UnfoldedSplit.makePad(width: proxy.size.width, isRegularWidth: sizeClass == .regular)
             ZStack(alignment: .topLeading) {
                 // Folded, the brand pane is not built: a zero-width copy still
                 // reached accessibility, centred off the leading edge.

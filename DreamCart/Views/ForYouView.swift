@@ -12,6 +12,7 @@ struct ForYouView: View {
     @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isUnfoldedPane) private var isUnfoldedPane
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var drag: CGSize = .zero
@@ -28,7 +29,8 @@ struct ForYouView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 14) {
-                header
+                // The large title already names the screen on iPad.
+                if sizeClass != .regular { header }
                 if products.isEmpty {
                     Spacer(minLength: 0)
                     exhausted
@@ -39,7 +41,7 @@ struct ForYouView: View {
                     // overrun the header or the buttons. In an unfolded pane
                     // the buttons flank the card instead of sitting under it.
                     GeometryReader { proxy in
-                        let layout = DeckLayout.arrangement(in: proxy.size, allowsFlanking: isUnfoldedPane)
+                        let layout = DeckLayout.arrangement(in: proxy.size, allowsFlanking: isUnfoldedPane || sizeClass == .regular)
                         let region = CGSize(width: proxy.size.width, height: layout.deckHeight)
                         ZStack(alignment: .top) {
                             controls(spacing: layout.controlSpacing, size: region)
@@ -54,13 +56,14 @@ struct ForYouView: View {
             .padding(.horizontal, 16)
             .padding(.top, 6)
             .padding(.bottom, 10)
+            .frame(maxWidth: 860)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
             .navigationTitle("For You")
             // Beside the other tabs' large titles in a Duo pane; inline on a
             // phone, where the deck needs the height.
-            .navigationBarTitleDisplayMode(isUnfoldedPane ? .large : .inline)
+            .navigationBarTitleDisplayMode(isUnfoldedPane || sizeClass == .regular ? .large : .inline)
             .walletToolbar($showCoinShop)
             .navigationDestination(item: $selectedProduct) { product in
                 ProductDetailView(product: product)

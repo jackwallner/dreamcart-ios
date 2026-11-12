@@ -55,6 +55,7 @@ struct ProfileView: View {
                         .padding(.top, 8)
                 }
                 .padding(16)
+                .readableWidth(IPadLayout.column)
             }
             .reservesFloatingTabBar()
             .background(Theme.bg(scheme))
@@ -62,9 +63,10 @@ struct ProfileView: View {
             .walletToolbar($showCoinShop)
             .sheet(isPresented: $showPlusOffer) {
                 PlusOfferView(presentation: .sheet) { showPlusOffer = false }
+                    .formSheetSizing()
             }
-            .sheet(isPresented: $showLedger) { LedgerView() }
-            .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView() }
+            .sheet(isPresented: $showLedger) { LedgerView().formSheetSizing() }
+            .sheet(isPresented: $showNotificationPrimer) { NotificationPrimerView().formSheetSizing() }
             .task { await notifications.refreshStatus() }
             .disabled(working)
         }
