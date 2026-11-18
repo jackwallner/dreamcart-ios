@@ -151,8 +151,18 @@ struct ForYouView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .overlay(alignment: .topLeading) { RarityTag(rarity: product.rarityKind).padding(16) }
-        .overlay(alignment: .topTrailing) { pricePill(product.price).padding(16) }
+        // One row, so the tag and the price can never cover each other; both are
+        // capped because a card is narrower than two AX-size chips (the card's
+        // VoiceOver label already reads rarity and price).
+        .overlay(alignment: .top) {
+            HStack(alignment: .top, spacing: 8) {
+                RarityTag(rarity: product.rarityKind)
+                Spacer(minLength: 0)
+                pricePill(product.price)
+            }
+            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+            .padding(16)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous)
             .strokeBorder(product.rarityKind.color.opacity(0.55), lineWidth: 2))
