@@ -187,13 +187,13 @@ struct ForYouView: View {
         VStack(alignment: .leading, spacing: 7) {
             Text(product.brands?.name.uppercased() ?? String(localized: "DREAMCART"))
                 .font(.dcOverline)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.white.opacity(0.92))
                 .lineLimit(1)
             Text(product.name)
                 .font(.dcTitle)
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.leading)
-                .lineLimit(2)
+                .lineLimit(typeSize.isAccessibilitySize ? 3 : 2)
                 // A long name on a narrow card shrinks to fit rather than trail off.
                 .minimumScaleFactor(0.6)
             // As many whole tags as the card's width holds, never a cut-off one.

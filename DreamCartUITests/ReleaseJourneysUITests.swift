@@ -77,10 +77,17 @@ final class ReleaseJourneysUITests: XCTestCase {
         var add: XCUIElement?
         let deadline = Date().addingTimeInterval(60)
         while add == nil, Date() < deadline {
-            add = app.buttons.matching(identifier: L("Add to cart")).allElementsBoundByIndex.first { $0.exists && $0.isHittable }
+            add = app.buttons.matching(identifier: L("Add to cart")).allElementsBoundByIndex.first {
+                $0.exists && $0.identifier != "detailCheckoutButton" && $0.isHittable
+            }
             if add == nil {
                 let again = app.buttons[L("Reconsider passes")].firstMatch
-                if again.exists, again.isHittable { again.tap() }
+                if again.exists, again.isHittable {
+                    again.tap()
+                    // The deck refills where the button was: a second tap
+                    // before it goes would open the front card's page.
+                    _ = again.waitForNonExistence(timeout: 10)
+                }
                 Thread.sleep(forTimeInterval: 1)
             }
         }
