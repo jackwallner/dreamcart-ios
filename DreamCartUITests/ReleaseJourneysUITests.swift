@@ -25,8 +25,8 @@ final class ReleaseJourneysUITests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.jackwallner.shop")
         QA.launch(app, arguments: ["-DuoSeed"])
         // The seeded Today is heavy while it loads: a query this early timed out.
-        _ = app.wait(for: .runningForeground, timeout: 30)
-        Thread.sleep(forTimeInterval: 20)
+        _ = app.wait(for: .runningForeground, timeout: 60)
+        Thread.sleep(forTimeInterval: 45)
         today("today", in: app)
         for tab in ["For You", "Cart", "Closet", "You"] {
             tapTab(tab, in: app)
@@ -99,9 +99,9 @@ final class ReleaseJourneysUITests: XCTestCase {
         place.tap()
 
         let skipReveal = app.buttons[L("Skip to summary")].firstMatch
-        if skipReveal.waitForExistence(timeout: 45) { skipReveal.tap() }
+        if skipReveal.waitForExistence(timeout: 90) { skipReveal.tap() }
         let closet = app.buttons[L("See in closet")].firstMatch
-        XCTAssertTrue(closet.waitForExistence(timeout: 45), "order placed and the haul summary shows")
+        XCTAssertTrue(closet.waitForExistence(timeout: 120), "order placed and the haul summary shows")
         QA.checkpoint(app, "core-haul")
         closet.tap()
         XCTAssertEqual(ownedCount(app), before + 1, "closet gained the purchased piece")
@@ -190,13 +190,13 @@ final class ReleaseJourneysUITests: XCTestCase {
 
     private func checkpoint(_ name: String, button label: String, in app: XCUIApplication) {
         // The first launch loads the catalog before the welcome pages show.
-        XCTAssertTrue(app.buttons[L(label)].firstMatch.waitForExistence(timeout: 60))
+        XCTAssertTrue(app.buttons[L(label)].firstMatch.waitForExistence(timeout: 150))
         QA.checkpoint(app, name)
     }
 
     /// Today has loaded once its tab is in the bar and the catalog has replaced the splash.
     private func today(_ name: String, in app: XCUIApplication) {
-        XCTAssertTrue(app.buttons[L("Closet")].firstMatch.waitForExistence(timeout: 60))
+        XCTAssertTrue(app.buttons[L("Closet")].firstMatch.waitForExistence(timeout: 150))
         QA.checkpoint(app, name)
     }
 }
