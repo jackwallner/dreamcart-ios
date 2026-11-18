@@ -287,7 +287,12 @@ struct ClosetView: View {
                         ForEach(products.dropFirst(leading.count)) { tile($0) }
                     }
                 }
-                .onRestingFrame(isAtRest: isAtRest) { gridFrame = $0 }
+                // Only a whole-point move of the grid's top or width matters;
+                // the height it drives must not feed back into it.
+                .onRestingFrame(isAtRest: isAtRest) { frame in
+                    guard abs(frame.minY - gridFrame.minY) >= 1 || abs(frame.width - gridFrame.width) >= 1 else { return }
+                    gridFrame = frame
+                }
             }
         }
     }

@@ -433,8 +433,14 @@ struct TodayView: View {
             // In a pane the space below the shelf runs down to the tab bar,
             // so the brand shelves after it start below the bar, not cut
             // against it.
+            // Measured before the padding it drives, and only on a whole-point
+            // move: measuring the padded frame fed the padding back into the
+            // frame and re-laid Today every pass on the unfolded Duo.
+            .onRestingFrame(isAtRest: isAtRest) { frame in
+                guard abs(frame.minY - shelfFrame.minY) >= 1 || abs(frame.width - shelfFrame.width) >= 1 else { return }
+                shelfFrame = frame
+            }
             .padding(.bottom, firstRow.map { barTop - shelfFrame.minY - sectionSpacing + 8 - $0.tileHeight } ?? 0)
-            .onRestingFrame(isAtRest: isAtRest) { shelfFrame = $0 }
         }
         .id("new-drops")
     }
