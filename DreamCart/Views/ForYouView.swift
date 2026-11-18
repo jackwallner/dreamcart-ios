@@ -206,6 +206,7 @@ struct ForYouView: View {
         ZStack {
             stamp(acceptedFlash ? String(localized: "CARTED!") : String(localized: "ADD"), icon: "cart.fill", color: .green, angle: -10)
                 .opacity(stampOpacity(forDirection: 1))
+                .padding(.top, 48) // clear of the rarity tag in the same corner
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             stamp(String(localized: "PASS"), icon: "xmark", color: .red, angle: 10)
                 .opacity(stampOpacity(forDirection: -1))

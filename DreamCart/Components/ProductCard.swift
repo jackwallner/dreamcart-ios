@@ -194,8 +194,11 @@ struct RarityTag: View {
                 .tracking(0.6)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7).padding(.vertical, 3)
-                .background(rarity.badgeColor, in: Capsule())
-                .shadow(color: rarity.glow ? rarity.color.opacity(0.6) : .clear, radius: 5)
+                .background {
+                    // The glow sits behind the capsule only: on the label it haloed the white text.
+                    Capsule().fill(rarity.badgeColor)
+                        .shadow(color: rarity.glow ? rarity.color.opacity(0.6) : .clear, radius: 5)
+                }
                 // A narrow tile must never wrap the badge ("RAR / E").
                 .fixedSize()
         }

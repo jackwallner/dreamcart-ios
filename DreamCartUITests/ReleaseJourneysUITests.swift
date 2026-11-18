@@ -24,6 +24,9 @@ final class ReleaseJourneysUITests: XCTestCase {
     func test2TabsPlusOfferAndReturn() {
         let app = XCUIApplication(bundleIdentifier: "com.jackwallner.shop")
         QA.launch(app, arguments: ["-DuoSeed"])
+        // The seeded Today is heavy while it loads: a query this early timed out.
+        _ = app.wait(for: .runningForeground, timeout: 30)
+        Thread.sleep(forTimeInterval: 5)
         today("today", in: app)
         for tab in ["For You", "Cart", "Closet", "You"] {
             tapTab(tab, in: app)
@@ -174,11 +177,13 @@ final class ReleaseJourneysUITests: XCTestCase {
     private func tapTab(_ label: String, in app: XCUIApplication) {
         // Unfolded (iPhone Duo) the Cart is a pane beside the browsing tabs and
         // has no tab button: it is already open.
-        if label == "Cart", !app.buttons[L("Cart")].firstMatch.waitForExistence(timeout: 3) {
+        // The Cart tab carries a count badge once a piece is in it, so match the label's start.
+        let cart = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", L("Cart"))).firstMatch
+        if label == "Cart", !cart.waitForExistence(timeout: 15) {
             XCTAssertTrue(app.navigationBars[L("Cart")].waitForExistence(timeout: 15))
             return
         }
-        let button = app.buttons[L(label)].firstMatch
+        let button = label == "Cart" ? cart : app.buttons[L(label)].firstMatch
         XCTAssertTrue(button.waitForExistence(timeout: 15))
         button.tap()
     }

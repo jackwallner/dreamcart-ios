@@ -95,7 +95,7 @@ struct ProductDetailView: View {
         }
         .ignoresSafeArea(.container, edges: isUnfoldedPane ? .trailing : [])
         .sheet(isPresented: $showCoinShop) { CoinShopView().formSheetSizing() }
-        .paneSheet(isPresented: $showCheckout) {
+        .paneSheet(isPresented: $showCheckout, formSized: false) {
             CheckoutView { bought in
                 showCheckout = false
                 if reduceMotion { unboxing = bought }
