@@ -4,6 +4,7 @@ content rights, free app pricing, version copyright, and App Review contact/note
 
 Usage: source ~/.baseball_credentials && python3 scripts/asc-setup-release.py
 """
+import os
 import sys
 from pathlib import Path
 
@@ -105,7 +106,7 @@ def main():
     review_attributes = {
         "contactFirstName": "Jack",
         "contactLastName": "Wallner",
-        "contactPhone": "REDACTED_PHONE",
+        "contactPhone": os.environ["ASC_REVIEW_PHONE"],
         "contactEmail": "jackwallner+q@gmail.com",
         "demoAccountRequired": False,
         "notes": REVIEW_NOTES,
