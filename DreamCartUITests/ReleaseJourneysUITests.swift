@@ -24,9 +24,10 @@ final class ReleaseJourneysUITests: XCTestCase {
     func test2TabsPlusOfferAndReturn() {
         let app = XCUIApplication(bundleIdentifier: "com.jackwallner.shop")
         QA.launch(app, arguments: ["-DuoSeed"])
-        // The seeded Today is heavy while it loads: a query this early timed out.
+        // The seeded Today is heavy while it loads: a query this early timed out,
+        // and on the Duo even one at 45 s did (the app answered no snapshot).
         _ = app.wait(for: .runningForeground, timeout: 60)
-        Thread.sleep(forTimeInterval: 45)
+        Thread.sleep(forTimeInterval: 120)
         today("today", in: app)
         for tab in ["For You", "Cart", "Closet", "You"] {
             tapTab(tab, in: app)
