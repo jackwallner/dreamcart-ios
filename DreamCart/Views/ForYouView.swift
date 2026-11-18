@@ -88,7 +88,12 @@ struct ForYouView: View {
             }
             if !typeSize.isAccessibilitySize {
                 Spacer()
-                Text("\(products.count) picks")
+                // Sized for a two-digit count, so the count growing as the catalog
+                // lands never narrows the pill and rewraps the title beside it.
+                ZStack {
+                    Text("\(88) picks").hidden()
+                    Text("\(products.count) picks")
+                }
                     .font(.dcLabel)
                     .foregroundStyle(Theme.violet)
                     .padding(.horizontal, 10)
