@@ -55,8 +55,6 @@ struct CheckoutView: View {
             // Place order sits where Check out was in the Cart, so one thumb
             // position confirms both steps.
             .reservesFloatingTabBar()
-            // A form sheet on iPad has no tab bar beneath it to clear.
-            .environment(\.floatingTabBarHeight, DeviceIdiom.isPhone ? barHeight : 0)
         }
         .paneSheet(isPresented: $showEditAddress) { ShippingAddressView() }
         .sheet(isPresented: $showUpsell) { CoinUpsellView(trigger: .insufficientCoins).formSheetSizing() }

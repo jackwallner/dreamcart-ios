@@ -75,7 +75,7 @@ struct CartView: View {
             .navigationTitle(isScreenshotMode ? "Saved pieces" : "Cart")
             .walletToolbar($showCoinShop)
         }
-        .paneSheet(isPresented: $showCheckout, formSized: false) {
+        .paneSheet(isPresented: $showCheckout, formSized: false, fullScreen: true) {
             CheckoutView { bought in
                 showCheckout = false
                 if reduceMotion {

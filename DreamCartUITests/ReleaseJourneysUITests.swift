@@ -26,7 +26,7 @@ final class ReleaseJourneysUITests: XCTestCase {
         QA.launch(app, arguments: ["-DuoSeed"])
         // The seeded Today is heavy while it loads: a query this early timed out.
         _ = app.wait(for: .runningForeground, timeout: 30)
-        Thread.sleep(forTimeInterval: 5)
+        Thread.sleep(forTimeInterval: 20)
         today("today", in: app)
         for tab in ["For You", "Cart", "Closet", "You"] {
             tapTab(tab, in: app)

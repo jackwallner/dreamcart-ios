@@ -33,8 +33,8 @@ enum Theme {
     /// Pink and coral deepened so white text holds 4.5:1 along the whole
     /// gradient (violet 5.7, pink 4.8, coral 4.7). `pink` and `coral` stay
     /// the bright accents for icons and art.
-    static let candyPink  = Color(red: 0.780, green: 0.170, blue: 0.390) // #D2306B
-    static let candyCoral = Color(red: 0.740, green: 0.255, blue: 0.145) // #C9482A
+    static let candyPink  = Color(red: 0.730, green: 0.140, blue: 0.350) // #D2306B
+    static let candyCoral = Color(red: 0.680, green: 0.200, blue: 0.110) // #C9482A
 
     // The signature gradient: used on reward buttons and celebration moments.
     // White text sits on it, so every stop is dark enough for 4.5:1.
@@ -256,7 +256,7 @@ enum Rarity: String {
         case .common:    return Color(white: 0.45)
         case .rare:      return Color(red: 0.19, green: 0.44, blue: 0.76)
         case .epic:      return Theme.violet
-        case .legendary: return Color(red: 0.58, green: 0.42, blue: 0.0)
+        case .legendary: return Color(red: 0.48, green: 0.34, blue: 0.0)
         }
     }
     /// The label colour on the dark haul summary, where `color` measured 1.9 to 2.7:1.

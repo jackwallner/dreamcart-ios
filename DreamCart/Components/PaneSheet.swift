@@ -93,6 +93,7 @@ private struct PaneSheet<Sheet: View>: ViewModifier {
     @Binding var isPresented: Bool
     let onDismiss: (() -> Void)?
     let formSized: Bool
+    let fullScreen: Bool
     let sheet: () -> Sheet
     @State private var coverID = UUID()
     @Environment(\.paneCovers) private var paneCovers
@@ -100,6 +101,8 @@ private struct PaneSheet<Sheet: View>: ViewModifier {
     @Environment(RouteCoordinator.self) private var router
 
     private var inPane: Bool { paneCovers != nil }
+    /// iPad only: the sheet fills the window so its button lands where the Cart's did.
+    private var coversScreen: Bool { fullScreen && !DeviceIdiom.isPhone }
     private var covering: Bool { isPresented && inPane }
 
     private func close() {
@@ -109,8 +112,10 @@ private struct PaneSheet<Sheet: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(isPresented: Binding(get: { isPresented && !inPane }, set: { isPresented = $0 }),
+            .sheet(isPresented: Binding(get: { isPresented && !inPane && !coversScreen }, set: { isPresented = $0 }),
                    onDismiss: onDismiss) { formSized ? AnyView(sheet().formSheetSizing()) : AnyView(sheet()) }
+            .fullScreenCover(isPresented: Binding(get: { isPresented && !inPane && coversScreen }, set: { isPresented = $0 }),
+                             onDismiss: onDismiss) { sheet() }
             .onChange(of: covering) { _, now in
                 if now {
                     paneCovers?.present(PaneCover(
@@ -138,7 +143,8 @@ extension View {
     func paneSheet<Sheet: View>(isPresented: Binding<Bool>,
                                 onDismiss: (() -> Void)? = nil,
                                 formSized: Bool = true,
+                                fullScreen: Bool = false,
                                 @ViewBuilder content: @escaping () -> Sheet) -> some View {
-        modifier(PaneSheet(isPresented: isPresented, onDismiss: onDismiss, formSized: formSized, sheet: content))
+        modifier(PaneSheet(isPresented: isPresented, onDismiss: onDismiss, formSized: formSized, fullScreen: fullScreen, sheet: content))
     }
 }
