@@ -33,8 +33,8 @@ enum Theme {
     /// Pink and coral deepened so white text holds 4.5:1 along the whole
     /// gradient (violet 5.7, pink 4.8, coral 4.7). `pink` and `coral` stay
     /// the bright accents for icons and art.
-    static let candyPink  = Color(red: 0.730, green: 0.140, blue: 0.350) // #D2306B
-    static let candyCoral = Color(red: 0.680, green: 0.200, blue: 0.110) // #C9482A
+    static let candyPink  = Color(red: 0.690, green: 0.120, blue: 0.320) // #D2306B
+    static let candyCoral = Color(red: 0.630, green: 0.170, blue: 0.080) // #C9482A
 
     // The signature gradient: used on reward buttons and celebration moments.
     // White text sits on it, so every stop is dark enough for 4.5:1.

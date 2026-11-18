@@ -199,6 +199,7 @@ struct CheckoutView: View {
             }
         }
         .padding(16)
+        .readableWidth(IPadLayout.column)
         .background(.bar)
     }
 

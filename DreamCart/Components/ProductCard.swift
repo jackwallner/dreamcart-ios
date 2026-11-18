@@ -195,9 +195,8 @@ struct RarityTag: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 7).padding(.vertical, 3)
                 .background {
-                    // The glow sits behind the capsule only: on the label it haloed the white text.
+                    // No glow: the card already glows, and a halo tints the pixels the contrast check reads behind the label.
                     Capsule().fill(rarity.badgeColor)
-                        .shadow(color: rarity.glow ? rarity.color.opacity(0.6) : .clear, radius: 5)
                 }
                 // A narrow tile must never wrap the badge ("RAR / E").
                 .fixedSize()
