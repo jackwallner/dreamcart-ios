@@ -11,3 +11,10 @@ paths:
 - `SupabaseClient.shared` is a process-wide actor. Get a session with the DEBUG-only `signInWithPassword` against the stub (`SupabaseStub.tokenJSON(expiresIn:)`; under 120 puts the token inside the refresh window) and call `signOutLocal()` in `setUp` and `tearDown`, so no fake session is left in the simulator keychain.
 - `ShopStore` pages the rest of the catalog from a task of its own. Wait for the `offset=` request before uninstalling the stub.
 - A test class that touches `ShopStore` or `AuthController` is `@MainActor`.
+
+## QA tester coins (2026-11-19)
+The release journeys sign in as `tester@dreamcart.dev` on the live backend, and
+every core-loop checkout spends its coins. Run `python3 scripts/qa-topup-tester.py`
+before a gate: it tops the account to 20,000 when it is under 5,000 and logs a
+`qa_topup` ledger row. An empty balance shows up as the core loop failing on
+"cart has the piece and the shopper can afford it".
