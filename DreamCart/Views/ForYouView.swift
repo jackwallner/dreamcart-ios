@@ -145,7 +145,12 @@ struct ForYouView: View {
             RemoteImage(url: product.imageUrl, rarity: product.rarityKind, maxPixelSize: 1400)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
-            LinearGradient(colors: [.black.opacity(0.28), .clear, .black.opacity(0.8)],
+            // Dark from the brand line down whatever the photo (or the light
+            // loading placeholder) is, so the white copy always reads.
+            LinearGradient(stops: [.init(color: .black.opacity(0.28), location: 0),
+                                   .init(color: .clear, location: 0.3),
+                                   .init(color: .black.opacity(0.6), location: 0.62),
+                                   .init(color: .black.opacity(0.85), location: 1)],
                            startPoint: .top, endPoint: .bottom)
             cardCopy(product)
             if slot == 0 {
