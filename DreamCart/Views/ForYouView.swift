@@ -152,7 +152,13 @@ struct ForYouView: View {
                                    .init(color: .black.opacity(0.6), location: 0.62),
                                    .init(color: .black.opacity(0.85), location: 1)],
                            startPoint: .top, endPoint: .bottom)
-            cardCopy(product)
+            // The cards behind keep their copy hidden until they rise: covered
+            // text read as white on white to the contrast audit. The next card's
+            // fades in with the drag, so it is fully drawn when it takes the front.
+            if slot < 2 {
+                cardCopy(product)
+                    .opacity(slot == 0 ? 1 : progress)
+            }
             if slot == 0 {
                 swipeOverlay
             }
