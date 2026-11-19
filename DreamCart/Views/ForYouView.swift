@@ -43,11 +43,13 @@ struct ForYouView: View {
                     GeometryReader { proxy in
                         let layout = DeckLayout.arrangement(in: proxy.size, allowsFlanking: isUnfoldedPane || sizeClass == .regular)
                         let region = CGSize(width: proxy.size.width, height: layout.deckHeight)
+                        // Buttons above the deck: when they flank the card, the
+                        // swipe hint's nudge slid the card over Add and ate the tap.
                         ZStack(alignment: .top) {
-                            controls(spacing: layout.controlSpacing, size: region)
-                                .position(x: proxy.size.width / 2, y: layout.controlsY)
                             deck(card: layout.card, size: region)
                                 .frame(width: region.width, height: region.height)
+                            controls(spacing: layout.controlSpacing, size: region)
+                                .position(x: proxy.size.width / 2, y: layout.controlsY)
                         }
                         .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
                     }
@@ -188,7 +190,8 @@ struct ForYouView: View {
             Text(product.brands?.name.uppercased() ?? String(localized: "DREAMCART"))
                 .font(.dcOverline)
                 .foregroundStyle(.white.opacity(0.92))
-                .lineLimit(1)
+                .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+                .minimumScaleFactor(0.8)
             Text(product.name)
                 .font(.dcTitle)
                 .foregroundStyle(.white)
