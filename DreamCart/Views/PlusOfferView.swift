@@ -240,8 +240,12 @@ struct PlusOfferView: View {
         return String(localized: "\(price)/week")
     }
 
+    /// Never mentions the trial. App Review rejected 1.0.5 under 3.1.2(c)
+    /// again with the price fixed (2026-11-21): a 34 pt "Try DreamCart+ free"
+    /// still outshone the 22 pt billed amount, so the trial lives only in the
+    /// button and the small disclosure.
     private var headline: String {
-        store.plusTrialEligible ? String(localized: "Try \(PlusPlan.name) free") : String(localized: "Get \(PlusPlan.name)")
+        String(localized: "Get \(PlusPlan.name)")
     }
 
     private var ctaTitle: String {

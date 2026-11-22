@@ -72,6 +72,13 @@ final class StoreController {
             prices[p.productIdentifier] = p.localizedPriceString
         }
         isReady = products.contains { $0.productIdentifier != PlusPlan.productId }
+        // RevenueCat can come back without the membership (a slow or failed
+        // fetch). The paywall must still show the billed amount (3.1.2(c)), so
+        // ask StoreKit for the price alone. Trial eligibility stays RevenueCat's.
+        if prices[PlusPlan.productId] == nil,
+           let product = try? await StoreKit.Product.products(for: [PlusPlan.productId]).first {
+            prices[PlusPlan.productId] = product.displayPrice
+        }
         #endif
     }
 
