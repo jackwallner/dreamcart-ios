@@ -58,11 +58,15 @@ def ensure_set(c, loc_id: str) -> str:
 
 
 def main():
+    global DISPLAY
     parser = argparse.ArgumentParser()
     parser.add_argument("dir", nargs="?", default=str(Path(__file__).resolve().parent.parent / "fastlane/screenshots/en-US"))
+    parser.add_argument("--display", default=DISPLAY,
+                        help="Screenshot bucket, e.g. APP_IPAD_PRO_3GEN_129 for the 13-inch iPad (2064x2752)")
     parser.add_argument("--replace", action="store_true", help="Delete existing files in the 6.9-inch bucket first")
     parser.add_argument("--delete-display", choices=["APP_IPHONE_65"], help="Delete a stale screenshot display bucket")
     args = parser.parse_args()
+    DISPLAY = args.display
     shot_dir = Path(args.dir)
     images = sorted(p for p in shot_dir.glob("*.png") if p.is_file())
     if not images:
