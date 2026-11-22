@@ -51,6 +51,16 @@ actor SupabaseClient {
 
     // MARK: session lifecycle
 
+    /// Every request goes through here. URLRequest's default 60 s timeout held
+    /// the launch splash for a minute per call on a network that answered
+    /// nothing, so calls that keep that default wait 20 s instead. An explicit
+    /// timeout (callFunction) stands.
+    private static func send(_ req: URLRequest) async throws -> (Data, URLResponse) {
+        var req = req
+        if req.timeoutInterval == 60 { req.timeoutInterval = 20 }
+        return try await URLSession.shared.data(for: req)
+    }
+
     func restore() {
         guard let data = Keychain.load() else { return }
         session = try? JSONDecoder().decode(SBSession.self, from: data)
@@ -85,7 +95,7 @@ actor SupabaseClient {
         if let fullName, !fullName.isEmpty { body["data"] = ["full_name": fullName] }
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         try Self.ensureOK(resp, data)
         try storeSession(from: data)
     }
@@ -103,7 +113,7 @@ actor SupabaseClient {
         req.setValue(apikey, forHTTPHeaderField: "apikey")
         req.setValue("application/json", forHTTPHeaderField: "content-type")
         req.httpBody = try JSONSerialization.data(withJSONObject: ["email": email, "password": password])
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         try Self.ensureOK(resp, data)
         try storeSession(from: data)
     }
@@ -149,7 +159,7 @@ actor SupabaseClient {
         req.setValue(apikey, forHTTPHeaderField: "apikey")
         req.setValue("application/json", forHTTPHeaderField: "content-type")
         req.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": refreshToken])
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         // Only the auth server refusing the token ends the session. A 429, a 5xx
         // or a 200 that is not a token (a Wi-Fi sign-in page) says nothing about
         // it; those throw and the next call tries again with the same token.
@@ -196,7 +206,7 @@ actor SupabaseClient {
         } else {
             req.setValue("Bearer \(apikey)", forHTTPHeaderField: "Authorization")
         }
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         try Self.ensureOK(resp, data)
         do { return try Self.decoder.decode(T.self, from: data) }
         catch { throw SBError.decoding("\(error)") }
@@ -216,7 +226,7 @@ actor SupabaseClient {
             req.setValue("Bearer \(apikey)", forHTTPHeaderField: "Authorization")
         }
         req.httpBody = try JSONSerialization.data(withJSONObject: args)
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         try Self.ensureOK(resp, data)
         do { return try Self.decoder.decode(T.self, from: data) }
         catch { throw SBError.decoding("\(error)") }
@@ -238,7 +248,7 @@ actor SupabaseClient {
         let token = try await accessToken()
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let body { req.httpBody = try JSONSerialization.data(withJSONObject: body) }
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         try Self.ensureOK(resp, data)
         return data
     }
@@ -260,7 +270,7 @@ actor SupabaseClient {
         let enc = JSONEncoder()
         enc.dateEncodingStrategy = .iso8601
         req.httpBody = try enc.encode(rows)
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         try Self.ensureOK(resp, data)
     }
 
@@ -281,7 +291,7 @@ actor SupabaseClient {
         let token = try await accessToken()
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        let (data, resp) = try await Self.send(req)
         try Self.ensureOK(resp, data)
         do { return try Self.decoder.decode(T.self, from: data) }
         catch { throw SBError.decoding("\(error)") }

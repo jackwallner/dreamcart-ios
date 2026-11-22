@@ -94,7 +94,9 @@ struct DreamCartApp: App {
                     // copy of the language it was scheduled in, and a language
                     // change in Settings relaunches the app. Rebuilding it here
                     // is what moves the reminder to the new language.
-                    await notifications.reconcile()
+                    // Not awaited: the launch must never wait on the notification
+                    // center before the first screen appears.
+                    Task { await notifications.reconcile() }
                     await auth.bootstrap()
                     if auth.state == .signedIn {
                         shop.purchaseRecovery.selectAccount(await SupabaseClient.shared.currentUserId)

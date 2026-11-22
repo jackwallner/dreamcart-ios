@@ -6,6 +6,11 @@ struct RootView: View {
     @Environment(StoreController.self) private var store
     @Environment(RouteCoordinator.self) private var router
     @Environment(\.colorScheme) private var scheme
+    /// Set 8 s after launch. App Review rejected 1.0.5 (2.1(a)) for a launch
+    /// that never got past the first screen, so a slow or stalled catalog load
+    /// may hold the splash only this long; the tabs then show their own load
+    /// state and Retry.
+    @State private var splashExpired = false
 
     var body: some View {
         @Bindable var auth = auth
@@ -20,7 +25,7 @@ struct RootView: View {
                 // Stay on the splash through the first catalog load. Auth resolves
                 // long before the products arrive, and cutting to the tabs early
                 // shows a shell of empty grids rather than the app.
-                if shop.hasLoadedOnce {
+                if shop.hasLoadedOnce || splashExpired {
                     if auth.state == .signedIn && auth.justCompletedOnboarding {
                         // One-time final onboarding step for brand-new users only
                         // (see AuthController.justCompletedOnboarding); clearing
@@ -47,6 +52,10 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.28), value: shop.hasLoadedOnce)
+        .task {
+            try? await Task.sleep(for: .seconds(8))
+            splashExpired = true
+        }
         // Any account-based action a guest taps raises this instead of doing
         // the work (AuthController.requireAccount).
         .sheet(isPresented: $auth.promptSignIn) { SignInPromptView().formSheetSizing() }
