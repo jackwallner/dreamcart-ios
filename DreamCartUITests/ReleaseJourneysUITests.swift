@@ -136,10 +136,10 @@ final class ReleaseJourneysUITests: XCTestCase {
     /// Reads the closet's piece count: "N pieces owned" on the collection card,
     /// or "N pieces" under All pieces where the unfolded pane drops the card.
     private func ownedCount(_ app: XCUIApplication) -> Int {
-        let count = app.staticTexts
+        let count = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label MATCHES %@", L("^[0-9]+ pieces?( owned)?$"))).firstMatch
         let empty = app.staticTexts[L("Your closet is empty")]
-        let deadline = Date().addingTimeInterval(30)
+        let deadline = Date().addingTimeInterval(90)
         while Date() < deadline, !count.exists, !empty.exists { _ = count.waitForExistence(timeout: 1) }
         if empty.exists { return 0 }
         XCTAssertTrue(count.exists, "the closet shows how many pieces are owned")

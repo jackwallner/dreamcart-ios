@@ -149,7 +149,7 @@ struct ForYouView: View {
             // loading placeholder) is, so the white copy always reads.
             LinearGradient(stops: [.init(color: .black.opacity(0.28), location: 0),
                                    .init(color: .clear, location: 0.3),
-                                   .init(color: .black.opacity(0.6), location: 0.62),
+                                   .init(color: .black.opacity(0.7), location: 0.55),
                                    .init(color: .black.opacity(0.85), location: 1)],
                            startPoint: .top, endPoint: .bottom)
             // The cards behind keep their copy hidden until they rise: covered
@@ -200,7 +200,7 @@ struct ForYouView: View {
         VStack(alignment: .leading, spacing: 7) {
             Text(product.brands?.name.uppercased() ?? String(localized: "DREAMCART"))
                 .font(.dcOverline)
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white)
                 .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
                 .minimumScaleFactor(0.8)
             Text(product.name)

@@ -27,7 +27,9 @@ struct WelcomeView: View {
                     }
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
-                .animation(reduceMotion ? nil : .easeInOut, value: page)
+                // A nil animation left the UIKit pager on the old page when Next was
+                // tapped under Reduce Motion, so keep a near-instant one instead.
+                .animation(.easeInOut(duration: reduceMotion ? 0.01 : 0.35), value: page)
                 .onAppear { Analytics.track("onboarding_step", ["step": page]) }
                 .onChange(of: page) { _, new in Analytics.track("onboarding_step", ["step": new]) }
 
