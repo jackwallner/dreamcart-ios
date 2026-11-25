@@ -8,6 +8,7 @@ Developer notes and historical audits for this repository. The published site re
 - [audit823.md](audits/audit823.md): DreamCart (shop) audit823
 - [ios27DreamCart.md](audits/ios27DreamCart.md): iOS 27 compatibility audit: DreamCart
 - [presubmit-review-2026-11-08-deep.md](audits/presubmit-review-2026-11-08-deep.md): DreamCart pre-submit review, deep pass (1.0.5)
+- [state-machines-2026-11-24.md](audits/state-machines-2026-11-24.md): State machine audit (repro suite in `state-machines-2026-11-24-repro.swift`)
 
 ## Handoffs
 
