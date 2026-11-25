@@ -59,6 +59,12 @@ struct CoinUpsellView: View {
                         .foregroundStyle(Theme.pink)
                         .multilineTextAlignment(.center)
                 }
+                if store.awaitingApproval {
+                    Text(PurchaseIssue.awaitingApprovalMessage)
+                        .font(.dcCaption)
+                        .foregroundStyle(Theme.subtle(scheme))
+                        .multilineTextAlignment(.center)
+                }
                 Spacer(minLength: 0)
                 CandyButton(title: buyTitle, systemImage: "bolt.fill", enabled: !buying && shop.purchaseRecovery.pendingCoins == nil) {
                     buyTask?.cancel()
@@ -91,6 +97,7 @@ struct CoinUpsellView: View {
             buyTask = nil
             buying = false
             store.isPurchasing = false
+            store.purchaseScreenClosed()
             if !purchaseCompleted {
                 Analytics.track("upsell_dismissed", ["trigger": trigger.rawValue])
             }

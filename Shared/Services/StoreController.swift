@@ -16,6 +16,9 @@ final class StoreController {
     var isReady = false
     var isPurchasing = false
     var lastError: String?
+    /// Ask to Buy: the purchase went to a parent. Shown as a calm notice, not
+    /// an error; the approval unlocks through the next profile refresh.
+    var awaitingApproval = false
 
     #if HAS_REVENUECAT
     private var storeProducts: [String: StoreProduct] = [:]
@@ -290,6 +293,7 @@ final class StoreController {
             return false
         }
         isPurchasing = true
+        awaitingApproval = false
         defer { isPurchasing = false }
         do {
             let result = try await Purchases.shared.purchase(product: product)
@@ -302,12 +306,49 @@ final class StoreController {
             syncConversionAttributes()
             return true
         } catch {
-            lastError = error.localizedDescription
+            show(PurchaseIssue.from(revenueCatCode: (error as? RevenueCat.ErrorCode)?.rawValue,
+                                    description: error.localizedDescription))
             return false
         }
     }
     #endif
 
+    func show(_ issue: PurchaseIssue) {
+        switch issue {
+        case .awaitingApproval:
+            lastError = nil
+            awaitingApproval = true
+        case .failed(let message):
+            awaitingApproval = false
+            lastError = message
+        }
+    }
+
+    /// A purchase screen closed. Its notice and error belong to it, so neither
+    /// is left for the next purchase screen to show.
+    func purchaseScreenClosed() {
+        awaitingApproval = false
+        lastError = nil
+    }
+}
+
+/// What a failed store purchase is shown as.
+enum PurchaseIssue: Equatable {
+    /// Ask to Buy: a parent has the request. Not a failure.
+    case awaitingApproval
+    case failed(String)
+
+    /// RevenueCat's `ErrorCode.paymentPendingError` raw value. The unit tests
+    /// do not link RevenueCat, so the mapping reads the code itself.
+    static let revenueCatPaymentPendingCode = 20
+
+    static func from(revenueCatCode: Int?, description: String) -> PurchaseIssue {
+        revenueCatCode == revenueCatPaymentPendingCode ? .awaitingApproval : .failed(description)
+    }
+
+    static var awaitingApprovalMessage: String {
+        String(localized: "Waiting for approval. Your purchase unlocks once it is approved.")
+    }
 }
 
 // Deliberately no StoreKit restore path. Every product here is a consumable

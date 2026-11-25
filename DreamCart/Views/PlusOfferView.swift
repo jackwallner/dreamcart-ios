@@ -97,6 +97,13 @@ struct PlusOfferView: View {
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 28)
                     }
+                    if store.awaitingApproval {
+                        Text(PurchaseIssue.awaitingApprovalMessage)
+                            .font(.dcCaption)
+                            .foregroundStyle(Theme.subtle(scheme))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 28)
+                    }
                     Spacer(minLength: 20)
                 }
                 .frame(maxWidth: .infinity, minHeight: geoHeight)
@@ -152,7 +159,10 @@ struct PlusOfferView: View {
                             ["product_id": PlusPlan.productId, "source": source])
             store.trackPaywallImpression(id: paywallId, oncePerSession: true)
         }
-        .onDisappear { buyTask?.cancel() }
+        .onDisappear {
+            buyTask?.cancel()
+            store.purchaseScreenClosed()
+        }
         .onChange(of: shop.purchaseRecovery.confirmedPlus) { _, confirmed in
             if confirmed { confirmActivation() }
         }

@@ -29,6 +29,12 @@ struct CoinShopView: View {
                             .foregroundStyle(Theme.pink)
                             .multilineTextAlignment(.center)
                     }
+                    if store.awaitingApproval {
+                        Text(PurchaseIssue.awaitingApprovalMessage)
+                            .font(.dcSub)
+                            .foregroundStyle(Theme.subtle(scheme))
+                            .multilineTextAlignment(.center)
+                    }
                     ForEach(CoinPack.all) { pack in
                         packCard(pack)
                     }
@@ -65,6 +71,7 @@ struct CoinShopView: View {
             buyTask = nil
             buying = nil
             store.isPurchasing = false
+            store.purchaseScreenClosed()
         }
         .onChange(of: scenePhase) { _, newPhase in
             // Leaving .active (or a second .active while one is pending) aborts
