@@ -104,13 +104,18 @@ final class LocalNotificationCoordinator {
         set { defaults.set(newValue, forKey: Self.primerShownKey) }
     }
 
+    /// On when the shopper asked for reminders and iOS allows them. The wish
+    /// is stored on its own: iOS permission going away hides it, and coming
+    /// back restores it, so a trip through Settings never loses the reminder.
     var isNotificationsEnabled: Bool {
-        get { defaults.bool(forKey: Self.notificationsEnabledKey) }
+        get { wantsReminders && authorizationState.isEnabled }
         set {
             defaults.set(newValue, forKey: Self.notificationsEnabledKey)
             Task { await reconcile() }
         }
     }
+
+    private var wantsReminders: Bool { defaults.bool(forKey: Self.notificationsEnabledKey) }
 
     var isDenied: Bool { authorizationState == .denied }
     var shouldPresentPrimer: Bool {
@@ -138,10 +143,16 @@ final class LocalNotificationCoordinator {
     }
 
     func refreshStatus() async {
-        authorizationState = AuthorizationState(await center.authorizationStatus())
-        if !authorizationState.isEnabled {
-            defaults.set(false, forKey: Self.notificationsEnabledKey)
+        let wasEnabled = authorizationState.isEnabled
+        await readStatus()
+        // Allowed again in Settings: bring back the reminder the shopper asked for.
+        if !wasEnabled, authorizationState.isEnabled, wantsReminders, !isReconciling {
+            await reconcile()
         }
+    }
+
+    private func readStatus() async {
+        authorizationState = AuthorizationState(await center.authorizationStatus())
     }
 
     @discardableResult
@@ -167,7 +178,7 @@ final class LocalNotificationCoordinator {
     func disable() async {
         defaults.set(false, forKey: Self.notificationsEnabledKey)
         cancelNewDrops()
-        await refreshStatus()
+        await readStatus()
     }
 
     func cancelNewDrops() {
@@ -177,8 +188,8 @@ final class LocalNotificationCoordinator {
     func reconcile() async {
         isReconciling = true
         defer { isReconciling = false }
-        await refreshStatus()
-        guard isNotificationsEnabled, authorizationState.isEnabled else {
+        await readStatus()
+        guard isNotificationsEnabled else {
             center.removePendingNotificationRequests(withIdentifiers: [Self.newDropsIdentifier])
             return
         }

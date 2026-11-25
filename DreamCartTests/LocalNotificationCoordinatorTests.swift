@@ -85,4 +85,76 @@ final class LocalNotificationCoordinatorTests: XCTestCase {
         XCTAssertTrue(center.pending.isEmpty)
         XCTAssertFalse(coordinator.isNotificationsEnabled)
     }
+
+    // MARK: permission off and on again (state machine audit 2026-11-24, B1)
+
+    /// The foreground path is `refreshStatus()`. Switching DreamCart's
+    /// notifications off in iOS Settings used to clear the shopper's own
+    /// toggle, so allowing them again brought nothing back.
+    func testRemindersComeBackWhenPermissionIsAllowedAgain() async {
+        let center = FakeCenter()
+        let coordinator = LocalNotificationCoordinator(center: center, defaults: defaults)
+        await coordinator.refreshStatus()
+        coordinator.isNotificationsEnabled = true
+        await coordinator.reconcile()
+        XCTAssertNotNil(center.pending[LocalNotificationCoordinator.newDropsIdentifier], "precondition: scheduled")
+
+        center.status = .denied
+        await coordinator.refreshStatus()
+        XCTAssertTrue(coordinator.isDenied, "precondition: denied seen")
+        XCTAssertFalse(coordinator.isNotificationsEnabled, "the toggle reads off while iOS says no")
+
+        center.status = .authorized
+        await coordinator.refreshStatus()
+        XCTAssertTrue(coordinator.isNotificationsEnabled)
+        XCTAssertNotNil(center.pending[LocalNotificationCoordinator.newDropsIdentifier])
+    }
+
+    /// While iOS says no, a launch removes the reminder; allowing it again
+    /// schedules a fresh one rather than switching the toggle off.
+    func testAMissingReminderIsRestoredWhenPermissionReturnsAfterALaunch() async {
+        let center = FakeCenter()
+        center.status = .denied
+        defaults.set(true, forKey: LocalNotificationCoordinator.notificationsEnabledKey)
+        let coordinator = LocalNotificationCoordinator(center: center, defaults: defaults)
+        await coordinator.reconcile()
+        XCTAssertTrue(center.pending.isEmpty, "precondition: nothing scheduled while denied")
+
+        center.status = .authorized
+        await coordinator.refreshStatus()
+        XCTAssertTrue(coordinator.isNotificationsEnabled)
+        XCTAssertEqual(center.addCount, 1)
+    }
+
+    /// Upgrade: a shopper whose stored setting says on keeps it.
+    func testAStoredOnSettingFromAnEarlierBuildStillSchedules() async {
+        let center = FakeCenter()
+        defaults.set(true, forKey: LocalNotificationCoordinator.notificationsEnabledKey)
+        defaults.set(20 * 60, forKey: LocalNotificationCoordinator.preferredMinuteKey)
+        let coordinator = LocalNotificationCoordinator(center: center, defaults: defaults)
+
+        await coordinator.refreshStatus()
+
+        XCTAssertTrue(coordinator.isNotificationsEnabled)
+        let trigger = center.pending[LocalNotificationCoordinator.newDropsIdentifier]?.trigger as? UNCalendarNotificationTrigger
+        XCTAssertEqual(trigger?.dateComponents.hour, 20)
+    }
+
+    /// Reminders turned off in the app stay off when permission comes and goes.
+    func testRemindersTurnedOffInTheAppStayOffAcrossPermissionChanges() async {
+        let center = FakeCenter()
+        let coordinator = LocalNotificationCoordinator(center: center, defaults: defaults)
+        await coordinator.refreshStatus()
+        coordinator.isNotificationsEnabled = true
+        await coordinator.reconcile()
+        await coordinator.disable()
+
+        center.status = .denied
+        await coordinator.refreshStatus()
+        center.status = .authorized
+        await coordinator.refreshStatus()
+
+        XCTAssertFalse(coordinator.isNotificationsEnabled)
+        XCTAssertTrue(center.pending.isEmpty)
+    }
 }
