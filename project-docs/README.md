@@ -9,6 +9,8 @@ Developer notes and historical audits for this repository. The published site re
 - [ios27DreamCart.md](audits/ios27DreamCart.md): iOS 27 compatibility audit: DreamCart
 - [presubmit-review-2026-11-08-deep.md](audits/presubmit-review-2026-11-08-deep.md): DreamCart pre-submit review, deep pass (1.0.5)
 - [state-machines-2026-11-24.md](audits/state-machines-2026-11-24.md): State machine audit (repro suite in `state-machines-2026-11-24-repro.swift`)
+- [state-machines-2026-11-24-fixes.md](audits/state-machines-2026-11-24-fixes.md): State machine fixes
+- [rollout-2026-11-24.md](audits/rollout-2026-11-24.md): Ask to Buy, remote config and state machine rollouts from Mahj Trainer
 
 ## Handoffs
 
