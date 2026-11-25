@@ -153,6 +153,7 @@ struct PlusOfferView: View {
         .task {
             await store.loadProducts()
             await store.refreshPlusTrialEligibility()
+            store.recordTrialCTAShown()
         }
         .onAppear {
             Analytics.track("plus_offer_shown",
@@ -263,9 +264,7 @@ struct PlusOfferView: View {
             return shop.purchaseRecovery.isRecovering ? String(localized: "Activating membership") : String(localized: "Retry activation")
         }
         if buying { return String(localized: "Starting…") }
-        return store.plusTrialEligible
-            ? String(localized: "Start \(PlusPlan.trialDays)-day free trial")
-            : String(localized: "Get \(PlusPlan.name)")
+        return store.trialCTA.title(trialEligible: store.plusTrialEligible)
     }
 
     /// One concise line, matching the approved fleet pattern: trial length,

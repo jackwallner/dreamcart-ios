@@ -19,6 +19,10 @@ final class StoreController {
     /// Ask to Buy: the purchase went to a parent. Shown as a calm notice, not
     /// an error; the approval unlocks through the next profile refresh.
     var awaitingApproval = false
+    /// The current offering's metadata, where a RevenueCat Experiment sets
+    /// copy variants (`RemoteConfig`). Nil until RevenueCat answers, which
+    /// reads as every control.
+    private(set) var offeringMetadata: [String: Any]?
 
     #if HAS_REVENUECAT
     private var storeProducts: [String: StoreProduct] = [:]
@@ -75,6 +79,9 @@ final class StoreController {
             prices[p.productIdentifier] = p.localizedPriceString
         }
         isReady = products.contains { $0.productIdentifier != PlusPlan.productId }
+        if let offerings = try? await Purchases.shared.offerings() {
+            offeringMetadata = offerings.current?.metadata
+        }
         // RevenueCat can come back without the membership (a slow or failed
         // fetch). The paywall must still show the billed amount (3.1.2(c)), so
         // ask StoreKit for the price alone. Trial eligibility stays RevenueCat's.
@@ -137,6 +144,24 @@ final class StoreController {
         case "com.jackwallner.shop.coins.spree": return "$19.99"
         default: return "$49.99"
         }
+    }
+
+    // MARK: - Remote config
+
+    /// The trial button wording this customer sees.
+    var trialCTA: TrialCTA { TrialCTA.from(metadata: offeringMetadata) }
+
+    func isOn(_ remoteSwitch: RemoteSwitch) -> Bool {
+        RemoteConfig.isOn(remoteSwitch, in: offeringMetadata)
+    }
+
+    /// Tags the customer with the trial button arm they saw, so a wording test
+    /// can be read by attribute as well as by Experiment.
+    func recordTrialCTAShown() {
+        #if HAS_REVENUECAT
+        guard Purchases.isConfigured, plusTrialEligible else { return }
+        Purchases.shared.attribution.setAttributes([TrialCTA.metadataKey: trialCTA.rawValue])
+        #endif
     }
 
     // MARK: - DreamCart+

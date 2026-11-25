@@ -15,6 +15,7 @@ XcodeGen project/scheme: `DreamCart`, bundle `com.jackwallner.shop`.
 - **Supabase backend** (the coins economy / catalog) — separate Supabase account `jtest0979`; service creds in `.env.shop` (gitignored); migrations in `supabase/`
 - **Pollinations** for product imagery (keyless image generation)
 - `DreamCart.storekit` for local paywall / coin-pack testing
+- Copy tests run without a release through the current RevenueCat offering's metadata (`Shared/Services/RemoteConfig.swift`): `trial_cta` (`three_day` control, `my`, `your`) words the DreamCart+ trial button; a missing or unknown value is the control, and switch keys (`rating_prompt`) must be set the same on every offering.
 
 ## Architecture
 
